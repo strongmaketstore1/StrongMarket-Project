@@ -1,5 +1,5 @@
 import {
-  <BrowserRouter basename="/StrongMarket-Project">
+  BrowserRouter,
   Link,
   Route,
   Routes,
@@ -160,7 +160,7 @@ function CartButton() {
 
 function AppContent() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/StrongMarket-Project">
       <div className="app">
         <header className="navbar">
           <Link className="logo" to="/">
@@ -168,15 +168,16 @@ function AppContent() {
           </Link>
 
           <nav>
-  <Link to="/">Home</Link>
-  <Link to="/shop">Shop</Link>
-  <Link to="/shop">Categories</Link>
-  <Link to="/merchant/apply">
-    Become a Merchant
-  </Link>
-  <Link to="/login">Login</Link>
-  <Link to="/">About</Link>
-</nav>
+            <Link to="/">Home</Link>
+            <Link to="/shop">Shop</Link>
+            <Link to="/shop">Categories</Link>
+            <Link to="/merchant/apply">
+              Become a Merchant
+            </Link>
+            <Link to="/login">Login</Link>
+            <Link to="/">About</Link>
+          </nav>
+
           <div className="nav-actions">
             <Link className="search-btn" to="/shop">
               Search
