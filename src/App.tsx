@@ -1,5 +1,5 @@
 import {
-  BrowserRouter,
+  <BrowserRouter basename="/StrongMarket-Project">
   Link,
   Route,
   Routes,
