@@ -172,9 +172,12 @@ function AppContent() {
             <Link to="/shop">Shop</Link>
             <Link to="/shop">Categories</Link>
             <Link to="/merchant/apply">
-              Become a Merchant
-            </Link>
-            <Link to="/login">Login</Link>
+  Become a Merchant
+</Link>
+<Link to="/merchant/dashboard">
+  Merchant Dashboard
+</Link>
+<Link to="/login">Login</Link>
             <Link to="/">About</Link>
           </nav>
 
