@@ -7,7 +7,6 @@ import {
 } from "firebase/firestore";
 
 import { db, auth } from "../firebase";
-
 import type { MerchantApplication } from "../types/merchant";
 
 type MerchantApplicationWithId = MerchantApplication;
@@ -20,14 +19,12 @@ export default function AdminMerchantApplications() {
 
   async function loadApplications() {
     try {
-      setError("");
-
       const currentUser = auth.currentUser;
 
       if (!currentUser) {
-        setError("Please log in as the admin first.");
-        setLoading(false);
-        return;
+        throw new Error(
+          "You must be logged in as the admin.",
+        );
       }
 
       const snapshot = await getDocs(
@@ -49,14 +46,16 @@ export default function AdminMerchantApplications() {
 
       setApplications(results);
     } catch (err) {
-  console.error("Merchant applications error:", err);
+      console.error(
+        "Merchant applications error:",
+        err,
+      );
 
-  setError(
-    err instanceof Error
-      ? err.message
-      : "Unable to load merchant applications.",
-  );
-}
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to load merchant applications.",
+      );
     } finally {
       setLoading(false);
     }
@@ -90,14 +89,17 @@ export default function AdminMerchantApplications() {
         ),
       );
     } catch (err) {
-  console.error("Approve application error:", err);
+      console.error(
+        "Approve application error:",
+        err,
+      );
 
-  setError(
-    err instanceof Error
-      ? err.message
-      : "Unable to approve merchant application.",
-  );
-}
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to approve merchant application.",
+      );
+    }
   }
 
   async function rejectApplication(
@@ -128,14 +130,17 @@ export default function AdminMerchantApplications() {
         ),
       );
     } catch (err) {
-  console.error("Reject application error:", err);
+      console.error(
+        "Reject application error:",
+        err,
+      );
 
-  setError(
-    err instanceof Error
-      ? err.message
-      : "Unable to reject merchant application.",
-  );
-}
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to reject merchant application.",
+      );
+    }
   }
 
   useEffect(() => {
