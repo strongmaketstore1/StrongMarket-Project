@@ -10,6 +10,10 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import MerchantApply from "./pages/MerchantApply";
 import AdminMerchantApplications from "./pages/AdminMerchantApplications";
+import { useEffect, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "./firebase";
+import { logoutUser, deleteAccount } from "./auth";
 
 import { products } from "./data/products";
 import ProductCard from "./components/ProductCard";
@@ -159,6 +163,43 @@ function CartButton() {
 }
 
 function AppContent() {
+  const [user, setUser] = useState(auth.currentUser);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      (currentUser) => {
+        setUser(currentUser);
+      },
+    );
+
+    return () => unsubscribe();
+  }, []);
+
+  async function handleLogout() {
+    await logoutUser();
+  }
+
+  async function handleDeleteAccount() {
+    const confirmed = window.confirm(
+      "Are you sure you want to permanently delete your account? This cannot be undone.",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await deleteAccount();
+      alert("Your account has been deleted.");
+    } catch (error) {
+      console.error(error);
+      alert(
+        "Unable to delete your account. You may need to sign in again before deleting your account.",
+      );
+    }
+  }
+
   return (
     <BrowserRouter basename="/StrongMarket-Project">
       <div className="app">
@@ -167,19 +208,44 @@ function AppContent() {
             Strong<span>Market</span>Store
           </Link>
 
-          <nav>
-            <Link to="/">Home</Link>
-            <Link to="/shop">Shop</Link>
-            <Link to="/shop">Categories</Link>
-            <Link to="/merchant/apply">
-  Become a Merchant
-</Link>
-<Link to="/merchant/dashboard">
-  Merchant Dashboard
-</Link>
-<Link to="/login">Login</Link>
-            <Link to="/">About</Link>
-          </nav>
+         <nav>
+  <Link to="/">Home</Link>
+  <Link to="/shop">Shop</Link>
+  <Link to="/shop">Categories</Link>
+
+  <Link to="/merchant/apply">
+    Become a Merchant
+  </Link>
+
+  {user ? (
+    <>
+      <Link to="/merchant/dashboard">
+        Merchant Dashboard
+      </Link>
+
+      <button
+        type="button"
+        onClick={handleLogout}
+      >
+        Logout
+      </button>
+
+      <button
+        type="button"
+        onClick={handleDeleteAccount}
+      >
+        Delete Account
+      </button>
+    </>
+  ) : (
+    <>
+      <Link to="/login">Login</Link>
+      <Link to="/register">Register</Link>
+    </>
+  )}
+
+  <Link to="/">About</Link>
+</nav>
 
           <div className="nav-actions">
             <Link className="search-btn" to="/shop">
