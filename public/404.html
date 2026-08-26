@@ -3,11 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <script>
-      sessionStorage.redirect = location.href;
-      location.replace(
-        location.origin +
-        "/StrongMarket-Project/"
-      );
+      const path = location.pathname;
+      const repo = "/StrongMarket-Project";
+
+      if (path.startsWith(repo)) {
+        sessionStorage.setItem(
+          "redirect",
+          path + location.search + location.hash
+        );
+      }
+
+      location.replace(repo + "/");
     </script>
   </head>
   <body></body>
