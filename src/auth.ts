@@ -3,6 +3,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
+  deleteUser,
 } from "firebase/auth";
 
 import { auth } from "./firebase";
@@ -10,6 +11,7 @@ import {
   doc,
   getDoc,
   setDoc,
+  deleteDoc,
 } from "firebase/firestore";
 
 import { db } from "./firebase";
@@ -27,38 +29,39 @@ export async function registerUser(
     );
 
   await updateProfile(
-  credential.user,
-  {
-    displayName,
-  },
-);
+    credential.user,
+    {
+      displayName,
+    },
+  );
 
-await setDoc(
-  doc(
-    db,
-    "users",
-    credential.user.uid,
-  ),
-  {
-    id: credential.user.uid,
-    name: displayName,
-    email: credential.user.email ?? email,
-    role: "customer",
-merchantStatus: "none",
-createdAt: new Date().toISOString(),
-  },
-);
+  await setDoc(
+    doc(
+      db,
+      "users",
+      credential.user.uid,
+    ),
+    {
+      id: credential.user.uid,
+      name: displayName,
+      email: credential.user.email ?? email,
+      role: "customer",
+      merchantStatus: "none",
+      createdAt: new Date().toISOString(),
+    },
+  );
 
-const userDoc = await getDoc(
-  doc(db, "users", credential.user.uid),
-);
+  const userDoc = await getDoc(
+    doc(db, "users", credential.user.uid),
+  );
 
-console.log(
-  "Firestore user profile:",
-  userDoc.exists(),
-  userDoc.data(),
-);
-return credential.user;
+  console.log(
+    "Firestore user profile:",
+    userDoc.exists(),
+    userDoc.data(),
+  );
+
+  return credential.user;
 }
 
 export async function loginUser(
@@ -77,4 +80,18 @@ export async function loginUser(
 
 export async function logoutUser() {
   await signOut(auth);
+}
+
+export async function deleteAccount() {
+  const user = auth.currentUser;
+
+  if (!user) {
+    throw new Error("No user is currently signed in.");
+  }
+
+  await deleteDoc(
+    doc(db, "users", user.uid),
+  );
+
+  await deleteUser(user);
 }
