@@ -4,19 +4,21 @@ import {
   Route,
   Routes,
 } from "react-router-dom";
-import "./App.css";
-
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import MerchantApply from "./pages/MerchantApply";
-import AdminMerchantApplications from "./pages/AdminMerchantApplications";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
+
+import "./App.css";
+
 import { auth } from "./firebase";
 import { logoutUser, deleteAccount } from "./auth";
 
 import { products } from "./data/products";
 import ProductCard from "./components/ProductCard";
+
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import MerchantApply from "./pages/MerchantApply";
+import AdminMerchantApplications from "./pages/AdminMerchantApplications";
 import Shop from "./pages/Shop";
 import ProductDetails from "./pages/ProductDetails";
 import Cart from "./pages/Cart";
@@ -72,8 +74,11 @@ function Home() {
 
         <div className="hero-card">
           <div className="card-glow"></div>
+
           <p>FEATURED</p>
+
           <h2>Premium Digital Collection</h2>
+
           <span>
             Curated resources. Instant delivery.
           </span>
@@ -83,7 +88,9 @@ function Home() {
       <section className="categories" id="categories">
         <div className="section-heading">
           <p className="eyebrow">EXPLORE</p>
+
           <h2>Shop by category</h2>
+
           <p>
             Find the digital resources you need without
             the clutter.
@@ -93,7 +100,9 @@ function Home() {
         <div className="category-grid">
           <div className="category-card">
             <span>01</span>
+
             <h3>Ebooks & Guides</h3>
+
             <p>
               Practical knowledge for personal and
               professional growth.
@@ -102,7 +111,9 @@ function Home() {
 
           <div className="category-card">
             <span>02</span>
+
             <h3>Business</h3>
+
             <p>
               Resources designed to help businesses move
               faster.
@@ -111,7 +122,9 @@ function Home() {
 
           <div className="category-card">
             <span>03</span>
+
             <h3>Templates</h3>
+
             <p>
               Ready-to-use templates for work, content,
               and projects.
@@ -120,7 +133,9 @@ function Home() {
 
           <div className="category-card">
             <span>04</span>
+
             <h3>AI & Productivity</h3>
+
             <p>
               Digital tools and resources for smarter
               workflows.
@@ -132,7 +147,9 @@ function Home() {
       <section className="featured" id="shop">
         <div className="section-heading">
           <p className="eyebrow">BESTSELLERS</p>
+
           <h2>Featured products</h2>
+
           <p>
             Premium digital products selected for
             StrongMarketStore.
@@ -177,7 +194,12 @@ function AppContent() {
   }, []);
 
   async function handleLogout() {
-    await logoutUser();
+    try {
+      await logoutUser();
+    } catch (error) {
+      console.error(error);
+      alert("Unable to log out.");
+    }
   }
 
   async function handleDeleteAccount() {
@@ -191,9 +213,11 @@ function AppContent() {
 
     try {
       await deleteAccount();
+
       alert("Your account has been deleted.");
     } catch (error) {
       console.error(error);
+
       alert(
         "Unable to delete your account. You may need to sign in again before deleting your account.",
       );
@@ -208,47 +232,63 @@ function AppContent() {
             Strong<span>Market</span>Store
           </Link>
 
-         <nav>
-  <Link to="/">Home</Link>
-  <Link to="/shop">Shop</Link>
-  <Link to="/shop">Categories</Link>
+          <nav>
+            <Link to="/">Home</Link>
 
-  <Link to="/merchant/apply">
-    Become a Merchant
-  </Link>
+            <Link to="/shop">
+              Shop
+            </Link>
 
-  {user ? (
-    <>
-      <Link to="/merchant/dashboard">
-        Merchant Dashboard
-      </Link>
+            <Link to="/shop">
+              Categories
+            </Link>
 
-      <button
-        type="button"
-        onClick={handleLogout}
-      >
-        Logout
-      </button>
+            <Link to="/merchant/apply">
+              Become a Merchant
+            </Link>
 
-      <button
-        type="button"
-        onClick={handleDeleteAccount}
-      >
-        Delete Account
-      </button>
-    </>
-  ) : (
-    <>
-      <Link to="/login">Login</Link>
-      <Link to="/register">Register</Link>
-    </>
-  )}
+            {user ? (
+              <>
+                <Link to="/merchant/dashboard">
+                  Merchant Dashboard
+                </Link>
 
-  <Link to="/">About</Link>
-</nav>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDeleteAccount}
+                >
+                  Delete Account
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login">
+                  Login
+                </Link>
+
+                <Link to="/register">
+                  Register
+                </Link>
+              </>
+            )}
+
+            <Link to="/">
+              About
+            </Link>
+          </nav>
 
           <div className="nav-actions">
-            <Link className="search-btn" to="/shop">
+            <Link
+              className="search-btn"
+              to="/shop"
+            >
               Search
             </Link>
 
@@ -257,21 +297,6 @@ function AppContent() {
         </header>
 
         <Routes>
-          <Route
-            path="/admin/merchant-applications"
-            element={<AdminMerchantApplications />}
-          />
-
-          <Route
-            path="/merchant/apply"
-            element={<MerchantApply />}
-          />
-
-          <Route
-            path="/merchant/dashboard"
-            element={<MerchantDashboard />}
-          />
-
           <Route
             path="/"
             element={<Home />}
@@ -313,6 +338,16 @@ function AppContent() {
           />
 
           <Route
+            path="/merchant/apply"
+            element={<MerchantApply />}
+          />
+
+          <Route
+            path="/merchant/dashboard"
+            element={<MerchantDashboard />}
+          />
+
+          <Route
             path="/merchant/products/new"
             element={<MerchantAddProduct />}
           />
@@ -336,11 +371,19 @@ function AppContent() {
             path="/merchant/sales"
             element={<MerchantSales />}
           />
+
+          <Route
+            path="/admin/merchant-applications"
+            element={<AdminMerchantApplications />}
+          />
         </Routes>
 
         <footer>
           <div>
-            <Link className="logo" to="/">
+            <Link
+              className="logo"
+              to="/"
+            >
               Strong<span>Market</span>Store
             </Link>
 
