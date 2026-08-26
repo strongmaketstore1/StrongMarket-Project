@@ -49,10 +49,14 @@ export default function AdminMerchantApplications() {
 
       setApplications(results);
     } catch (err) {
-      console.error(err);
-      setError(
-        "Unable to load merchant applications.",
-      );
+  console.error("Merchant applications error:", err);
+
+  setError(
+    err instanceof Error
+      ? err.message
+      : "Unable to load merchant applications.",
+  );
+}
     } finally {
       setLoading(false);
     }
@@ -86,11 +90,14 @@ export default function AdminMerchantApplications() {
         ),
       );
     } catch (err) {
-      console.error(err);
-      setError(
-        "Unable to approve merchant application.",
-      );
-    }
+  console.error("Approve application error:", err);
+
+  setError(
+    err instanceof Error
+      ? err.message
+      : "Unable to approve merchant application.",
+  );
+}
   }
 
   async function rejectApplication(
@@ -121,11 +128,14 @@ export default function AdminMerchantApplications() {
         ),
       );
     } catch (err) {
-      console.error(err);
-      setError(
-        "Unable to reject merchant application.",
-      );
-    }
+  console.error("Reject application error:", err);
+
+  setError(
+    err instanceof Error
+      ? err.message
+      : "Unable to reject merchant application.",
+  );
+}
   }
 
   useEffect(() => {
