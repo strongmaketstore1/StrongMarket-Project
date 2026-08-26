@@ -3,10 +3,7 @@ import {
   collection,
   doc,
   getDocs,
-  orderBy,
-  query,
   updateDoc,
-  where,
 } from "firebase/firestore";
 
 import { db, auth } from "../firebase";
@@ -20,6 +17,46 @@ export default function AdminMerchantApplications() {
     useState<MerchantApplicationWithId[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  async function loadApplications() {
+    try {
+      setError("");
+
+      const currentUser = auth.currentUser;
+
+      if (!currentUser) {
+        setError("Please log in as the admin first.");
+        setLoading(false);
+        return;
+      }
+
+      const snapshot = await getDocs(
+        collection(db, "merchantApplications"),
+      );
+
+      const results = snapshot.docs
+        .map((item) => ({
+          id: item.id,
+          ...(item.data() as Omit<
+            MerchantApplication,
+            "id"
+          >),
+        }))
+        .filter(
+          (application) =>
+            application.status === "pending",
+        );
+
+      setApplications(results);
+    } catch (err) {
+      console.error(err);
+      setError(
+        "Unable to load merchant applications.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function approveApplication(
     application: MerchantApplicationWithId,
@@ -92,49 +129,25 @@ export default function AdminMerchantApplications() {
   }
 
   useEffect(() => {
-    async function loadApplications() {
-      try {
-        console.log("Current user:", auth.currentUser?.email);
-console.log("Current UID:", auth.currentUser?.uid);
-        
-        const applicationsQuery = query(
-          collection(db, "merchantApplications"),
-          where("status", "==", "pending"),
-          orderBy("createdAt", "desc"),
-        );
-
-        const snapshot = await getDocs(
-          applicationsQuery,
-        );
-
-        const results = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...(doc.data() as Omit<
-            MerchantApplication,
-            "id"
-          >),
-        }));
-
-        setApplications(results);
-      } catch (err) {
-        console.error(err);
-        setError(
-          "Unable to load merchant applications.",
-        );
-      } finally {
-        setLoading(false);
-      }
-    }
-
     loadApplications();
   }, []);
 
   if (loading) {
-    return <p>Loading merchant applications...</p>;
+    return (
+      <main>
+        <h1>Merchant Applications</h1>
+        <p>Loading merchant applications...</p>
+      </main>
+    );
   }
 
   if (error) {
-    return <p>{error}</p>;
+    return (
+      <main>
+        <h1>Merchant Applications</h1>
+        <p>{error}</p>
+      </main>
+    );
   }
 
   return (
