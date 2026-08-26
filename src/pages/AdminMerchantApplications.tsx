@@ -9,7 +9,7 @@ import {
   where,
 } from "firebase/firestore";
 
-import { db } from "../firebase";
+import { db, auth } from "../firebase";
 
 import type { MerchantApplication } from "../types/merchant";
 
@@ -94,6 +94,9 @@ export default function AdminMerchantApplications() {
   useEffect(() => {
     async function loadApplications() {
       try {
+        console.log("Current user:", auth.currentUser?.email);
+console.log("Current UID:", auth.currentUser?.uid);
+        
         const applicationsQuery = query(
           collection(db, "merchantApplications"),
           where("status", "==", "pending"),
