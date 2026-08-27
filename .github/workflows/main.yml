@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - codespace-super-space-cod-jr49rxw5pp6r3rg6
+  workflow_dispatch:
 
 permissions:
   contents: read
