@@ -44,7 +44,7 @@ export async function startPaystackPayment(
     }
 
     const response = await fetch(
-      "/api/paystack/initialize",
+  "https://strongmarket-payment-server.onrender.com/api/paystack/initialize",
       {
         method: "POST",
         headers: {

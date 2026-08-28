@@ -1,9 +1,15 @@
 import "dotenv/config";
 import express from "express";
 import axios from "axios";
+import cors from "cors";
 
 const app = express();
 
+app.use(
+  cors({
+    origin: "https://strongmaketstore1.github.io",
+  }),
+);
 app.use(express.json());
 
 const PAYSTACK_SECRET_KEY =
