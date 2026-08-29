@@ -23,8 +23,8 @@ export default function OrderSuccess() {
 
       try {
         const response = await fetch(
-          `/api/paystack/verify/${encodeURIComponent(reference)}`,
-        );
+  `https://strongmarket-payment-server.onrender.com/api/paystack/verify/${encodeURIComponent(reference)}`,
+);
 
         const result = await response.json();
 
