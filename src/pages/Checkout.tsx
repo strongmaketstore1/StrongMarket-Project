@@ -111,7 +111,7 @@ export default function Checkout() {
           paymentReference,
 
         callback_url:
-          `${window.location.origin}/order-success`,
+  `${window.location.origin}/StrongMarket-Project/order-success`,
 
         metadata: {
           customerName:
