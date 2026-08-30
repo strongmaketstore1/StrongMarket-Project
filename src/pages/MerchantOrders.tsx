@@ -1,41 +1,89 @@
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
+import {
+  collection,
+  onSnapshot,
+  query,
+  where,
+} from "firebase/firestore";
 
-import { auth } from "../firebase";
-import { getOrders } from "../service";
-import type { Order } from "../service";
+import { auth, db } from "../firebase";
+
+type OrderItem = {
+  productId: string;
+  productName: string;
+  quantity: number;
+  price: number;
+  merchantId?: string;
+};
+
+type Order = {
+  id: string;
+  customerName: string;
+  customerEmail: string;
+  items: OrderItem[];
+  subtotal: number;
+  currency: string;
+  status: string;
+  paymentReference?: string;
+  createdAt: string;
+  merchantIds?: string[];
+};
 
 export default function MerchantOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
-  const unsubscribe = onAuthStateChanged(
-    auth,
-    (user) => {
-      if (!user) {
-        setOrders([]);
-        setLoading(false);
-        return;
-      }
+    let unsubscribeOrders: (() => void) | undefined;
 
-      const savedOrders = getOrders();
+    const unsubscribeAuth = onAuthStateChanged(
+      auth,
+      (user) => {
+        if (!user) {
+          setOrders([]);
+          setMessage("You must be logged in.");
+          setLoading(false);
+          return;
+        }
 
-      const merchantOrders = savedOrders.filter(
-        (order) =>
-          order.items.some(
-            (item) =>
-              item.merchantId === user.uid,
-          ),
-      );
+        setMessage("");
 
-      setOrders(merchantOrders);
-      setLoading(false);
-    },
-  );
+        const ordersQuery = query(
+          collection(db, "orders"),
+          where("merchantIds", "array-contains", user.uid),
+        );
 
-  return () => unsubscribe();
-}, []);
+        unsubscribeOrders = onSnapshot(
+          ordersQuery,
+          (snapshot) => {
+            const merchantOrders = snapshot.docs.map(
+              (orderDoc) => ({
+                id: orderDoc.id,
+                ...orderDoc.data(),
+              }),
+            ) as Order[];
+
+            setOrders(merchantOrders);
+            setLoading(false);
+          },
+          (error) => {
+            console.error(error);
+            setMessage(
+              "Unable to load your orders.",
+            );
+            setLoading(false);
+          },
+        );
+      },
+    );
+
+    return () => {
+      unsubscribeOrders?.();
+      unsubscribeAuth();
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -51,48 +99,73 @@ export default function MerchantOrders() {
       <h1>Orders</h1>
 
       <p>
-        View orders placed for StrongMarketStore
-        products.
+        View orders placed for your
+        StrongMarketStore products.
       </p>
 
-      {orders.length === 0 ? (
+      {message && <p>{message}</p>}
+
+      {!message && orders.length === 0 && (
         <p>No orders yet.</p>
-      ) : (
+      )}
+
+      {orders.length > 0 && (
         <section>
           {orders.map((order) => (
             <article key={order.id}>
-              <h2>Order {order.id}</h2>
+              <h2>
+                Order {order.id}
+              </h2>
 
               <p>
-                Customer: {order.customerName}
+                Customer:{" "}
+                {order.customerName}
               </p>
 
               <p>
-                Email: {order.customerEmail}
+                Email:{" "}
+                {order.customerEmail}
               </p>
 
               <p>
-                Status: {order.status}
+                Status:{" "}
+                {order.status}
               </p>
 
               <p>
-                Total: {order.currency}{" "}
-                {order.subtotal.toLocaleString("en-NG")}
+                Total:{" "}
+                {order.currency}{" "}
+                {order.subtotal.toLocaleString(
+                  "en-NG",
+                )}
               </p>
 
-              <h3>Products</h3>
+              <h3>
+                Products
+              </h3>
 
-              {order.items.map((item) => (
-                <p key={item.productId}>
-                  {item.productName} × {item.quantity}
-                </p>
-              ))}
+              {order.items
+                .filter(
+                  (item) =>
+                    item.merchantId ===
+                    auth.currentUser?.uid,
+                )
+                .map((item) => (
+                  <p
+                    key={item.productId}
+                  >
+                    {item.productName} ×{" "}
+                    {item.quantity}
+                  </p>
+                ))}
 
               <p>
                 Date:{" "}
                 {new Date(
                   order.createdAt,
-                ).toLocaleString("en-NG")}
+                ).toLocaleString(
+                  "en-NG",
+                )}
               </p>
             </article>
           ))}
