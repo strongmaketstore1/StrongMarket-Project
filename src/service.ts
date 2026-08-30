@@ -32,17 +32,21 @@ export function createOrderItems(
     quantity: number;
   }[],
 ): OrderItem[] {
-  return products.map((item) => ({
-    productId: item.product.id,
-    productName: item.product.name,
-    quantity: item.quantity,
-    price: item.product.price,
-    merchantId: (
+  return products.map((item) => {
+    const merchantId = (
       item.product as Product & {
         merchantId?: string;
       }
-    ).merchantId,
-  }));
+    ).merchantId;
+
+    return {
+      productId: item.product.id,
+      productName: item.product.name,
+      quantity: item.quantity,
+      price: item.product.price,
+      ...(merchantId ? { merchantId } : {}),
+    };
+  });
 }
 const ORDERS_KEY = "strongmarketstore-orders";
 
