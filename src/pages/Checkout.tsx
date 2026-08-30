@@ -170,14 +170,16 @@ export default function Checkout() {
         },
       );
     } catch (error) {
-      console.error(error);
+  console.error("ORDER CREATION ERROR:", error);
 
-      setIsPaying(false);
+  setIsPaying(false);
 
-      setError(
-        "Unable to create your order. Please try again.",
-      );
-    }
+  setError(
+    error instanceof Error
+      ? error.message
+      : "Unable to create your order. Please try again.",
+  );
+}
   }
 
   return (
