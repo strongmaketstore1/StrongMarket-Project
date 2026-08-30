@@ -1,8 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+} from "firebase/firestore";
 
+import { db } from "../firebase";
 import { useCart } from "../context/CartContext";
-import { getOrderById, updateOrderStatus } from "../service";
 
 export default function OrderSuccess() {
   const [searchParams] = useSearchParams();
@@ -22,9 +27,12 @@ export default function OrderSuccess() {
       }
 
       try {
+        // 1. Verify the payment with Paystack
         const response = await fetch(
-  `https://strongmarket-payment-server.onrender.com/api/paystack/verify/${encodeURIComponent(reference)}`,
-);
+          `https://strongmarket-payment-server.onrender.com/api/paystack/verify/${encodeURIComponent(
+            reference,
+          )}`,
+        );
 
         const result = await response.json();
 
@@ -38,23 +46,38 @@ export default function OrderSuccess() {
           return;
         }
 
-        const order = getOrderById(reference);
+        // 2. Find the order in Firestore
+        const orderRef = doc(
+          db,
+          "orders",
+          reference,
+        );
 
-        if (!order) {
+        const orderSnapshot = await getDoc(orderRef);
+
+        if (!orderSnapshot.exists()) {
           setStatus("failed");
           return;
         }
 
-        updateOrderStatus(
-          reference,
-          "paid",
-          reference,
-        );
+        // 3. Mark the Firestore order as paid
+        await updateDoc(orderRef, {
+          status: "paid",
+          paymentReference: reference,
+          paidAt: new Date().toISOString(),
+        });
 
+        // 4. Clear the customer's cart
         clearCart();
 
+        // 5. Show success
         setStatus("paid");
-      } catch {
+      } catch (error) {
+        console.error(
+          "Payment verification error:",
+          error,
+        );
+
         setStatus("failed");
       }
     }

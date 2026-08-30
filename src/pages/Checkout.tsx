@@ -1,21 +1,21 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-
-import { useCart } from "../context/CartContext";
 import {
-  createOrderItems,
-  saveOrder,
-} from "../service";
+  addDoc,
+  collection,
+} from "firebase/firestore";
+
+import { db } from "../firebase";
+import { useCart } from "../context/CartContext";
+import { createOrderItems } from "../service";
 import { startPaystackPayment } from "../paystackService";
 
 export default function Checkout() {
-  
-
   const {
-  items,
-  itemCount,
-  subtotal,
-} = useCart();
+    items,
+    itemCount,
+    subtotal,
+  } = useCart();
 
   const [customerName, setCustomerName] =
     useState("");
@@ -52,7 +52,7 @@ export default function Checkout() {
     );
   }
 
-  function handleContinue() {
+  async function handleContinue() {
     setError("");
 
     if (!customerName.trim()) {
@@ -69,83 +69,115 @@ export default function Checkout() {
 
     setIsPaying(true);
 
-    const orderId = `SMS-${Date.now()}`;
+    try {
+      const orderId = `SMS-${Date.now()}`;
 
-    const paymentReference = orderId;
+      const paymentReference = orderId;
 
-    const order = {
-      id: orderId,
+      const order = {
+        id: orderId,
 
-      customerName:
-        customerName.trim(),
+        customerName:
+          customerName.trim(),
 
-      customerEmail:
-        customerEmail.trim(),
-
-      items: createOrderItems(items),
-
-      subtotal,
-
-      currency: "NGN",
-
-      status: "pending" as const,
-
-      paymentReference,
-
-      createdAt:
-        new Date().toISOString(),
-    };
-
-    saveOrder(order);
-
-    startPaystackPayment(
-      {
-        email:
+        customerEmail:
           customerEmail.trim(),
 
-        amount: Math.round(
-          subtotal * 100,
+        items: createOrderItems(items),
+
+        subtotal,
+
+        currency: "NGN",
+
+        status: "pending" as const,
+
+        paymentReference,
+
+        createdAt:
+          new Date().toISOString(),
+      };
+
+      const merchantIds = [
+        ...new Set(
+          items
+            .map(
+              (item) =>
+                item.product.merchantId,
+            )
+            .filter(
+              (
+                merchantId,
+              ): merchantId is string =>
+                Boolean(merchantId),
+            ),
         ),
+      ];
 
-        reference:
-          paymentReference,
-
-        callback_url:
-  `${window.location.origin}/StrongMarket-Project/order-success`,
-
-        metadata: {
-          customerName:
-            customerName.trim(),
-
-          orderId,
-
-          itemCount,
+      await addDoc(
+        collection(db, "orders"),
+        {
+          ...order,
+          merchantIds,
         },
-      },
+      );
 
-      import.meta.env
-        .VITE_PAYSTACK_PUBLIC_KEY,
+      startPaystackPayment(
+        {
+          email:
+            customerEmail.trim(),
 
-      () => {
-        setIsPaying(false);
-      },
+          amount: Math.round(
+            subtotal * 100,
+          ),
 
-      () => {
-        setIsPaying(false);
+          reference:
+            paymentReference,
 
-        setError(
-          "Payment was cancelled.",
-        );
-      },
+          callback_url:
+            `${window.location.origin}/StrongMarket-Project/order-success`,
 
-      (paymentError) => {
-        setIsPaying(false);
+          metadata: {
+            customerName:
+              customerName.trim(),
 
-        setError(
-          paymentError.message,
-        );
-      },
-    );
+            orderId,
+
+            itemCount,
+          },
+        },
+
+        import.meta.env
+          .VITE_PAYSTACK_PUBLIC_KEY,
+
+        () => {
+          setIsPaying(false);
+        },
+
+        () => {
+          setIsPaying(false);
+
+          setError(
+            "Payment was cancelled.",
+          );
+        },
+
+        (paymentError) => {
+          setIsPaying(false);
+
+          setError(
+            paymentError.message,
+          );
+        },
+      );
+    } catch (error) {
+      console.error(error);
+
+      setIsPaying(false);
+
+      setError(
+        "Unable to create your order. Please try again.",
+      );
+    }
   }
 
   return (
