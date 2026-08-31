@@ -42,9 +42,11 @@ export default function OrderSuccess() {
           result?.data?.status === "success";
 
         if (!paymentSuccessful) {
-          setStatus("failed");
-          return;
-        }
+  console.error("Paystack verification failed:", result);
+  alert(`Payment verification failed: ${JSON.stringify(result)}`);
+  setStatus("failed");
+  return;
+}
 
         // 2. Find the order in Firestore
         const orderRef = doc(
