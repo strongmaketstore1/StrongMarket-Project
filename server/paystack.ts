@@ -10,6 +10,7 @@ app.use(
     origin: "https://strongmaketstore1.github.io",
   }),
 );
+
 app.use(express.json());
 
 const PAYSTACK_SECRET_KEY =
@@ -17,12 +18,12 @@ const PAYSTACK_SECRET_KEY =
 
 if (!PAYSTACK_SECRET_KEY) {
   console.error(
-    "❌ PAYSTACK_SECRET_KEY is missing from .env",
+    "❌ PAYSTACK_SECRET_KEY is missing",
   );
-
   process.exit(1);
 }
 
+// Health check
 app.get("/api/health", (_req, res) => {
   res.json({
     success: true,
@@ -31,6 +32,7 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
+// Initialize Paystack payment
 app.post(
   "/api/paystack/initialize",
   async (req, res) => {
@@ -56,7 +58,6 @@ app.post(
         {
           email,
           amount,
-
           currency: "NGN",
 
           ...(reference
@@ -75,60 +76,51 @@ app.post(
           headers: {
             Authorization:
               `Bearer ${PAYSTACK_SECRET_KEY}`,
-
             "Content-Type":
               "application/json",
           },
         },
       );
 
-      return res.json(
-        response.data,
-      );
+      return res.json(response.data);
     } catch (error) {
-      if (
-        axios.isAxiosError(error)
-      ) {
+      if (axios.isAxiosError(error)) {
         console.error(
-          "Paystack error:",
+          "Paystack initialization error:",
           error.response?.data ||
             error.message,
         );
 
         return res.status(
-          error.response?.status ||
-            500,
+          error.response?.status || 500,
         ).json({
           success: false,
-
           message:
-            error.response?.data
-              ?.message ||
-            "Unable to initialize Paystack transaction.",
+            error.response?.data?.message ||
+            "Payment initialization failed.",
         });
       }
 
       console.error(
-        "Unexpected payment error:",
+        "Unexpected initialization error:",
         error,
       );
 
       return res.status(500).json({
         success: false,
         message:
-          "Unable to initialize payment.",
+          "Payment initialization failed.",
       });
     }
   },
 );
 
+// Verify Paystack payment
 app.get(
   "/api/paystack/verify/:reference",
   async (req, res) => {
     try {
-      const {
-        reference,
-      } = req.params;
+      const { reference } = req.params;
 
       if (!reference) {
         return res.status(400).json({
@@ -138,24 +130,21 @@ app.get(
         });
       }
 
-      const response =
-        await axios.get(
-          `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
-          {
-            headers: {
-              Authorization:
-                `Bearer ${PAYSTACK_SECRET_KEY}`,
-            },
+      const response = await axios.get(
+        `https://api.paystack.co/transaction/verify/${encodeURIComponent(
+          reference,
+        )}`,
+        {
+          headers: {
+            Authorization:
+              `Bearer ${PAYSTACK_SECRET_KEY}`,
           },
-        );
-
-      return res.json(
-        response.data,
+        },
       );
+
+      return res.json(response.data);
     } catch (error) {
-      if (
-        axios.isAxiosError(error)
-      ) {
+      if (axios.isAxiosError(error)) {
         console.error(
           "Paystack verification error:",
           error.response?.data ||
@@ -163,14 +152,11 @@ app.get(
         );
 
         return res.status(
-          error.response?.status ||
-            500,
+          error.response?.status || 500,
         ).json({
           success: false,
-
           message:
-            error.response?.data
-              ?.message ||
+            error.response?.data?.message ||
             "Unable to verify Paystack transaction.",
         });
       }
@@ -189,7 +175,11 @@ app.get(
   },
 );
 
-const PORT = 3001;
+// Render provides the PORT environment variable.
+// Use 3001 locally if PORT is not provided.
+const PORT = Number(
+  process.env.PORT || 3001,
+);
 
 app.listen(
   PORT,
