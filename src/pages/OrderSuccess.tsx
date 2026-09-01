@@ -44,39 +44,57 @@ export default function OrderSuccess() {
           result?.data?.status === "success";
 
         if (!paymentSuccessful) {
-  console.error("Paystack verification failed:", result);
-  alert(`Payment verification failed: ${JSON.stringify(result)}`);
-  setStatus("failed");
-  return;
-}
+          console.error(
+            "Paystack verification failed:",
+            result,
+          );
+
+          alert(
+            `Payment verification failed: ${JSON.stringify(
+              result,
+            )}`,
+          );
+
+          setStatus("failed");
+          return;
+        }
 
         // 2. Find the order in Firestore
         const ordersQuery = query(
-  collection(db, "orders"),
-  where("paymentReference", "==", reference),
-);
+          collection(db, "orders"),
+          where(
+            "paymentReference",
+            "==",
+            reference,
+          ),
+        );
 
-const ordersSnapshot = await getDocs(ordersQuery);
+        const ordersSnapshot =
+          await getDocs(ordersQuery);
 
-if (ordersSnapshot.empty) {
-  console.error(
-    "Order not found in Firestore for payment reference:",
-    reference,
-  );
-  alert(
-    `Order not found for payment reference: ${reference}`,
-  );
-  setStatus("failed");
-  return;
-}
+        if (ordersSnapshot.empty) {
+          console.error(
+            "Order not found in Firestore for payment reference:",
+            reference,
+          );
 
-const orderDoc = ordersSnapshot.docs[0];
+          alert(
+            `Order not found for payment reference: ${reference}`,
+          );
 
-await updateDoc(orderDoc.ref, {
-  status: "paid",
-  paymentReference: reference,
-  paidAt: new Date().toISOString(),
-});
+          setStatus("failed");
+          return;
+        }
+
+        // 3. Mark the order as paid
+        const orderDoc =
+          ordersSnapshot.docs[0];
+
+        await updateDoc(orderDoc.ref, {
+          status: "paid",
+          paymentReference: reference,
+          paidAt: new Date().toISOString(),
+        });
 
         // 4. Clear the customer's cart
         clearCart();
@@ -87,6 +105,14 @@ await updateDoc(orderDoc.ref, {
         console.error(
           "Payment verification error:",
           error,
+        );
+
+        alert(
+          `Payment verification error: ${
+            error instanceof Error
+              ? error.message
+              : JSON.stringify(error)
+          }`,
         );
 
         setStatus("failed");
@@ -121,7 +147,9 @@ await updateDoc(orderDoc.ref, {
     return (
       <main className="order-success-page">
         <div className="order-success">
-          <div className="success-icon">!</div>
+          <div className="success-icon">
+            !
+          </div>
 
           <p className="eyebrow">
             PAYMENT NOT CONFIRMED
@@ -159,7 +187,9 @@ await updateDoc(orderDoc.ref, {
   return (
     <main className="order-success-page">
       <div className="order-success">
-        <div className="success-icon">✓</div>
+        <div className="success-icon">
+          ✓
+        </div>
 
         <p className="eyebrow">
           PAYMENT SUCCESSFUL
