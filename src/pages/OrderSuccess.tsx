@@ -59,6 +59,13 @@ export default function OrderSuccess() {
 const ordersSnapshot = await getDocs(ordersQuery);
 
 if (ordersSnapshot.empty) {
+  console.error(
+    "Order not found in Firestore for payment reference:",
+    reference,
+  );
+  alert(
+    `Order not found for payment reference: ${reference}`,
+  );
   setStatus("failed");
   return;
 }
