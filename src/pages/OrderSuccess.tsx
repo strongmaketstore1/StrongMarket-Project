@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
-  doc,
-  getDoc,
+  collection,
+  getDocs,
+  query,
   updateDoc,
+  where,
 } from "firebase/firestore";
 
 import { db } from "../firebase";
@@ -49,25 +51,25 @@ export default function OrderSuccess() {
 }
 
         // 2. Find the order in Firestore
-        const orderRef = doc(
-          db,
-          "orders",
-          reference,
-        );
+        const ordersQuery = query(
+  collection(db, "orders"),
+  where("paymentReference", "==", reference),
+);
 
-        const orderSnapshot = await getDoc(orderRef);
+const ordersSnapshot = await getDocs(ordersQuery);
 
-        if (!orderSnapshot.exists()) {
-          setStatus("failed");
-          return;
-        }
+if (ordersSnapshot.empty) {
+  setStatus("failed");
+  return;
+}
 
-        // 3. Mark the Firestore order as paid
-        await updateDoc(orderRef, {
-          status: "paid",
-          paymentReference: reference,
-          paidAt: new Date().toISOString(),
-        });
+const orderDoc = ordersSnapshot.docs[0];
+
+await updateDoc(orderDoc.ref, {
+  status: "paid",
+  paymentReference: reference,
+  paidAt: new Date().toISOString(),
+});
 
         // 4. Clear the customer's cart
         clearCart();
