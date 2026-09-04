@@ -5,15 +5,19 @@ import cors from "cors";
 import { cert, getApps, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import path from "path";
+import { readFileSync } from "fs";
 
 const app = express();
 
-const serviceAccount = require(
-  path.join(
-    process.env.RENDER
-      ? "/etc/secrets"
-      : process.cwd(),
-    "firebase-service-account.json",
+const serviceAccount = JSON.parse(
+  readFileSync(
+    path.join(
+      process.env.RENDER
+        ? "/etc/secrets"
+        : process.cwd(),
+      "firebase-service-account.json",
+    ),
+    "utf8",
   ),
 );
 
