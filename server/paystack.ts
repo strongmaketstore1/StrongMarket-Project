@@ -2,8 +2,28 @@ import "dotenv/config";
 import express from "express";
 import axios from "axios";
 import cors from "cors";
+import { cert, getApps, initializeApp } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
+import path from "path";
 
 const app = express();
+
+const serviceAccount = require(
+  path.join(
+    process.env.RENDER
+      ? "/etc/secrets"
+      : process.cwd(),
+    "firebase-service-account.json",
+  ),
+);
+
+const firebaseApp = getApps().length
+  ? getApps()[0]
+  : initializeApp({
+      credential: cert(serviceAccount),
+    });
+
+const db = getFirestore(firebaseApp);
 
 app.use(
   cors({
