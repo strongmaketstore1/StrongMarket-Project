@@ -219,6 +219,45 @@ app.get("/api/paystack/transaction/:id", async (req, res) => {
   }
 });
 
+// Diagnostic: fetch Paystack transaction timeline
+app.get(
+  "/api/paystack/timeline/:id_or_reference",
+  async (req, res) => {
+    try {
+      const { id_or_reference } = req.params;
+
+      const response = await axios.get(
+        `https://api.paystack.co/transaction/timeline/${encodeURIComponent(
+          id_or_reference,
+        )}`,
+        {
+          headers: {
+            Authorization:
+              `Bearer ${PAYSTACK_SECRET_KEY}`,
+          },
+        },
+      );
+
+      return res.json(response.data);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        return res.status(
+          error.response?.status || 500,
+        ).json({
+          paystackStatus: error.response?.status,
+          paystackResponse: error.response?.data,
+        });
+      }
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Unable to fetch transaction timeline.",
+      });
+    }
+  },
+);
+
 // Verify Paystack payment
 app.get(
   "/api/paystack/verify/:reference",
