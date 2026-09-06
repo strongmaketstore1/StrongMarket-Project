@@ -163,13 +163,15 @@ app.get("/api/paystack/transactions", async (_req, res) => {
       );
 
       return res.status(
-        error.response?.status || 500,
-      ).json({
-        success: false,
-        message:
-          error.response?.data?.message ||
-          "Unable to fetch Paystack transactions.",
-      });
+  error.response?.status || 500,
+).json({
+  success: false,
+  paystackStatus: error.response?.status,
+  paystackResponse: error.response?.data,
+  message:
+    error.response?.data?.message ||
+    "Unable to verify Paystack transaction.",
+});
     }
 
     console.error(
