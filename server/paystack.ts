@@ -139,6 +139,52 @@ app.post(
   },
 );
 
+// Diagnostic: list recent Paystack transactions
+app.get("/api/paystack/transactions", async (_req, res) => {
+  try {
+    const response = await axios.get(
+      "https://api.paystack.co/transaction",
+      {
+        headers: {
+          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+        },
+        params: {
+          perPage: 10,
+        },
+      },
+    );
+
+    return res.json(response.data);
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error(
+        "Paystack transaction list error:",
+        error.response?.data || error.message,
+      );
+
+      return res.status(
+        error.response?.status || 500,
+      ).json({
+        success: false,
+        message:
+          error.response?.data?.message ||
+          "Unable to fetch Paystack transactions.",
+      });
+    }
+
+    console.error(
+      "Unexpected transaction list error:",
+      error,
+    );
+
+    return res.status(500).json({
+      success: false,
+      message:
+        "Unable to fetch Paystack transactions.",
+    });
+  }
+});
+
 // Verify Paystack payment
 app.get(
   "/api/paystack/verify/:reference",
