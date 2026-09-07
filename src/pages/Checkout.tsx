@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  addDoc,
-  collection,
+    collection,
+    doc,
+    setDoc,
 } from "firebase/firestore";
 
 import { db } from "../firebase";
@@ -113,13 +114,13 @@ export default function Checkout() {
         ),
       ];
 
-      await addDoc(
-        collection(db, "orders"),
-        {
-          ...order,
-          merchantIds,
-        },
-      );
+      await setDoc(
+    doc(db, "orders", orderId),
+    {
+        ...order,
+        merchantIds,
+    },
+);
 
       startPaystackPayment(
         {

@@ -1,14 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import {
-  collection,
-  getDocs,
-  query,
-  updateDoc,
-  where,
-} from "firebase/firestore";
 
-import { db } from "../firebase";
 import { useCart } from "../context/CartContext";
 
 export default function OrderSuccess() {
@@ -19,38 +11,45 @@ export default function OrderSuccess() {
     "checking" | "paid" | "failed"
   >("checking");
 
-  const reference = searchParams.get("reference");
+  const reference =
+    searchParams.get("reference");
 
   useEffect(() => {
-    async function verifyPayment() {
+    async function confirmPayment() {
       if (!reference) {
         setStatus("failed");
         return;
       }
 
       try {
-        // 1. Verify the payment with Paystack
+        // Ask the secure Render server to verify
+        // Paystack and update the Firestore order.
         const response = await fetch(
-          `https://strongmarket-payment-server.onrender.com/api/paystack/verify/${encodeURIComponent(
-            reference,
-          )}`,
+          "https://strongmarket-payment-server.onrender.com/api/paystack/confirm",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              reference,
+            }),
+          },
         );
 
         const result = await response.json();
 
-        const paymentSuccessful =
-          response.ok &&
-          result?.status === true &&
-          result?.data?.status === "success";
-
-        if (!paymentSuccessful) {
+        if (
+          !response.ok ||
+          result?.success !== true
+        ) {
           console.error(
-            "Paystack verification failed:",
+            "Payment confirmation failed:",
             result,
           );
 
           alert(
-            `Payment verification failed: ${JSON.stringify(
+            `Payment confirmation failed: ${JSON.stringify(
               result,
             )}`,
           );
@@ -59,56 +58,19 @@ export default function OrderSuccess() {
           return;
         }
 
-        // 2. Find the order in Firestore
-        const ordersQuery = query(
-          collection(db, "orders"),
-          where(
-            "paymentReference",
-            "==",
-            reference,
-          ),
-        );
-
-        const ordersSnapshot =
-          await getDocs(ordersQuery);
-
-        if (ordersSnapshot.empty) {
-          console.error(
-            "Order not found in Firestore for payment reference:",
-            reference,
-          );
-
-          alert(
-            `Order not found for payment reference: ${reference}`,
-          );
-
-          setStatus("failed");
-          return;
-        }
-
-        // 3. Mark the order as paid
-        const orderDoc =
-          ordersSnapshot.docs[0];
-
-        await updateDoc(orderDoc.ref, {
-          status: "paid",
-          paymentReference: reference,
-          paidAt: new Date().toISOString(),
-        });
-
-        // 4. Clear the customer's cart
+        // Payment is confirmed and the server
+        // has marked the order as paid.
         clearCart();
 
-        // 5. Show success
         setStatus("paid");
       } catch (error) {
         console.error(
-          "Payment verification error:",
+          "Payment confirmation error:",
           error,
         );
 
         alert(
-          `Payment verification error: ${
+          `Payment confirmation error: ${
             error instanceof Error
               ? error.message
               : JSON.stringify(error)
@@ -119,7 +81,7 @@ export default function OrderSuccess() {
       }
     }
 
-    verifyPayment();
+    confirmPayment();
   }, [reference, clearCart]);
 
   if (status === "checking") {

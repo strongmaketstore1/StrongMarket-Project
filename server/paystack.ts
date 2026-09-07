@@ -320,6 +320,108 @@ app.get(
   },
 );
 
+app.post(
+  "/api/paystack/confirm",
+  async (req, res) => {
+    try {
+      const { reference } = req.body || {};
+
+      if (!reference) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Transaction reference is required.",
+        });
+      }
+
+      // 1. Verify the payment with Paystack
+      const response = await axios.get(
+        `https://api.paystack.co/transaction/verify/${encodeURIComponent(
+          reference,
+        )}`,
+        {
+          headers: {
+            Authorization:
+              `Bearer ${PAYSTACK_SECRET_KEY}`,
+          },
+        },
+      );
+
+      const transaction =
+        response.data?.data;
+
+      if (
+        !response.data?.status ||
+        transaction?.status !== "success"
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Payment has not been successfully verified.",
+        });
+      }
+
+      // 2. Find the order using the payment reference
+      const orderRef = db
+        .collection("orders")
+        .doc(reference);
+
+      const orderSnapshot =
+        await orderRef.get();
+
+      if (!orderSnapshot.exists) {
+        return res.status(404).json({
+          success: false,
+          message: "Order not found.",
+        });
+      }
+
+      // 3. Mark the order as paid using Firebase Admin
+      await orderRef.update({
+        status: "paid",
+        paymentReference: reference,
+        paidAt: new Date().toISOString(),
+      });
+
+      return res.json({
+        success: true,
+        message:
+          "Payment verified and order marked as paid.",
+        reference,
+        transactionId: transaction.id,
+      });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error(
+          "Paystack confirmation error:",
+          error.response?.data ||
+            error.message,
+        );
+
+        return res.status(
+          error.response?.status || 500,
+        ).json({
+          success: false,
+          message:
+            error.response?.data?.message ||
+            "Unable to confirm payment.",
+        });
+      }
+
+      console.error(
+        "Unexpected payment confirmation error:",
+        error,
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Unable to confirm payment.",
+      });
+    }
+  },
+);
+
 // Render provides the PORT environment variable.
 // Use 3001 locally if PORT is not provided.
 const PORT = Number(
