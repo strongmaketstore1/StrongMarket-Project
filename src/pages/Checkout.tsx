@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
-    collection,
     doc,
     setDoc,
 } from "firebase/firestore";
