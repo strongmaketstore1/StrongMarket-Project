@@ -2,11 +2,11 @@ import "dotenv/config";
 import express from "express";
 import axios from "axios";
 import cors from "cors";
+import admin from "firebase-admin";
+import path from "path";
 import { cert, getApps, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
-import path from "path";
 import { readFileSync } from "fs";
-
 const app = express();
 
 const serviceAccount = JSON.parse(
