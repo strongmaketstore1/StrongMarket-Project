@@ -29,7 +29,9 @@ export default function Shop() {
     useState<Product[]>([]);
 
   const [selectedCategory, setSelectedCategory] =
-    useState<CategoryFilter>("all");
+  useState<CategoryFilter>("all");
+
+const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
@@ -59,13 +61,21 @@ export default function Shop() {
     ...merchantProducts,
   ];
 
-  const filteredProducts =
-    selectedCategory === "all"
-      ? allProducts
-      : allProducts.filter(
-          (product) =>
-            product.category === selectedCategory,
-        );
+  const filteredProducts = allProducts.filter((product) => {
+  const matchesCategory =
+    selectedCategory === "all" ||
+    product.category === selectedCategory;
+
+  const search = searchTerm.trim().toLowerCase();
+
+  const matchesSearch =
+    !search ||
+    product.name.toLowerCase().includes(search) ||
+    product.description.toLowerCase().includes(search) ||
+    product.category.toLowerCase().includes(search);
+
+  return matchesCategory && matchesSearch;
+});
 
   const selectedCategoryLabel =
     categories.find(
@@ -87,6 +97,17 @@ export default function Shop() {
       </section>
 
       <section className="shop-content">
+        <div className="shop-search">
+  <input
+    type="search"
+    placeholder="Search digital products..."
+    value={searchTerm}
+    onChange={(event) =>
+      setSearchTerm(event.target.value)
+    }
+    aria-label="Search digital products"
+  />
+</div>
         <div className="category-filter">
           {categories.map((category) => (
             <button
