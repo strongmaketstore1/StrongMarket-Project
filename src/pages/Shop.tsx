@@ -141,7 +141,7 @@ const [searchTerm, setSearchTerm] = useState("");
           <div className="product-grid">
             {filteredProducts.map((product) => (
               <ProductCard
-                key={`${product.id}-${product.slug}`}
+                key={`₦{product.id}-₦{product.slug}`}
                 product={product}
               />
             ))}

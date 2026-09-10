@@ -51,7 +51,7 @@ export default function MerchantAddProduct() {
         .toLowerCase()
         .trim()
         .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
+        .replace(/(^-|-₦)/g, "");
 
       await addDoc(collection(db, "products"), {
         name: name.trim(),

@@ -84,7 +84,7 @@ export default function Cart() {
                 </p>
 
                 <strong>
-                  ${item.product.price.toFixed(2)}
+                  ₦{item.product.price.toFixed(2)}
                 </strong>
               </div>
 
@@ -143,7 +143,7 @@ export default function Cart() {
 
           <div className="summary-row">
             <span>Subtotal</span>
-            <strong>${subtotal.toFixed(2)}</strong>
+            <strong>₦{subtotal.toFixed(2)}</strong>
           </div>
 
           <div className="summary-row">
@@ -153,7 +153,7 @@ export default function Cart() {
 
           <div className="summary-total">
             <span>Total</span>
-            <strong>${subtotal.toFixed(2)}</strong>
+            <strong>₦{subtotal.toFixed(2)}</strong>
           </div>
 
           <Link

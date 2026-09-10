@@ -49,7 +49,7 @@ export default function OrderSuccess() {
           );
 
           alert(
-            `Payment confirmation failed: ${JSON.stringify(
+            `Payment confirmation failed: ₦{JSON.stringify(
               result,
             )}`,
           );
@@ -70,7 +70,7 @@ export default function OrderSuccess() {
         );
 
         alert(
-          `Payment confirmation error: ${
+          `Payment confirmation error: ₦{
             error instanceof Error
               ? error.message
               : JSON.stringify(error)

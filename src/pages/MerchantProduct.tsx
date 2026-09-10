@@ -173,7 +173,7 @@ if (loading) {
                 </p>
               )}
             <Link
-  to={`/merchant/products/${product.id}/edit`}
+  to={`/merchant/products/₦{product.id}/edit`}
 >
   ✏️ Edit
 </Link>

@@ -64,7 +64,7 @@ export async function startPaystackPayment(
 
     if (!responseText.trim()) {
       throw new Error(
-        `Paystack server returned an empty response (HTTP ${response.status}).`,
+        `Paystack server returned an empty response (HTTP ₦{response.status}).`,
       );
     }
 
@@ -77,7 +77,7 @@ export async function startPaystackPayment(
         ) as PaystackInitializeResponse;
     } catch {
       throw new Error(
-        `Paystack server returned an invalid response (HTTP ${response.status}).`,
+        `Paystack server returned an invalid response (HTTP ₦{response.status}).`,
       );
     }
 

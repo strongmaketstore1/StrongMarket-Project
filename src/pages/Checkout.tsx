@@ -70,7 +70,7 @@ export default function Checkout() {
     setIsPaying(true);
 
     try {
-      const orderId = `SMS-${Date.now()}`;
+      const orderId = `SMS-₦{Date.now()}`;
 
       const paymentReference = orderId;
 
@@ -134,7 +134,7 @@ export default function Checkout() {
             paymentReference,
 
           callback_url:
-            `${window.location.origin}/StrongMarket-Project/order-success`,
+            `₦{window.location.origin}/StrongMarket-Project/order-success`,
 
           metadata: {
             customerName:

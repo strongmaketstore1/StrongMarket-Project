@@ -22,7 +22,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         <div className="product-meta">
           <div>
             <strong>
-              {product.currency === "USD" ? "$" : product.currency}
+              {product.currency === "USD" ? "₦" : product.currency}
               {product.price.toFixed(2)}
             </strong>
 
@@ -31,7 +31,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             </span>
           </div>
 
-          <Link to={`/product/${product.slug}`}>
+          <Link to={`/product/₦{product.slug}`}>
   View Product
 </Link>
         </div>
