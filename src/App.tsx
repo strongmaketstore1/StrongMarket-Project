@@ -98,65 +98,42 @@ function Home() {
         </div>
 
         <div className="category-grid">
-          <div className="category-card">
-            <span>01</span>
 
-            <h3>Ebooks & Guides</h3>
+  <Link className="category-card" to="/shop?category=ebooks">
+    <span>01</span>
+    <h3>Ebooks & Guides</h3>
+    <p>
+      Practical knowledge for personal and professional growth.
+    </p>
+  </Link>
 
-            <p>
-              Practical knowledge for personal and
-              professional growth.
-            </p>
-          </div>
+  <Link className="category-card" to="/shop?category=business">
+    <span>02</span>
+    <h3>Business</h3>
+    <p>
+      Resources designed to help businesses move faster.
+    </p>
+  </Link>
 
-          <div className="category-card">
-            <span>02</span>
+  <Link className="category-card" to="/shop?category=templates">
+    <span>03</span>
+    <h3>Templates</h3>
+    <p>
+      Ready-to-use templates for work, content, and projects.
+    </p>
+  </Link>
 
-            <h3>Business</h3>
+  <Link className="category-card" to="/shop?category=ai-productivity">
+    <span>04</span>
+    <h3>AI & Productivity</h3>
+    <p>
+      Digital tools and resources for smarter workflows.
+    </p>
+  </Link>
 
-            <p>
-              Resources designed to help businesses move
-              faster.
-            </p>
-          </div>
+</div>
 
-          <div className="category-card">
-            <span>03</span>
-
-            <h3>Templates</h3>
-
-            <p>
-              Ready-to-use templates for work, content,
-              and projects.
-            </p>
-          </div>
-
-          <div className="category-card">
-            <span>04</span>
-
-            <h3>AI & Productivity</h3>
-
-            <p>
-              Digital tools and resources for smarter
-              workflows.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="featured" id="shop">
-        <div className="section-heading">
-          <p className="eyebrow">BESTSELLERS</p>
-
-          <h2>Featured products</h2>
-
-          <p>
-            Premium digital products selected for
-            StrongMarketStore.
-          </p>
-        </div>
-
-        <div className="product-grid">
+  <div className="product-grid">
           {featuredProducts.map((product) => (
             <ProductCard
               key={product.id}
