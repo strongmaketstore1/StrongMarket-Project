@@ -31,7 +31,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             </span>
           </div>
 
-          <Link to={`/product/₦{product.slug}`}>
+          <Link to={`/product/${product.slug}`}>
   View Product
 </Link>
         </div>
