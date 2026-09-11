@@ -12,18 +12,21 @@ export default function OrderSuccess() {
   >("checking");
 
   const reference =
-    searchParams.get("reference");
+    searchParams.get("reference") ||
+    searchParams.get("trxref") ||
+    sessionStorage.getItem(
+      "strongmarket-paystack-reference",
+    );
 
   useEffect(() => {
     async function confirmPayment() {
       if (!reference) {
+        console.error("No Paystack reference found.");
         setStatus("failed");
         return;
       }
 
       try {
-        // Ask the secure Render server to verify
-        // Paystack and update the Firestore order.
         const response = await fetch(
           "https://strongmarket-payment-server.onrender.com/api/paystack/confirm",
           {
@@ -48,33 +51,21 @@ export default function OrderSuccess() {
             result,
           );
 
-          alert(
-            `Payment confirmation failed: ₦{JSON.stringify(
-              result,
-            )}`,
-          );
-
           setStatus("failed");
           return;
         }
 
-        // Payment is confirmed and the server
-        // has marked the order as paid.
         clearCart();
+
+        sessionStorage.removeItem(
+          "strongmarket-paystack-reference",
+        );
 
         setStatus("paid");
       } catch (error) {
         console.error(
           "Payment confirmation error:",
           error,
-        );
-
-        alert(
-          `Payment confirmation error: ₦{
-            error instanceof Error
-              ? error.message
-              : JSON.stringify(error)
-          }`,
         );
 
         setStatus("failed");
@@ -109,9 +100,7 @@ export default function OrderSuccess() {
     return (
       <main className="order-success-page">
         <div className="order-success">
-          <div className="success-icon">
-            !
-          </div>
+          <div className="success-icon">!</div>
 
           <p className="eyebrow">
             PAYMENT NOT CONFIRMED
@@ -123,7 +112,8 @@ export default function OrderSuccess() {
 
           <p>
             Your order has not been marked as
-            paid. Please try the payment again.
+            paid. Please return to checkout and
+            try again.
           </p>
 
           <div className="success-actions">
@@ -149,9 +139,7 @@ export default function OrderSuccess() {
   return (
     <main className="order-success-page">
       <div className="order-success">
-        <div className="success-icon">
-          ✓
-        </div>
+        <div className="success-icon">✓</div>
 
         <p className="eyebrow">
           PAYMENT SUCCESSFUL

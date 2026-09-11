@@ -29,7 +29,7 @@ export async function startPaystackPayment(
   data: PaystackPaymentData,
   _publicKey: string,
   onSuccess: (response: PaystackSuccessResponse) => void,
-  onCancel?: () => void,
+  onCancel: (() => void) | undefined,
   onError?: (error: Error) => void,
 ) {
   try {
@@ -38,13 +38,11 @@ export async function startPaystackPayment(
     }
 
     if (!data.amount || data.amount <= 0) {
-      throw new Error(
-        "A valid payment amount is required.",
-      );
+      throw new Error("A valid payment amount is required.");
     }
 
     const response = await fetch(
-  "https://strongmarket-payment-server.onrender.com/api/paystack/initialize",
+      "https://strongmarket-payment-server.onrender.com/api/paystack/initialize",
       {
         method: "POST",
         headers: {
@@ -64,59 +62,55 @@ export async function startPaystackPayment(
 
     if (!responseText.trim()) {
       throw new Error(
-        `Paystack server returned an empty response (HTTP ₦{response.status}).`,
+        `Paystack server returned an empty response (HTTP ${response.status}).`,
       );
     }
 
     let result: PaystackInitializeResponse;
 
     try {
-      result =
-        JSON.parse(
-          responseText,
-        ) as PaystackInitializeResponse;
+      result = JSON.parse(responseText) as PaystackInitializeResponse;
     } catch {
       throw new Error(
-        `Paystack server returned an invalid response (HTTP ₦{response.status}).`,
+        `Paystack server returned an invalid response (HTTP ${response.status}).`,
       );
     }
 
     if (!response.ok || !result.status) {
       throw new Error(
-        result.message ||
-          "Unable to initialize Paystack payment.",
+        result.message || "Unable to initialize Paystack payment.",
       );
     }
 
-    const authorizationUrl =
-      result.data?.authorization_url;
+    const authorizationUrl = result.data?.authorization_url;
+    const reference = result.data?.reference || data.reference;
 
     if (!authorizationUrl) {
-      throw new Error(
-        "Paystack did not return a payment URL.",
-      );
+      throw new Error("Paystack did not return a payment URL.");
     }
 
-    window.location.href =
-      authorizationUrl;
-
-    if (result.data?.reference) {
-      onSuccess({
-        reference:
-          result.data.reference,
-        message: result.message,
-      });
+    if (!reference) {
+      throw new Error("Paystack did not return a transaction reference.");
     }
+
+    sessionStorage.setItem(
+      "strongmarket-paystack-reference",
+      reference,
+    );
+
+    void onCancel;
+    onSuccess({
+      reference,
+      message: result.message,
+    });
+
+    window.location.href = authorizationUrl;
   } catch (error) {
     const paymentError =
       error instanceof Error
         ? error
-        : new Error(
-            "Unable to initialize payment.",
-          );
+        : new Error("Unable to initialize payment.");
 
     onError?.(paymentError);
   }
-
-  return onCancel;
 }
