@@ -3,6 +3,9 @@ import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { createOrderItems } from "../service";
 import { startPaystackPayment } from "../paystackService";
+import { createFirestoreOrder, getMerchantIds } from "../firestoreOrders";
+import type { Order } from "../types/order";
+import { auth } from "../firebase";
 
 export default function Checkout() {
   const { items, itemCount, subtotal } = useCart();
@@ -53,17 +56,24 @@ export default function Checkout() {
 
       const orderItems = createOrderItems(items);
 
-      const merchantIds = [
-        ...new Set(
-          items
-            .map((item) => item.product.merchantId)
-            .filter(
-              (merchantId): merchantId is string =>
-                Boolean(merchantId),
-            ),
-        ),
-      ];
+      const merchantIds = getMerchantIds(orderItems)
 
+      const order: Order = {
+  id: orderId,
+  customerId: auth.currentUser?.uid,
+  customerName: customerName.trim(),
+  customerEmail: customerEmail.trim(),
+  items: orderItems,
+  merchantIds,
+  subtotal,
+  currency: "NGN",
+  status: "pending",
+  paymentReference,
+  createdAt: new Date().toISOString(),
+};
+
+await createFirestoreOrder(order);
+      
       startPaystackPayment(
         {
           email: customerEmail.trim(),

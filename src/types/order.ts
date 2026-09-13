@@ -5,6 +5,7 @@ export interface OrderItem {
   productName: string;
   quantity: number;
   price: number;
+  merchantId?: string;
 }
 
 export type OrderStatus =
@@ -15,14 +16,17 @@ export type OrderStatus =
 
 export interface Order {
   id: string;
+  customerId?: string;
   customerName: string;
   customerEmail: string;
   items: OrderItem[];
+  merchantIds: string[];
   subtotal: number;
   currency: string;
   status: OrderStatus;
   paymentReference?: string;
   createdAt: string;
+  paidAt?: string;
 }
 
 export function createOrderItems(
@@ -36,6 +40,8 @@ export function createOrderItems(
     productName: item.product.name,
     quantity: item.quantity,
     price: item.product.price,
-    merchantId: item.product.merchantId,
+    ...(item.product.merchantId
+      ? { merchantId: item.product.merchantId }
+      : {}),
   }));
 }
