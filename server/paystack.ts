@@ -6,7 +6,10 @@ import admin from "firebase-admin";
 import path from "path";
 import { cert, getApps, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
+import { getAuth } from "firebase-admin/auth";
+import cloudinary from "./cloudinary";
 import { readFileSync } from "fs";
+
 const app = express();
 
 const serviceAccount = JSON.parse(
@@ -28,6 +31,7 @@ const firebaseApp = getApps().length
     });
 
 const db = getFirestore(firebaseApp);
+const adminAuth = getAuth(firebaseApp);
 
 app.use(
   cors({
@@ -422,6 +426,102 @@ app.post(
   },
 );
 
+app.get(
+  "/api/products/:productId/download",
+  async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+
+      if (!authHeader?.startsWith("Bearer ")) {
+        return res.status(401).json({
+          success: false,
+          message: "Authentication required.",
+        });
+      }
+
+      const idToken = authHeader.substring(7);
+      const decodedToken =
+        await adminAuth.verifyIdToken(idToken);
+
+      const { productId } = req.params;
+      const orderId =
+        typeof req.query.orderId === "string"
+          ? req.query.orderId
+          : "";
+
+      if (!orderId) {
+        return res.status(400).json({
+          success: false,
+          message: "Order ID is required.",
+        });
+      }
+
+      const orderRef = db.collection("orders").doc(orderId);
+      const orderSnapshot = await orderRef.get();
+
+      if (!orderSnapshot.exists) {
+        return res.status(404).json({
+          success: false,
+          message: "Order not found.",
+        });
+      }
+
+      const order = orderSnapshot.data();
+
+      if (!order) {
+        return res.status(404).json({
+          success: false,
+          message: "Order not found.",
+        });
+      }
+
+      if (order.customerId !== decodedToken.uid) {
+        return res.status(403).json({
+          success: false,
+          message: "You are not authorized to download this product.",
+        });
+      }
+
+      if (order.status !== "paid") {
+        return res.status(403).json({
+          success: false,
+          message: "Payment is required before downloading.",
+        });
+      }
+
+      const purchasedItem = Array.isArray(order.items)
+        ? order.items.find(
+            (item: { productId?: string }) =>
+              item.productId === productId,
+          )
+        : null;
+
+      if (!purchasedItem) {
+        return res.status(403).json({
+          success: false,
+          message: "This product is not part of your order.",
+        });
+      }
+
+      return res.status(501).json({
+        success: false,
+        message:
+          "Product file is not configured yet.",
+      });
+    } catch (error) {
+      console.error(
+        "Secure product download error:",
+        error,
+      );
+
+      return res.status(401).json({
+        success: false,
+        message:
+          "Unable to authorize product download.",
+      });
+    }
+  },
+);
 // Render provides the PORT environment variable.
 // Use 3001 locally if PORT is not provided.
 const PORT = Number(
