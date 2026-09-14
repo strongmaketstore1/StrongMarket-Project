@@ -60,6 +60,50 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
+// Authorize Cloudinary product upload
+app.post(
+  "/api/products/upload",
+  async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+
+      if (!authHeader?.startsWith("Bearer ")) {
+        return res.status(401).json({
+          success: false,
+          message: "Authentication required.",
+        });
+      }
+
+      const idToken = authHeader.substring(7);
+
+      const decodedToken =
+        await adminAuth.verifyIdToken(idToken);
+
+      if (!decodedToken.uid) {
+        return res.status(403).json({
+          success: false,
+          message: "Merchant authorization required.",
+        });
+      }
+
+      return res.json({
+        success: true,
+        message: "Upload authorization confirmed.",
+      });
+    } catch (error) {
+      console.error(
+        "Cloudinary upload authorization error:",
+        error,
+      );
+
+      return res.status(401).json({
+        success: false,
+        message: "Unable to authorize upload.",
+      });
+    }
+  },
+);
+
 // Initialize Paystack payment
 app.post(
   "/api/paystack/initialize",
@@ -349,7 +393,7 @@ app.post(
               `Bearer ${PAYSTACK_SECRET_KEY}`,
           },
         },
-      );
+      );  
 
       const transaction =
         response.data?.data;
