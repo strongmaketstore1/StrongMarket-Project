@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import { useCart } from "../context/CartContext";
+import { auth } from "../firebase";
+import { getFirestoreOrder } from "../firestoreOrders";
+import type { Order } from "../types/order";
 
 export default function OrderSuccess() {
   const [searchParams] = useSearchParams();
@@ -11,6 +14,9 @@ export default function OrderSuccess() {
     "checking" | "paid" | "failed"
   >("checking");
 
+const [order, setOrder] =
+  useState<Order | null>(null);
+  
   const reference =
     searchParams.get("reference") ||
     searchParams.get("trxref") ||
@@ -18,7 +24,54 @@ export default function OrderSuccess() {
       "strongmarket-paystack-reference",
     );
 
-  useEffect(() => {
+  async function downloadProduct(productId: string) {
+  try {
+    const user = auth.currentUser;
+
+    if (!user) {
+      alert("Please log in to download your product.");
+      return;
+    }
+
+    const idToken = await user.getIdToken();
+
+    const response = await fetch(
+      `https://strongmarket-payment-server.onrender.com/api/products/${productId}/download?orderId=${encodeURIComponent(reference || "")}`,
+      {
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+      },
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || result?.success !== true) {
+      alert(
+        result?.message ||
+          "Unable to download this product.",
+      );
+      return;
+    }
+
+    window.open(
+      result.downloadUrl,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  } catch (error) {
+    console.error(
+      "Product download error:",
+      error,
+    );
+
+    alert(
+      "Unable to download this product. Please try again.",
+    );
+  }
+}
+  
+useEffect(() => {
     async function confirmPayment() {
       if (!reference) {
         console.error("No Paystack reference found.");
@@ -55,13 +108,28 @@ export default function OrderSuccess() {
           return;
         }
 
-        clearCart();
+        const paidOrder =
+  await getFirestoreOrder(reference);
 
-        sessionStorage.removeItem(
-          "strongmarket-paystack-reference",
-        );
+if (!paidOrder) {
+  console.error(
+    "Paid order could not be found:",
+    reference,
+  );
 
-        setStatus("paid");
+  setStatus("failed");
+  return;
+}
+
+setOrder(paidOrder);
+
+clearCart();
+
+sessionStorage.removeItem(
+  "strongmarket-paystack-reference",
+);
+
+setStatus("paid");
       } catch (error) {
         console.error(
           "Payment confirmation error:",
@@ -156,9 +224,40 @@ export default function OrderSuccess() {
         </p>
 
         <div className="success-status">
-          <strong>Payment status</strong>
-          <span>Paid</span>
-        </div>
+  <strong>Payment status</strong>
+  <span>Paid</span>
+</div>
+
+<div className="purchased-products">
+  <h2>Your Downloads</h2>
+
+  {order?.items.map((item) => (
+    <div
+      className="purchased-product"
+      key={item.productId}
+    >
+      <div>
+        <strong>{item.productName}</strong>
+        <span>
+          Digital product — ready to download
+        </span>
+      </div>
+
+      <button
+        className="primary-btn"
+        type="button"
+        onClick={() =>
+          downloadProduct(item.productId)
+        }
+        disabled={!item.cloudinaryPublicId}
+      >
+        {item.cloudinaryPublicId
+          ? "Download Product"
+          : "File Coming Soon"}
+      </button>
+    </div>
+  ))}
+</div>
 
         <div className="success-actions">
           <Link
