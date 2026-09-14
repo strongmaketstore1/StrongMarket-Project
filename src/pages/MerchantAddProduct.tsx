@@ -30,6 +30,8 @@ export default function MerchantAddProduct() {
     useState<ProductCategory>("ebooks");
   const [image, setImage] = useState("");
   const [fileName, setFileName] = useState("");
+  const [cloudinaryPublicId, setCloudinaryPublicId] =
+  useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -63,6 +65,8 @@ export default function MerchantAddProduct() {
         category,
         image: image.trim(),
         fileName: fileName.trim(),
+        cloudinaryPublicId:
+        cloudinaryPublicId.trim(),
         featured: false,
         rating: 0,
         reviewCount: 0,
@@ -79,6 +83,7 @@ export default function MerchantAddProduct() {
       setCategory("ebooks");
       setImage("");
       setFileName("");
+      setCloudinaryPublicId("");
     } catch (error) {
       console.error(error);
       setMessage(
@@ -222,6 +227,22 @@ export default function MerchantAddProduct() {
           />
         </div>
 
+        <div>
+  <label htmlFor="cloudinaryPublicId">
+    Cloudinary Public ID
+  </label>
+
+  <input
+    id="cloudinaryPublicId"
+    type="text"
+    value={cloudinaryPublicId}
+    onChange={(event) =>
+      setCloudinaryPublicId(event.target.value)
+    }
+    placeholder="strongmarket/products/my-product"
+  />
+</div>
+        
         <button
           type="submit"
           disabled={loading}
