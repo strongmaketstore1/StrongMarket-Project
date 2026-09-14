@@ -6,6 +6,7 @@ export interface OrderItem {
   quantity: number;
   price: number;
   merchantId?: string;
+  cloudinaryPublicId?: string;
 }
 
 export type OrderStatus =
@@ -36,12 +37,18 @@ export function createOrderItems(
   }[],
 ): OrderItem[] {
   return products.map((item) => ({
-    productId: item.product.id,
-    productName: item.product.name,
-    quantity: item.quantity,
-    price: item.product.price,
-    ...(item.product.merchantId
-      ? { merchantId: item.product.merchantId }
-      : {}),
-  }));
+  productId: item.product.id,
+  productName: item.product.name,
+  quantity: item.quantity,
+  price: item.product.price,
+  ...(item.product.cloudinaryPublicId
+    ? {
+        cloudinaryPublicId:
+          item.product.cloudinaryPublicId,
+      }
+    : {}),
+  ...(item.product.merchantId
+    ? { merchantId: item.product.merchantId }
+    : {}),
+}));
 }

@@ -17,6 +17,7 @@ export interface Product {
   category: ProductCategory;
   image: string;
   fileName?: string;
+  cloudinaryPublicId?: string;
   featured: boolean;
   rating: number;
   reviewCount: number;

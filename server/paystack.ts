@@ -478,14 +478,16 @@ app.get(
       if (order.customerId !== decodedToken.uid) {
         return res.status(403).json({
           success: false,
-          message: "You are not authorized to download this product.",
+          message:
+            "You are not authorized to download this product.",
         });
       }
 
       if (order.status !== "paid") {
         return res.status(403).json({
           success: false,
-          message: "Payment is required before downloading.",
+          message:
+            "Payment is required before downloading.",
         });
       }
 
@@ -499,15 +501,41 @@ app.get(
       if (!purchasedItem) {
         return res.status(403).json({
           success: false,
-          message: "This product is not part of your order.",
+          message:
+            "This product is not part of your order.",
         });
       }
 
-      return res.status(501).json({
-        success: false,
-        message:
-          "Product file is not configured yet.",
-      });
+      const cloudinaryPublicId =
+  typeof purchasedItem.cloudinaryPublicId === "string"
+    ? purchasedItem.cloudinaryPublicId
+    : "";
+
+if (!cloudinaryPublicId) {
+  return res.status(404).json({
+    success: false,
+    message:
+      "This product does not have a downloadable file yet.",
+  });
+}
+
+const downloadUrl =
+  cloudinary.utils.private_download_url(
+    cloudinaryPublicId,
+    "pdf",
+    {
+      resource_type: "raw",
+      type: "private",
+      attachment: true,
+      expires_at:
+        Math.floor(Date.now() / 1000) + 300,
+    },
+  );
+
+return res.json({
+  success: true,
+  downloadUrl,
+});
     } catch (error) {
       console.error(
         "Secure product download error:",
@@ -522,6 +550,7 @@ app.get(
     }
   },
 );
+
 // Render provides the PORT environment variable.
 // Use 3001 locally if PORT is not provided.
 const PORT = Number(
