@@ -1,13 +1,9 @@
 import { useEffect, useState } from "react";
-import {
-  collection,
-  doc,
-  getDocs,
-  updateDoc,
-} from "firebase/firestore";
-
-import { db, auth } from "../firebase";
+import { auth } from "../firebase";
 import type { MerchantApplication } from "../types/merchant";
+
+const API_URL =
+  "https://strongmarket-payment-server.onrender.com";
 
 type MerchantApplicationWithId = MerchantApplication;
 
@@ -23,28 +19,32 @@ export default function AdminMerchantApplications() {
 
       if (!currentUser) {
         throw new Error(
-          "You must be logged in as the admin.",
+          "You must be logged in.",
         );
       }
 
-      const snapshot = await getDocs(
-        collection(db, "merchantApplications"),
+      const idToken =
+        await currentUser.getIdToken();
+
+      const response = await fetch(
+        `${API_URL}/api/admin/merchant-applications`,
+        {
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+        },
       );
 
-      const results = snapshot.docs
-        .map((item) => ({
-          id: item.id,
-          ...(item.data() as Omit<
-            MerchantApplication,
-            "id"
-          >),
-        }))
-        .filter(
-          (application) =>
-            application.status === "pending",
-        );
+      const data = await response.json();
 
-      setApplications(results);
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message ||
+            "Unable to load merchant applications.",
+        );
+      }
+
+      setApplications(data.applications || []);
     } catch (err) {
       console.error(
         "Merchant applications error:",
@@ -65,23 +65,35 @@ export default function AdminMerchantApplications() {
     application: MerchantApplicationWithId,
   ) {
     try {
-      await updateDoc(
-        doc(
-          db,
-          "merchantApplications",
-          application.id,
-        ),
+      const currentUser = auth.currentUser;
+
+      if (!currentUser) {
+        throw new Error(
+          "You must be logged in.",
+        );
+      }
+
+      const idToken =
+        await currentUser.getIdToken();
+
+      const response = await fetch(
+        `${API_URL}/api/admin/merchant-applications/${application.id}/approve`,
         {
-          status: "approved",
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
         },
       );
 
-      await updateDoc(
-        doc(db, "users", application.userId),
-        {
-          merchantStatus: "approved",
-        },
-      );
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message ||
+            "Unable to approve merchant application.",
+        );
+      }
 
       setApplications((current) =>
         current.filter(
@@ -102,47 +114,6 @@ export default function AdminMerchantApplications() {
     }
   }
 
-  async function rejectApplication(
-    application: MerchantApplicationWithId,
-  ) {
-    try {
-      await updateDoc(
-        doc(
-          db,
-          "merchantApplications",
-          application.id,
-        ),
-        {
-          status: "rejected",
-        },
-      );
-
-      await updateDoc(
-        doc(db, "users", application.userId),
-        {
-          merchantStatus: "rejected",
-        },
-      );
-
-      setApplications((current) =>
-        current.filter(
-          (item) => item.id !== application.id,
-        ),
-      );
-    } catch (err) {
-      console.error(
-        "Reject application error:",
-        err,
-      );
-
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Unable to reject merchant application.",
-      );
-    }
-  }
-
   useEffect(() => {
     loadApplications();
   }, []);
@@ -151,7 +122,9 @@ export default function AdminMerchantApplications() {
     return (
       <main>
         <h1>Merchant Applications</h1>
-        <p>Loading merchant applications...</p>
+        <p>
+          Loading merchant applications...
+        </p>
       </main>
     );
   }
@@ -170,11 +143,15 @@ export default function AdminMerchantApplications() {
       <h1>Merchant Applications</h1>
 
       {applications.length === 0 ? (
-        <p>No pending merchant applications.</p>
+        <p>
+          No pending merchant applications.
+        </p>
       ) : (
         applications.map((application) => (
           <article key={application.id}>
-            <h2>{application.businessName}</h2>
+            <h2>
+              {application.businessName}
+            </h2>
 
             <p>
               {application.businessDescription}
@@ -185,27 +162,15 @@ export default function AdminMerchantApplications() {
               {application.status}
             </p>
 
-            <p>
-              <strong>Applicant ID:</strong>{" "}
-              {application.userId}
-            </p>
-
             <button
               type="button"
               onClick={() =>
-                approveApplication(application)
+                approveApplication(
+                  application,
+                )
               }
             >
               Approve
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                rejectApplication(application)
-              }
-            >
-              Reject
             </button>
           </article>
         ))
