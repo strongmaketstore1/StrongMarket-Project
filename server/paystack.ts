@@ -9,8 +9,13 @@ import { getFirestore } from "firebase-admin/firestore";
 import { getAuth } from "firebase-admin/auth";
 import cloudinary from "./cloudinary";
 import { readFileSync } from "fs";
+import multer from "multer";
 
 const app = express();
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+});
 
 const serviceAccount = JSON.parse(
   readFileSync(
@@ -60,9 +65,9 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
-// Authorize Cloudinary product upload
 app.post(
   "/api/products/upload",
+  upload.single("file"),
   async (req, res) => {
     try {
       const authHeader = req.headers.authorization;
@@ -86,19 +91,50 @@ app.post(
         });
       }
 
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: "Please select a digital product file.",
+        });
+      }
+
+      const result = await new Promise<any>(
+        (resolve, reject) => {
+          const stream =
+            cloudinary.uploader.upload_stream(
+              {
+                folder: "strongmarket/products",
+                resource_type: "raw",
+                type: "private",
+              },
+              (error, result) => {
+                if (error) {
+                  reject(error);
+                } else {
+                  resolve(result);
+                }
+              },
+            );
+
+          stream.end(req.file!.buffer);
+        },
+      );
+
       return res.json({
         success: true,
-        message: "Upload authorization confirmed.",
+        message: "Product file uploaded successfully.",
+        publicId: result.public_id,
+        fileName: req.file.originalname,
       });
     } catch (error) {
       console.error(
-        "Cloudinary upload authorization error:",
+        "Cloudinary product upload error:",
         error,
       );
 
-      return res.status(401).json({
+      return res.status(500).json({
         success: false,
-        message: "Unable to authorize upload.",
+        message: "Unable to upload product file.",
       });
     }
   },
