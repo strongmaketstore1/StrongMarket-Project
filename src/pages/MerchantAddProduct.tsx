@@ -153,11 +153,14 @@ export default function MerchantAddProduct() {
       setFileName("");
       setCloudinaryPublicId("");
     } catch (error) {
-      console.error(error);
-      setMessage(
-        "Unable to add product. Please try again.",
-      );
-    } finally {
+  console.error("Add product error:", error);
+
+  setMessage(
+    error instanceof Error
+      ? error.message
+      : "Unable to add product. Please try again.",
+  );
+} finally {
       setLoading(false);
     }
   }
