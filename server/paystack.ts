@@ -140,6 +140,157 @@ app.post(
   },
 );
 
+// Admin merchant application management
+app.get(
+  "/api/admin/merchant-applications",
+  async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+
+      if (!authHeader?.startsWith("Bearer ")) {
+        return res.status(401).json({
+          success: false,
+          message: "Authentication required.",
+        });
+      }
+
+      const idToken = authHeader.substring(7);
+      const decodedToken =
+        await adminAuth.verifyIdToken(idToken);
+
+      // Current StrongMarket admin account
+      // and the account being used to recover admin access.
+      const allowedAdminUids = [
+        "RN5LrlclfrMHGxENa1O6rCNKK5p2",
+        "A1vw5apcWCaTWBBlw0zb16Pt5Pv2",
+      ];
+
+      if (!allowedAdminUids.includes(decodedToken.uid)) {
+        return res.status(403).json({
+          success: false,
+          message: "Admin authorization required.",
+        });
+      }
+
+      const snapshot = await db
+        .collection("merchantApplications")
+        .where("status", "==", "pending")
+        .get();
+
+      const applications = snapshot.docs.map(
+        (item) => ({
+          id: item.id,
+          ...item.data(),
+        }),
+      );
+
+      return res.json({
+        success: true,
+        applications,
+      });
+    } catch (error) {
+      console.error(
+        "Admin merchant applications error:",
+        error,
+      );
+
+      return res.status(401).json({
+        success: false,
+        message:
+          "Unable to authorize admin access.",
+      });
+    }
+  },
+);
+
+app.post(
+  "/api/admin/merchant-applications/:applicationId/approve",
+  async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+
+      if (!authHeader?.startsWith("Bearer ")) {
+        return res.status(401).json({
+          success: false,
+          message: "Authentication required.",
+        });
+      }
+
+      const idToken = authHeader.substring(7);
+      const decodedToken =
+        await adminAuth.verifyIdToken(idToken);
+
+      const allowedAdminUids = [
+        "RN5LrlclfrMHGxENa1O6rCNKK5p2",
+        "A1vw5apcWCaTWBBlw0zb16Pt5Pv2",
+      ];
+
+      if (!allowedAdminUids.includes(decodedToken.uid)) {
+        return res.status(403).json({
+          success: false,
+          message: "Admin authorization required.",
+        });
+      }
+
+      const { applicationId } = req.params;
+
+      const applicationRef = db
+        .collection("merchantApplications")
+        .doc(applicationId);
+
+      const applicationSnapshot =
+        await applicationRef.get();
+
+      if (!applicationSnapshot.exists) {
+        return res.status(404).json({
+          success: false,
+          message: "Merchant application not found.",
+        });
+      }
+
+      const application =
+        applicationSnapshot.data();
+
+      if (!application?.userId) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Merchant application has no user ID.",
+        });
+      }
+
+      await applicationRef.update({
+        status: "approved",
+        reviewedAt: new Date().toISOString(),
+      });
+
+      await db
+        .collection("users")
+        .doc(application.userId)
+        .update({
+          merchantStatus: "approved",
+        });
+
+      return res.json({
+        success: true,
+        message:
+          "Merchant application approved successfully.",
+      });
+    } catch (error) {
+      console.error(
+        "Approve merchant application error:",
+        error,
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Unable to approve merchant application.",
+      });
+    }
+  },
+);
+
 // Initialize Paystack payment
 app.post(
   "/api/paystack/initialize",
