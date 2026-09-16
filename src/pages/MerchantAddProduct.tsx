@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { FormEvent } from "react";
+import type { ChangeEvent, FormEvent } from "react";
 import { addDoc, collection } from "firebase/firestore";
 
 import { auth, db } from "../firebase";
@@ -32,9 +32,77 @@ export default function MerchantAddProduct() {
   const [fileName, setFileName] = useState("");
   const [cloudinaryPublicId, setCloudinaryPublicId] =
   useState("");
+  const [uploadingFile, setUploadingFile] =
+  useState(false);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
+  async function uploadProductFile(
+  event: ChangeEvent<HTMLInputElement>,
+) {
+  const file = event.target.files?.[0];
+
+  if (!file) {
+    return;
+  }
+
+  try {
+    const user = auth.currentUser;
+
+    if (!user) {
+      setMessage("You must be logged in.");
+      return;
+    }
+
+    setUploadingFile(true);
+    setMessage("");
+
+    const idToken = await user.getIdToken();
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch(
+      "https://strongmarket-payment-server.onrender.com/api/products/upload",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: formData,
+      },
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || result?.success !== true) {
+      setMessage(
+        result?.message ||
+          "Unable to upload product file.",
+      );
+      return;
+    }
+
+    setCloudinaryPublicId(result.publicId);
+    setFileName(result.fileName || file.name);
+
+    setMessage(
+      "Product file uploaded successfully.",
+    );
+  } catch (error) {
+    console.error(
+      "Product file upload error:",
+      error,
+    );
+
+    setMessage(
+      "Unable to upload product file. Please try again.",
+    );
+  } finally {
+    setUploadingFile(false);
+  }
+}
+  
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
 
@@ -228,6 +296,19 @@ export default function MerchantAddProduct() {
         </div>
 
         <div>
+  <label htmlFor="productFile">
+    Digital Product File
+  </label>
+
+  <input
+    id="productFile"
+    type="file"
+    accept=".pdf,.zip,.doc,.docx"
+    onChange={uploadProductFile}
+  />
+</div>
+        
+        <div>
   <label htmlFor="cloudinaryPublicId">
     Cloudinary Public ID
   </label>
@@ -243,14 +324,16 @@ export default function MerchantAddProduct() {
   />
 </div>
         
-        <button
-          type="submit"
-          disabled={loading}
-        >
-          {loading
-            ? "Adding Product..."
-            : "Add Product"}
-        </button>
+       <button
+  type="submit"
+  disabled={loading || uploadingFile}
+>
+  {uploadingFile
+    ? "Uploading File..."
+    : loading
+      ? "Adding Product..."
+      : "Add Product"}
+</button>
       </form>
 
       {message && <p>{message}</p>}
