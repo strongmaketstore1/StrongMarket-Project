@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  doc,
-  getDoc,
+  collection,
+  getDocs,
+  query,
+  where,
 } from "firebase/firestore";
 import {
   onAuthStateChanged,
@@ -25,21 +27,53 @@ export default function MerchantDashboard() {
         }
 
         try {
-          const userSnapshot = await getDoc(
-            doc(db, "users", user.uid),
+          const applicationsQuery = query(
+            collection(db, "merchantApplications"),
+            where("userId", "==", user.uid),
           );
 
-          if (userSnapshot.exists()) {
-            const data = userSnapshot.data();
+          const snapshot = await getDocs(
+            applicationsQuery,
+          );
+
+          if (snapshot.empty) {
+            setStatus("none");
+          } else {
+            const applications = snapshot.docs.map(
+              (application) => application.data(),
+            );
+
+            const approvedApplication =
+              applications.find(
+                (application) =>
+                  application.status === "approved",
+              );
+
+            const pendingApplication =
+              applications.find(
+                (application) =>
+                  application.status === "pending",
+              );
+
+            const latestApplication =
+              applications.sort(
+                (a, b) =>
+                  new Date(b.createdAt).getTime() -
+                  new Date(a.createdAt).getTime(),
+              )[0];
 
             setStatus(
-              data.merchantStatus || "none",
+              approvedApplication?.status ||
+                pendingApplication?.status ||
+                latestApplication?.status ||
+                "none",
             );
-          } else {
-            setStatus("none");
           }
         } catch (error) {
-          console.error(error);
+          console.error(
+            "Merchant application lookup error:",
+            error,
+          );
           setStatus("none");
         } finally {
           setLoading(false);
@@ -54,7 +88,7 @@ export default function MerchantDashboard() {
     return (
       <main>
         <h1>Merchant Dashboard</h1>
-        <p>Loading merchant status...</p>
+        <p>Loading merchant application...</p>
       </main>
     );
   }
@@ -122,38 +156,38 @@ export default function MerchantDashboard() {
       </section>
 
       <section>
-  <h2>Merchant Center</h2>
+        <h2>Merchant Center</h2>
 
-  <div>
-    <Link
-      className="primary-btn"
-      to="/merchant/products/new"
-    >
-      📦 Add Product
-    </Link>
+        <div>
+          <Link
+            className="primary-btn"
+            to="/merchant/products/new"
+          >
+            📦 Add Product
+          </Link>
 
-    <Link
-  className="primary-btn"
-  to="/merchant/products"
->
-  🛍️ My Products
-</Link>
+          <Link
+            className="primary-btn"
+            to="/merchant/products"
+          >
+            🛍️ My Products
+          </Link>
 
-    <Link
-  className="primary-btn"
-  to="/merchant/orders"
->
-  🛒 Orders
-</Link>
+          <Link
+            className="primary-btn"
+            to="/merchant/orders"
+          >
+            🛒 Orders
+          </Link>
 
-    <Link
-  className="primary-btn"
-  to="/merchant/sales"
->
-  💰 Sales & Earnings
-</Link>
-  </div>
-</section>
+          <Link
+            className="primary-btn"
+            to="/merchant/sales"
+          >
+            💰 Sales & Earnings
+          </Link>
+        </div>
+      </section>
     </main>
   );
 }
