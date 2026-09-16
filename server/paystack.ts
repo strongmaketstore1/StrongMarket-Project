@@ -134,7 +134,10 @@ app.post(
 
       return res.status(500).json({
         success: false,
-        message: "Unable to upload product file.",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Unable to upload product file.",
       });
     }
   },
@@ -158,8 +161,6 @@ app.get(
       const decodedToken =
         await adminAuth.verifyIdToken(idToken);
 
-      // Current StrongMarket admin account
-      // and the account being used to recover admin access.
       const allowedAdminUids = [
         "RN5LrlclfrMHGxENa1O6rCNKK5p2",
         "A1vw5apcWCaTWBBlw0zb16Pt5Pv2",
@@ -398,15 +399,15 @@ app.get("/api/paystack/transactions", async (_req, res) => {
       );
 
       return res.status(
-  error.response?.status || 500,
-).json({
-  success: false,
-  paystackStatus: error.response?.status,
-  paystackResponse: error.response?.data,
-  message:
-    error.response?.data?.message ||
-    "Unable to verify Paystack transaction.",
-});
+        error.response?.status || 500,
+      ).json({
+        success: false,
+        paystackStatus: error.response?.status,
+        paystackResponse: error.response?.data,
+        message:
+          error.response?.data?.message ||
+          "Unable to verify Paystack transaction.",
+      });
     }
 
     console.error(
@@ -530,15 +531,15 @@ app.get(
         );
 
         return res.status(
-  error.response?.status || 500,
-).json({
-  success: false,
-  paystackStatus: error.response?.status,
-  paystackResponse: error.response?.data,
-  message:
-    error.response?.data?.message ||
-    "Unable to verify Paystack transaction.",
-});
+          error.response?.status || 500,
+        ).json({
+          success: false,
+          paystackStatus: error.response?.status,
+          paystackResponse: error.response?.data,
+          message:
+            error.response?.data?.message ||
+            "Unable to verify Paystack transaction.",
+        });
       }
 
       console.error(
@@ -580,7 +581,7 @@ app.post(
               `Bearer ${PAYSTACK_SECRET_KEY}`,
           },
         },
-      );  
+      );
 
       const transaction =
         response.data?.data;
@@ -738,35 +739,35 @@ app.get(
       }
 
       const cloudinaryPublicId =
-  typeof purchasedItem.cloudinaryPublicId === "string"
-    ? purchasedItem.cloudinaryPublicId
-    : "";
+        typeof purchasedItem.cloudinaryPublicId === "string"
+          ? purchasedItem.cloudinaryPublicId
+          : "";
 
-if (!cloudinaryPublicId) {
-  return res.status(404).json({
-    success: false,
-    message:
-      "This product does not have a downloadable file yet.",
-  });
-}
+      if (!cloudinaryPublicId) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "This product does not have a downloadable file yet.",
+        });
+      }
 
-const downloadUrl =
-  cloudinary.utils.private_download_url(
-    cloudinaryPublicId,
-    "pdf",
-    {
-      resource_type: "raw",
-      type: "private",
-      attachment: true,
-      expires_at:
-        Math.floor(Date.now() / 1000) + 300,
-    },
-  );
+      const downloadUrl =
+        cloudinary.utils.private_download_url(
+          cloudinaryPublicId,
+          "pdf",
+          {
+            resource_type: "raw",
+            type: "private",
+            attachment: true,
+            expires_at:
+              Math.floor(Date.now() / 1000) + 300,
+          },
+        );
 
-return res.json({
-  success: true,
-  downloadUrl,
-});
+      return res.json({
+        success: true,
+        downloadUrl,
+      });
     } catch (error) {
       console.error(
         "Secure product download error:",
