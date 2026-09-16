@@ -1,4 +1,9 @@
 import { useEffect, useState } from "react";
+import {
+  onAuthStateChanged,
+  type User,
+} from "firebase/auth";
+
 import { auth } from "../firebase";
 import type { MerchantApplication } from "../types/merchant";
 
@@ -13,16 +18,10 @@ export default function AdminMerchantApplications() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  async function loadApplications() {
+  async function loadApplications(
+    currentUser: User,
+  ) {
     try {
-      const currentUser = auth.currentUser;
-
-      if (!currentUser) {
-        throw new Error(
-          "You must be logged in.",
-        );
-      }
-
       const idToken =
         await currentUser.getIdToken();
 
@@ -115,7 +114,21 @@ export default function AdminMerchantApplications() {
   }
 
   useEffect(() => {
-    loadApplications();
+    const unsubscribe =
+      onAuthStateChanged(
+        auth,
+        (currentUser) => {
+          if (!currentUser) {
+            setError("You must be logged in.");
+            setLoading(false);
+            return;
+          }
+
+          loadApplications(currentUser);
+        },
+      );
+
+    return () => unsubscribe();
   }, []);
 
   if (loading) {
@@ -165,9 +178,7 @@ export default function AdminMerchantApplications() {
             <button
               type="button"
               onClick={() =>
-                approveApplication(
-                  application,
-                )
+                approveApplication(application)
               }
             >
               Approve
