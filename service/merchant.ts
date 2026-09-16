@@ -1,4 +1,9 @@
-import { addDoc, collection } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  doc,
+  updateDoc,
+} from "firebase/firestore";
 
 import { db } from "../src/firebase";
 
@@ -25,6 +30,13 @@ export async function submitMerchantApplication(
     application,
   );
 
+  await updateDoc(
+  doc(db, "users", userId),
+  {
+    merchantStatus: "pending",
+  },
+);
+  
   return {
     id: docRef.id,
     ...application,
