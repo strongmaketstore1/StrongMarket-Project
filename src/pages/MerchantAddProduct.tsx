@@ -272,14 +272,17 @@ export default function MerchantAddProduct() {
           </label>
 
           <input
-            id="image"
-            type="text"
-            value={image}
-            onChange={(event) =>
-              setImage(event.target.value)
-            }
-            placeholder="/products/my-product.jpg"
-          />
+  id="image"
+  type="file"
+  accept="image/png,image/jpeg,image/webp"
+  onChange={(event) => {
+    const file = event.target.files?.[0];
+
+    if (file) {
+      setImage(file.name);
+    }
+  }}
+/>
         </div>
 
         <div>
