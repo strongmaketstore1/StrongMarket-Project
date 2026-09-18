@@ -103,10 +103,12 @@ app.post(
           const stream =
             cloudinary.uploader.upload_stream(
               {
-                folder: "strongmarket/products",
-                resource_type: "raw",
-                type: "private",
-              },
+  folder: "strongmarket/products",
+  resource_type: req.file!.mimetype.startsWith("image/")
+    ? "image"
+    : "raw",
+  type: "private",
+}
               (error, result) => {
                 if (error) {
                   reject(error);
@@ -121,11 +123,15 @@ app.post(
       );
 
       return res.json({
-        success: true,
-        message: "Product file uploaded successfully.",
-        publicId: result.public_id,
-        fileName: req.file.originalname,
-      });
+  success: true,
+  message: req.file.mimetype.startsWith("image/")
+    ? "Product image uploaded successfully."
+    : "Product file uploaded successfully.",
+  publicId: result.public_id,
+  fileName: req.file.originalname,
+  secureUrl: result.secure_url,
+  resourceType: result.resource_type,
+});
     } catch (error) {
       console.error(
         "Cloudinary product upload error:",
