@@ -275,11 +275,64 @@ export default function MerchantAddProduct() {
   id="image"
   type="file"
   accept="image/png,image/jpeg,image/webp"
-  onChange={(event) => {
+  onChange={async (event) => {
     const file = event.target.files?.[0];
 
-    if (file) {
-      setImage(file.name);
+    if (!file) {
+      return;
+    }
+
+    try {
+      const user = auth.currentUser;
+
+      if (!user) {
+        setMessage("You must be logged in.");
+        return;
+      }
+
+      setMessage("Uploading product image...");
+
+      const idToken = await user.getIdToken();
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch(
+        "https://strongmarket-payment-server.onrender.com/api/products/upload",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: formData,
+        },
+      );
+
+      const result = await response.json();
+
+      if (!response.ok || result?.success !== true) {
+        setMessage(
+          result?.message ||
+            "Unable to upload product image.",
+        );
+        return;
+      }
+
+      setImage(result.secureUrl || "");
+      setMessage(
+        "Product image uploaded successfully.",
+      );
+    } catch (error) {
+      console.error(
+        "Product image upload error:",
+        error,
+      );
+
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to upload product image.",
+      );
     }
   }}
 />
