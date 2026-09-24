@@ -245,9 +245,11 @@ const [merchantStatus, setMerchantStatus] = useState<string>("none");
 
             {user ? (
               <>
-                <Link to="/merchant/dashboard">
-                  Merchant Dashboard
-                </Link>
+               {merchantStatus === "approved" && (
+  <Link to="/merchant/dashboard">
+    Merchant Dashboard
+  </Link>
+)}
 
                 <button
                   type="button"
