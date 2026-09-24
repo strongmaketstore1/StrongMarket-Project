@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   collection,
+  doc,
+  getDoc,
   getDocs,
   query,
   where,
@@ -27,57 +29,28 @@ export default function MerchantDashboard() {
         }
 
         try {
-          const applicationsQuery = query(
-            collection(db, "merchantApplications"),
-            where("userId", "==", user.uid),
-          );
+  const userSnapshot = await getDoc(
+    doc(db, "users", user.uid),
+  );
 
-          const snapshot = await getDocs(
-            applicationsQuery,
-          );
+  if (!userSnapshot.exists()) {
+    setStatus("none");
+    return;
+  }
 
-          if (snapshot.empty) {
-            setStatus("none");
-          } else {
-            const applications = snapshot.docs.map(
-              (application) => application.data(),
-            );
+  const merchantStatus =
+    userSnapshot.data().merchantStatus ?? "none";
 
-            const approvedApplication =
-              applications.find(
-                (application) =>
-                  application.status === "approved",
-              );
-
-            const pendingApplication =
-              applications.find(
-                (application) =>
-                  application.status === "pending",
-              );
-
-            const latestApplication =
-              applications.sort(
-                (a, b) =>
-                  new Date(b.createdAt).getTime() -
-                  new Date(a.createdAt).getTime(),
-              )[0];
-
-            setStatus(
-              approvedApplication?.status ||
-                pendingApplication?.status ||
-                latestApplication?.status ||
-                "none",
-            );
-          }
-        } catch (error) {
-          console.error(
-            "Merchant application lookup error:",
-            error,
-          );
-          setStatus("none");
-        } finally {
-          setLoading(false);
-        }
+  setStatus(merchantStatus);
+} catch (error) {
+  console.error(
+    "Merchant status lookup error:",
+    error,
+  );
+  setStatus("none");
+} finally {
+  setLoading(false);
+}
       },
     );
 
