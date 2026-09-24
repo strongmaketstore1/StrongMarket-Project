@@ -166,7 +166,26 @@ app.get(
       const idToken = authHeader.substring(7);
       const decodedToken =
         await adminAuth.verifyIdToken(idToken);
+const userSnapshot = await db
+  .collection("users")
+  .doc(decodedToken.uid)
+  .get();
 
+if (!userSnapshot.exists) {
+  return res.status(403).json({
+    success: false,
+    message: "User account not found.",
+  });
+}
+
+const userData = userSnapshot.data();
+
+if (userData?.merchantStatus !== "approved") {
+  return res.status(403).json({
+    success: false,
+    message: "Approved merchant account required.",
+  });
+}
       const allowedAdminUids = [
         "RN5LrlclfrMHGxENa1O6rCNKK5p2",
         "A1vw5apcWCaTWBBlw0zb16Pt5Pv2",
