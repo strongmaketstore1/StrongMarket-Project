@@ -9,7 +9,7 @@ import { onAuthStateChanged } from "firebase/auth";
 
 import "./App.css";
 
-import { auth } from "./firebase";
+import { auth, db } from "./firebase";
 import { logoutUser, deleteAccount } from "./auth";
 import { doc, getDoc } from "firebase/firestore";
 import { products } from "./data/products";
@@ -158,17 +158,36 @@ function CartButton() {
 
 function AppContent() {
   const [user, setUser] = useState(auth.currentUser);
-
+const [merchantStatus, setMerchantStatus] = useState<string>("none");
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(
-      auth,
-      (currentUser) => {
-        setUser(currentUser);
-      },
-    );
+  const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    setUser(currentUser);
 
-    return () => unsubscribe();
-  }, []);
+    if (!currentUser) {
+      setMerchantStatus("none");
+      return;
+    }
+
+    try {
+      const userSnapshot = await getDoc(
+        doc(db, "users", currentUser.uid)
+      );
+
+      if (userSnapshot.exists()) {
+        setMerchantStatus(
+          userSnapshot.data().merchantStatus ?? "none"
+        );
+      } else {
+        setMerchantStatus("none");
+      }
+    } catch (error) {
+      console.error("Unable to load merchant status:", error);
+      setMerchantStatus("none");
+    }
+  });
+
+  return unsubscribe;
+}, []);
 
   async function handleLogout() {
     try {
