@@ -1,40 +1,92 @@
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
+import {
+  collection,
+  onSnapshot,
+  query,
+  where,
+} from "firebase/firestore";
 
-import { auth } from "../firebase";
-import { getOrders } from "../service";
-import type { Order } from "../service";
+import { auth, db } from "../firebase";
+
+type OrderItem = {
+  productId: string;
+  productName: string;
+  quantity: number;
+  price: number;
+  merchantId?: string;
+};
+
+type Order = {
+  id: string;
+  customerName: string;
+  customerEmail: string;
+  items: OrderItem[];
+  subtotal: number;
+  currency: string;
+  status: string;
+  paymentReference?: string;
+  createdAt: string;
+  merchantIds?: string[];
+};
 
 export default function MerchantSales() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(
+    let unsubscribeOrders: (() => void) | undefined;
+
+    const unsubscribeAuth = onAuthStateChanged(
       auth,
       (user) => {
         if (!user) {
           setOrders([]);
+          setMessage("You must be logged in.");
           setLoading(false);
           return;
         }
 
-        const savedOrders = getOrders();
+        setMessage("");
 
-        const merchantOrders = savedOrders.filter(
-          (order) =>
-            order.items.some(
-              (item) =>
-                item.merchantId === user.uid,
-            ),
+        const ordersQuery = query(
+          collection(db, "orders"),
+          where("merchantIds", "array-contains", user.uid),
         );
 
-        setOrders(merchantOrders);
-        setLoading(false);
+        unsubscribeOrders = onSnapshot(
+          ordersQuery,
+          (snapshot) => {
+            const merchantOrders = snapshot.docs.map(
+              (orderDoc) => ({
+                id: orderDoc.id,
+                ...orderDoc.data(),
+              }),
+            ) as Order[];
+
+            setOrders(merchantOrders);
+            setLoading(false);
+          },
+          (error) => {
+            console.error(
+              "Merchant sales error:",
+              error,
+            );
+
+            setMessage(
+              "Unable to load your sales.",
+            );
+            setLoading(false);
+          },
+        );
       },
     );
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribeOrders?.();
+      unsubscribeAuth();
+    };
   }, []);
 
   if (loading) {
@@ -46,26 +98,43 @@ export default function MerchantSales() {
     );
   }
 
-  let totalSales = 0;
-  let completedOrders = 0;
-  let pendingOrders = 0;
+  const merchantUid = auth.currentUser?.uid;
 
-  orders.forEach((order) => {
-  if (order.status === "paid") {
-    completedOrders++;
+  const merchantItems = orders.flatMap(
+    (order) =>
+      order.items.filter(
+        (item) =>
+          item.merchantId === merchantUid,
+      ),
+  );
 
-    order.items.forEach((item) => {
-      if (item.merchantId) {
-        totalSales +=
-          item.price * item.quantity;
-      }
-    });
-  }
+  const totalSales = merchantItems.reduce(
+    (total, item) => {
+      return (
+        total +
+        item.price * item.quantity
+      );
+    },
+    0,
+  );
 
-  if (order.status === "pending") {
-    pendingOrders++;
-  }
-});
+  const completedOrders = orders.filter(
+    (order) =>
+      order.status === "paid" &&
+      order.items.some(
+        (item) =>
+          item.merchantId === merchantUid,
+      ),
+  ).length;
+
+  const pendingOrders = orders.filter(
+    (order) =>
+      order.status === "pending" &&
+      order.items.some(
+        (item) =>
+          item.merchantId === merchantUid,
+      ),
+  ).length;
 
   return (
     <main>
@@ -109,26 +178,61 @@ export default function MerchantSales() {
         <section>
           <h2>Recent Orders</h2>
 
-          {orders.map((order) => (
-            <article key={order.id}>
-              <h3>Order {order.id}</h3>
+          {orders.map((order) => {
+            const orderMerchantItems =
+              order.items.filter(
+                (item) =>
+                  item.merchantId ===
+                  merchantUid,
+              );
 
-              <p>
-                Customer: {order.customerName}
-              </p>
+            if (
+              orderMerchantItems.length === 0
+            ) {
+              return null;
+            }
 
-              <p>
-                Status: {order.status}
-              </p>
+            return (
+              <article key={order.id}>
+                <h3>Order {order.id}</h3>
 
-              <p>
-                Date:{" "}
-                {new Date(
-                  order.createdAt,
-                ).toLocaleString("en-NG")}
-              </p>
-            </article>
-          ))}
+                <p>
+                  Customer:{" "}
+                  {order.customerName}
+                </p>
+
+                <p>
+                  Status: {order.status}
+                </p>
+
+                <p>
+                  Date:{" "}
+                  {new Date(
+                    order.createdAt,
+                  ).toLocaleString("en-NG")}
+                </p>
+
+                <h4>Your Products</h4>
+
+                {orderMerchantItems.map(
+                  (item) => (
+                    <p
+                      key={item.productId}
+                    >
+                      {item.productName} ×{" "}
+                      {item.quantity} — ₦
+                      {(
+                        item.price *
+                        item.quantity
+                      ).toLocaleString(
+                        "en-NG",
+                      )}
+                    </p>
+                  ),
+                )}
+              </article>
+            );
+          })}
         </section>
       )}
     </main>
