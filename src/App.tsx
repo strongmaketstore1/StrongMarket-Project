@@ -11,7 +11,7 @@ import "./App.css";
 
 import { auth } from "./firebase";
 import { logoutUser, deleteAccount } from "./auth";
-
+import { doc, getDoc } from "firebase/firestore";
 import { products } from "./data/products";
 import ProductCard from "./components/ProductCard";
 
