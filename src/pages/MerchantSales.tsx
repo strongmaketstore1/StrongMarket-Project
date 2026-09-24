@@ -33,7 +33,7 @@ type Order = {
 export default function MerchantSales() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState("");
+  const [, setMessage] = useState("");
 
   useEffect(() => {
     let unsubscribeOrders: (() => void) | undefined;
