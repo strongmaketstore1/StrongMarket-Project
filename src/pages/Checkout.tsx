@@ -14,7 +14,8 @@ export default function Checkout() {
   const [customerEmail, setCustomerEmail] = useState("");
   const [error, setError] = useState("");
   const [isPaying, setIsPaying] = useState(false);
-const [currency, setCurrency] = useState<"NGN" | "USD">("NGN");
+  const [currency, setCurrency] = useState<"NGN" | "USD">("NGN");
+
   if (items.length === 0) {
     return (
       <main className="checkout-page">
@@ -56,24 +57,24 @@ const [currency, setCurrency] = useState<"NGN" | "USD">("NGN");
 
       const orderItems = createOrderItems(items);
 
-      const merchantIds = getMerchantIds(orderItems)
+      const merchantIds = getMerchantIds(orderItems);
 
       const order: Order = {
-  id: orderId,
-  customerId: auth.currentUser?.uid,
-  customerName: customerName.trim(),
-  customerEmail: customerEmail.trim(),
-  items: orderItems,
-  merchantIds,
-  subtotal,
-  currency: "NGN",
-  status: "pending",
-  paymentReference,
-  createdAt: new Date().toISOString(),
-};
+        id: orderId,
+        customerId: auth.currentUser?.uid,
+        customerName: customerName.trim(),
+        customerEmail: customerEmail.trim(),
+        items: orderItems,
+        merchantIds,
+        subtotal,
+        currency: "NGN",
+        status: "pending",
+        paymentReference,
+        createdAt: new Date().toISOString(),
+      };
 
-await createFirestoreOrder(order);
-      
+      await createFirestoreOrder(order);
+
       startPaystackPayment(
         {
           email: customerEmail.trim(),
@@ -158,6 +159,27 @@ await createFirestoreOrder(order);
                 }
                 placeholder="you@example.com"
               />
+            </label>
+
+            <label>
+              Currency
+
+              <select
+                value={currency}
+                onChange={(event) =>
+                  setCurrency(
+                    event.target.value as "NGN" | "USD",
+                  )
+                }
+              >
+                <option value="NGN">
+                  ₦ NGN — Nigerian Naira
+                </option>
+
+                <option value="USD">
+                  $ USD — US Dollar
+                </option>
+              </select>
             </label>
 
             {error && (
