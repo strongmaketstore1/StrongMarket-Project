@@ -637,6 +637,99 @@ app.post(
         });
       }
 
+      const order = orderSnapshot.data();
+
+if (!order) {
+  return res.status(404).json({
+    success: false,
+    message: "Order data not found.",
+  });
+}
+
+const items = Array.isArray(order.items)
+  ? order.items
+  : [];
+
+if (items.length === 0) {
+  return res.status(400).json({
+    success: false,
+    message: "Order contains no products.",
+  });
+}
+
+let expectedAmount = 0;
+
+for (const item of items) {
+  if (
+    typeof item.productId !== "string" ||
+    !Number.isInteger(item.quantity) ||
+    item.quantity <= 0
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid order items.",
+    });
+  }
+
+  const productSnapshot = await db
+    .collection("products")
+    .doc(item.productId)
+    .get();
+
+  if (!productSnapshot.exists) {
+    return res.status(400).json({
+      success: false,
+      message: "A product in this order no longer exists.",
+    });
+  }
+
+  const product = productSnapshot.data();
+
+  if (
+    typeof product?.price !== "number" ||
+    product.price < 0
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid product price.",
+    });
+  }
+
+  expectedAmount +=
+    product.price * item.quantity;
+}
+      const orderCurrency =
+  order.currency === "USD" ? "USD" : "NGN";
+
+const USD_RATE = 1500;
+
+const expectedPaymentAmount =
+  orderCurrency === "USD"
+    ? Math.round((expectedAmount / USD_RATE) * 100)
+    : Math.round(expectedAmount * 100);
+
+if (
+  transaction.currency !== orderCurrency ||
+  transaction.amount !== expectedPaymentAmount
+) {
+  console.error(
+    "Payment amount mismatch:",
+    {
+      reference,
+      expectedPaymentAmount,
+      actualAmount: transaction.amount,
+      expectedCurrency: orderCurrency,
+      actualCurrency: transaction.currency,
+    },
+  );
+
+  return res.status(400).json({
+    success: false,
+    message:
+      "Payment amount does not match the order.",
+  });
+}
+     
       // 3. Mark the order as paid using Firebase Admin
       await orderRef.update({
         status: "paid",
