@@ -86,6 +86,7 @@ export default function Checkout() {
         {
           email: customerEmail.trim(),
           amount: paymentAmount,
+          currency,
           reference: paymentReference,
           callback_url:
             `${window.location.origin}/StrongMarket-Project/order-success`,
