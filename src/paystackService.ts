@@ -1,6 +1,7 @@
 export interface PaystackPaymentData {
   email: string;
   amount: number;
+  currency?: "NGN" | "USD";
   reference?: string;
   callback_url?: string;
   firstName?: string;
@@ -49,12 +50,13 @@ export async function startPaystackPayment(
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email: data.email,
-          amount: data.amount,
-          reference: data.reference,
-          callback_url: data.callback_url,
-          metadata: data.metadata,
-        }),
+  email: data.email,
+  amount: data.amount,
+  currency: data.currency,
+  reference: data.reference,
+  callback_url: data.callback_url,
+  metadata: data.metadata,
+}),
       },
     );
 
