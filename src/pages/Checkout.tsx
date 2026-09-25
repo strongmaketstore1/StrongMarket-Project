@@ -15,7 +15,14 @@ export default function Checkout() {
   const [error, setError] = useState("");
   const [isPaying, setIsPaying] = useState(false);
   const [currency, setCurrency] = useState<"NGN" | "USD">("NGN");
+  
+  const USD_RATE = 1500;
 
+  const paymentAmount =
+  currency === "USD"
+    ? Math.round((subtotal / USD_RATE) * 100)
+    : Math.round(subtotal * 100);
+  
   if (items.length === 0) {
     return (
       <main className="checkout-page">
@@ -78,7 +85,7 @@ export default function Checkout() {
       startPaystackPayment(
         {
           email: customerEmail.trim(),
-          amount: Math.round(subtotal * 100),
+          amount: paymentAmount,
           reference: paymentReference,
           callback_url:
             `${window.location.origin}/StrongMarket-Project/order-success`,
@@ -87,7 +94,7 @@ export default function Checkout() {
             orderId,
             itemCount,
             subtotal,
-            currency: "NGN",
+            currency,
             merchantIds,
             items: orderItems,
           },
