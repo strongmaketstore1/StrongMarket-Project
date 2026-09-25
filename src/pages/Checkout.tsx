@@ -67,7 +67,7 @@ export default function Checkout() {
         items: orderItems,
         merchantIds,
         subtotal,
-        currency: "NGN",
+        currency,
         status: "pending",
         paymentReference,
         createdAt: new Date().toISOString(),
