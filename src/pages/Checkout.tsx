@@ -14,7 +14,7 @@ export default function Checkout() {
   const [customerEmail, setCustomerEmail] = useState("");
   const [error, setError] = useState("");
   const [isPaying, setIsPaying] = useState(false);
-
+const [currency, setCurrency] = useState<"NGN" | "USD">("NGN");
   if (items.length === 0) {
     return (
       <main className="checkout-page">
