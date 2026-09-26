@@ -1,6 +1,12 @@
 import { useState } from "react";
-import type { ChangeEvent, FormEvent } from "react";
-import { addDoc, collection } from "firebase/firestore";
+import type {
+  ChangeEvent,
+  FormEvent,
+} from "react";
+import {
+  addDoc,
+  collection,
+} from "firebase/firestore";
 
 import { auth, db } from "../firebase";
 import type { ProductCategory } from "../types/product";
@@ -22,7 +28,8 @@ const categories: {
 
 export default function MerchantAddProduct() {
   const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const [description, setDescription] =
+    useState("");
   const [shortDescription, setShortDescription] =
     useState("");
   const [price, setPrice] = useState("");
@@ -31,79 +38,86 @@ export default function MerchantAddProduct() {
   const [image, setImage] = useState("");
   const [fileName, setFileName] = useState("");
   const [cloudinaryPublicId, setCloudinaryPublicId] =
-  useState("");
+    useState("");
   const [uploadingFile, setUploadingFile] =
-  useState(false);
+    useState(false);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function uploadProductFile(
-  event: ChangeEvent<HTMLInputElement>,
-) {
-  const file = event.target.files?.[0];
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = event.target.files?.[0];
 
-  if (!file) {
-    return;
-  }
-
-  try {
-    const user = auth.currentUser;
-
-    if (!user) {
-      setMessage("You must be logged in.");
+    if (!file) {
       return;
     }
 
-    setUploadingFile(true);
-    setMessage("");
+    try {
+      const user = auth.currentUser;
 
-    const idToken = await user.getIdToken();
+      if (!user) {
+        setMessage("You must be logged in.");
+        return;
+      }
 
-    const formData = new FormData();
-    formData.append("file", file);
+      setUploadingFile(true);
+      setMessage("");
 
-    const response = await fetch(
-      "https://strongmarket-payment-server.onrender.com/api/products/upload",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${idToken}`,
+      const idToken = await user.getIdToken();
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch(
+        "https://strongmarket-payment-server.onrender.com/api/products/upload",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: formData,
         },
-        body: formData,
-      },
-    );
-
-    const result = await response.json();
-
-    if (!response.ok || result?.success !== true) {
-      setMessage(
-        result?.message ||
-          "Unable to upload product file.",
       );
-      return;
+
+      const result = await response.json();
+
+      if (
+        !response.ok ||
+        result?.success !== true
+      ) {
+        setMessage(
+          result?.message ||
+            "Unable to upload product file.",
+        );
+        return;
+      }
+
+      setCloudinaryPublicId(result.publicId);
+      setFileName(
+        result.fileName || file.name,
+      );
+
+      setMessage(
+        "Product file uploaded successfully.",
+      );
+    } catch (error) {
+      console.error(
+        "Product file upload error:",
+        error,
+      );
+
+      setMessage(
+        "Unable to upload product file. Please try again.",
+      );
+    } finally {
+      setUploadingFile(false);
     }
-
-    setCloudinaryPublicId(result.publicId);
-    setFileName(result.fileName || file.name);
-
-    setMessage(
-      "Product file uploaded successfully.",
-    );
-  } catch (error) {
-    console.error(
-      "Product file upload error:",
-      error,
-    );
-
-    setMessage(
-      "Unable to upload product file. Please try again.",
-    );
-  } finally {
-    setUploadingFile(false);
   }
-}
-  
-  async function handleSubmit(event: FormEvent) {
+
+  async function handleSubmit(
+    event: FormEvent,
+  ) {
     event.preventDefault();
 
     setMessage("");
@@ -123,26 +137,33 @@ export default function MerchantAddProduct() {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-₦)/g, "");
 
-      await addDoc(collection(db, "products"), {
-        name: name.trim(),
-        slug: productSlug,
-        description: description.trim(),
-        shortDescription: shortDescription.trim(),
-        price: Number(price),
-        currency: "NGN",
-        category,
-        image: image.trim(),
-        fileName: fileName.trim(),
-        cloudinaryPublicId:
-        cloudinaryPublicId.trim(),
-        featured: false,
-        rating: 0,
-        reviewCount: 0,
-        createdAt: new Date().toISOString(),
-        merchantId: user.uid,
-      });
+      await addDoc(
+        collection(db, "products"),
+        {
+          name: name.trim(),
+          slug: productSlug,
+          description: description.trim(),
+          shortDescription:
+            shortDescription.trim(),
+          price: Number(price),
+          currency: "NGN",
+          category,
+          image: image.trim(),
+          fileName: fileName.trim(),
+          cloudinaryPublicId:
+            cloudinaryPublicId.trim(),
+          featured: false,
+          rating: 0,
+          reviewCount: 0,
+          createdAt:
+            new Date().toISOString(),
+          merchantId: user.uid,
+        },
+      );
 
-      setMessage("Product added successfully.");
+      setMessage(
+        "Product added successfully.",
+      );
 
       setName("");
       setDescription("");
@@ -153,14 +174,17 @@ export default function MerchantAddProduct() {
       setFileName("");
       setCloudinaryPublicId("");
     } catch (error) {
-  console.error("Add product error:", error);
+      console.error(
+        "Add product error:",
+        error,
+      );
 
-  setMessage(
-    error instanceof Error
-      ? error.message
-      : "Unable to add product. Please try again.",
-  );
-} finally {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to add product. Please try again.",
+      );
+    } finally {
       setLoading(false);
     }
   }
@@ -170,7 +194,7 @@ export default function MerchantAddProduct() {
       <h1>Add Product</h1>
 
       <p>
-        Add a digital product to StrongMarketStore.
+        Add a digital product to CHILVO.
       </p>
 
       <form onSubmit={handleSubmit}>
@@ -217,7 +241,9 @@ export default function MerchantAddProduct() {
             id="description"
             value={description}
             onChange={(event) =>
-              setDescription(event.target.value)
+              setDescription(
+                event.target.value,
+              )
             }
             required
           />
@@ -272,70 +298,90 @@ export default function MerchantAddProduct() {
           </label>
 
           <input
-  id="image"
-  type="file"
-  accept="image/png,image/jpeg,image/webp"
-  onChange={async (event) => {
-    const file = event.target.files?.[0];
+            id="image"
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            onChange={async (event) => {
+              const file =
+                event.target.files?.[0];
 
-    if (!file) {
-      return;
-    }
+              if (!file) {
+                return;
+              }
 
-    try {
-      const user = auth.currentUser;
+              try {
+                const user =
+                  auth.currentUser;
 
-      if (!user) {
-        setMessage("You must be logged in.");
-        return;
-      }
+                if (!user) {
+                  setMessage(
+                    "You must be logged in.",
+                  );
+                  return;
+                }
 
-      setMessage("Uploading product image...");
+                setMessage(
+                  "Uploading product image...",
+                );
 
-      const idToken = await user.getIdToken();
+                const idToken =
+                  await user.getIdToken();
 
-      const formData = new FormData();
-      formData.append("file", file);
+                const formData =
+                  new FormData();
 
-      const response = await fetch(
-        "https://strongmarket-payment-server.onrender.com/api/products/upload",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-          },
-          body: formData,
-        },
-      );
+                formData.append(
+                  "file",
+                  file,
+                );
 
-      const result = await response.json();
+                const response =
+                  await fetch(
+                    "https://strongmarket-payment-server.onrender.com/api/products/upload",
+                    {
+                      method: "POST",
+                      headers: {
+                        Authorization: `Bearer ${idToken}`,
+                      },
+                      body: formData,
+                    },
+                  );
 
-      if (!response.ok || result?.success !== true) {
-        setMessage(
-          result?.message ||
-            "Unable to upload product image.",
-        );
-        return;
-      }
+                const result =
+                  await response.json();
 
-      setImage(result.secureUrl || "");
-      setMessage(
-        "Product image uploaded successfully.",
-      );
-    } catch (error) {
-      console.error(
-        "Product image upload error:",
-        error,
-      );
+                if (
+                  !response.ok ||
+                  result?.success !== true
+                ) {
+                  setMessage(
+                    result?.message ||
+                      "Unable to upload product image.",
+                  );
+                  return;
+                }
 
-      setMessage(
-        error instanceof Error
-          ? error.message
-          : "Unable to upload product image.",
-      );
-    }
-  }}
-/>
+                setImage(
+                  result.secureUrl || "",
+                );
+
+                setMessage(
+                  "Product image uploaded successfully.",
+                );
+              } catch (error) {
+                console.error(
+                  "Product image upload error:",
+                  error,
+                );
+
+                setMessage(
+                  error instanceof Error
+                    ? error.message
+                    : "Unable to upload product image.",
+                );
+              }
+            }}
+          />
         </div>
 
         <div>
@@ -348,51 +394,57 @@ export default function MerchantAddProduct() {
             type="text"
             value={fileName}
             onChange={(event) =>
-              setFileName(event.target.value)
+              setFileName(
+                event.target.value,
+              )
             }
             placeholder="my-product.pdf"
           />
         </div>
 
         <div>
-  <label htmlFor="productFile">
-    Digital Product File
-  </label>
+          <label htmlFor="productFile">
+            Digital Product File
+          </label>
 
-  <input
-    id="productFile"
-    type="file"
-    accept=".pdf,.zip,.doc,.docx"
-    onChange={uploadProductFile}
-  />
-</div>
-        
+          <input
+            id="productFile"
+            type="file"
+            accept=".pdf,.zip,.doc,.docx"
+            onChange={uploadProductFile}
+          />
+        </div>
+
         <div>
-  <label htmlFor="cloudinaryPublicId">
-    Cloudinary Public ID
-  </label>
+          <label htmlFor="cloudinaryPublicId">
+            Cloudinary Public ID
+          </label>
 
-  <input
-    id="cloudinaryPublicId"
-    type="text"
-    value={cloudinaryPublicId}
-    onChange={(event) =>
-      setCloudinaryPublicId(event.target.value)
-    }
-    placeholder="strongmarket/products/my-product"
-  />
-</div>
-        
-       <button
-  type="submit"
-  disabled={loading || uploadingFile}
->
-  {uploadingFile
-    ? "Uploading File..."
-    : loading
-      ? "Adding Product..."
-      : "Add Product"}
-</button>
+          <input
+            id="cloudinaryPublicId"
+            type="text"
+            value={cloudinaryPublicId}
+            onChange={(event) =>
+              setCloudinaryPublicId(
+                event.target.value,
+              )
+            }
+            placeholder="strongmarket/products/my-product"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={
+            loading || uploadingFile
+          }
+        >
+          {uploadingFile
+            ? "Uploading File..."
+            : loading
+              ? "Adding Product..."
+              : "Add Product"}
+        </button>
       </form>
 
       {message && <p>{message}</p>}
