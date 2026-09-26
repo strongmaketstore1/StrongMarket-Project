@@ -52,7 +52,11 @@ export default function MerchantOrders() {
 
         const ordersQuery = query(
           collection(db, "orders"),
-          where("merchantIds", "array-contains", user.uid),
+          where(
+            "merchantIds",
+            "array-contains",
+            user.uid,
+          ),
         );
 
         unsubscribeOrders = onSnapshot(
@@ -100,7 +104,7 @@ export default function MerchantOrders() {
 
       <p>
         View orders placed for your
-        StrongMarketStore products.
+        CHILVO products.
       </p>
 
       {message && <p>{message}</p>}
