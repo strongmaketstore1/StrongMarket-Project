@@ -859,18 +859,32 @@ app.get(
         });
       }
 
-      const cloudinaryPublicId =
-        typeof purchasedItem.cloudinaryPublicId === "string"
-          ? purchasedItem.cloudinaryPublicId
-          : "";
+     const productSnapshot = await db
+  .collection("products")
+  .doc(productId)
+  .get();
 
-      if (!cloudinaryPublicId) {
-        return res.status(404).json({
-          success: false,
-          message:
-            "This product does not have a downloadable file yet.",
-        });
-      }
+if (!productSnapshot.exists) {
+  return res.status(404).json({
+    success: false,
+    message: "Product not found.",
+  });
+}
+
+const product = productSnapshot.data();
+
+const cloudinaryPublicId =
+  typeof product?.cloudinaryPublicId === "string"
+    ? product.cloudinaryPublicId
+    : "";
+
+if (!cloudinaryPublicId) {
+  return res.status(404).json({
+    success: false,
+    message:
+      "This product does not have a downloadable file yet.",
+  });
+}
 
       const downloadUrl =
         cloudinary.utils.private_download_url(
