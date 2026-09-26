@@ -44,8 +44,7 @@ export default function Login() {
         <h1>Welcome back</h1>
 
         <p>
-          Sign in to your StrongMarketStore
-          account.
+          Sign in to your CHILVO account.
         </p>
 
         <form onSubmit={handleSubmit}>
