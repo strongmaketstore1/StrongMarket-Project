@@ -55,7 +55,7 @@ export default function MerchantApply() {
       <h1>Become a Merchant</h1>
 
       <p>
-        Apply to sell your products on StrongMarketStore.
+        Apply to sell your products on CHILVO.
       </p>
 
       <form onSubmit={handleSubmit}>
