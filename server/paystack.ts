@@ -343,7 +343,10 @@ app.post(
         {
           email,
           amount,
-          currency: "NGN",
+          currency:
+  req.body?.currency === "USD"
+    ? "USD"
+    : "NGN",
 
           ...(reference
             ? { reference }
