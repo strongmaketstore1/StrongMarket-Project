@@ -108,8 +108,8 @@ app.post(
     ? "image"
     : "raw",
   type: "private",
-}
-              (error, result) => {
+            },
+            (error, result) => {
                 if (error) {
                   reject(error);
                 } else {
