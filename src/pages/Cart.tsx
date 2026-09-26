@@ -21,7 +21,7 @@ export default function Cart() {
 
           <p>
             Discover something useful from the
-            StrongMarketStore marketplace.
+            CHILVO marketplace.
           </p>
 
           <Link className="primary-btn" to="/shop">
@@ -157,11 +157,11 @@ export default function Cart() {
           </div>
 
           <Link
-  className="primary-btn checkout-btn"
-  to="/checkout"
->
-  Proceed to Checkout
-</Link>
+            className="primary-btn checkout-btn"
+            to="/checkout"
+          >
+            Proceed to Checkout
+          </Link>
 
           <Link className="continue-shopping" to="/shop">
             Continue Shopping
