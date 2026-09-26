@@ -225,7 +225,7 @@ const [merchantStatus, setMerchantStatus] = useState<string>("none");
       <div className="app">
         <header className="navbar">
           <Link className="logo" to="/">
-            Strong<span>Market</span>Store
+            CHILVO
           </Link>
 
           <nav>
@@ -382,7 +382,7 @@ const [merchantStatus, setMerchantStatus] = useState<string>("none");
               className="logo"
               to="/"
             >
-              Strong<span>Market</span>Store
+              CHILVO
             </Link>
 
             <p>
@@ -392,7 +392,7 @@ const [merchantStatus, setMerchantStatus] = useState<string>("none");
           </div>
 
           <p>
-            © 2026 StrongMarketStore. All rights reserved.
+            © 2026 CHILVO. All rights reserved.
           </p>
         </footer>
       </div>
