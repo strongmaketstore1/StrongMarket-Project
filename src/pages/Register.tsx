@@ -46,7 +46,7 @@ export default function Register() {
         <h1>Create your account</h1>
 
         <p>
-          Join StrongMarketStore.
+          Join CHILVO.
         </p>
 
         <form onSubmit={handleSubmit}>
