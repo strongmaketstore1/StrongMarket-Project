@@ -6,7 +6,10 @@ import {
 
 import { products } from "../data/products";
 import ProductCard from "../components/ProductCard";
-import type { Product, ProductCategory } from "../types/product";
+import type {
+  Product,
+  ProductCategory,
+} from "../types/product";
 import { db } from "../firebase";
 
 type CategoryFilter = "all" | ProductCategory;
@@ -19,7 +22,10 @@ const categories: {
   { label: "Ebooks", value: "ebooks" },
   { label: "Business", value: "business" },
   { label: "Templates", value: "templates" },
-  { label: "AI & Productivity", value: "ai-productivity" },
+  {
+    label: "AI & Productivity",
+    value: "ai-productivity",
+  },
   { label: "Design", value: "design" },
   { label: "Marketing", value: "marketing" },
 ];
@@ -29,9 +35,9 @@ export default function Shop() {
     useState<Product[]>([]);
 
   const [selectedCategory, setSelectedCategory] =
-  useState<CategoryFilter>("all");
+    useState<CategoryFilter>("all");
 
-const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
@@ -61,21 +67,30 @@ const [searchTerm, setSearchTerm] = useState("");
     ...merchantProducts,
   ];
 
-  const filteredProducts = allProducts.filter((product) => {
-  const matchesCategory =
-    selectedCategory === "all" ||
-    product.category === selectedCategory;
+  const filteredProducts = allProducts.filter(
+    (product) => {
+      const matchesCategory =
+        selectedCategory === "all" ||
+        product.category === selectedCategory;
 
-  const search = searchTerm.trim().toLowerCase();
+      const search =
+        searchTerm.trim().toLowerCase();
 
-  const matchesSearch =
-    !search ||
-    product.name.toLowerCase().includes(search) ||
-    product.description.toLowerCase().includes(search) ||
-    product.category.toLowerCase().includes(search);
+      const matchesSearch =
+        !search ||
+        product.name
+          .toLowerCase()
+          .includes(search) ||
+        product.description
+          .toLowerCase()
+          .includes(search) ||
+        product.category
+          .toLowerCase()
+          .includes(search);
 
-  return matchesCategory && matchesSearch;
-});
+      return matchesCategory && matchesSearch;
+    },
+  );
 
   const selectedCategoryLabel =
     categories.find(
@@ -86,7 +101,7 @@ const [searchTerm, setSearchTerm] = useState("");
   return (
     <main className="shop-page">
       <section className="shop-hero">
-        <p className="eyebrow">STRONGMARKETSTORE</p>
+        <p className="eyebrow">CHILVO</p>
 
         <h1>Explore our digital marketplace.</h1>
 
@@ -98,16 +113,17 @@ const [searchTerm, setSearchTerm] = useState("");
 
       <section className="shop-content">
         <div className="shop-search">
-  <input
-    type="search"
-    placeholder="Search digital products..."
-    value={searchTerm}
-    onChange={(event) =>
-      setSearchTerm(event.target.value)
-    }
-    aria-label="Search digital products"
-  />
-</div>
+          <input
+            type="search"
+            placeholder="Search digital products..."
+            value={searchTerm}
+            onChange={(event) =>
+              setSearchTerm(event.target.value)
+            }
+            aria-label="Search digital products"
+          />
+        </div>
+
         <div className="category-filter">
           {categories.map((category) => (
             <button
@@ -141,7 +157,7 @@ const [searchTerm, setSearchTerm] = useState("");
           <div className="product-grid">
             {filteredProducts.map((product) => (
               <ProductCard
-                key={`₦{product.id}-₦{product.slug}`}
+                key={`${product.id}-${product.slug}`}
                 product={product}
               />
             ))}
