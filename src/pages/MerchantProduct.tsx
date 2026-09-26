@@ -30,50 +30,50 @@ export default function MerchantProducts() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-  const unsubscribeAuth = onAuthStateChanged(
-    auth,
-    (user) => {
-      if (!user) {
-        setMessage("You must be logged in.");
-        setLoading(false);
-        return;
-      }
-
-      const productsQuery = query(
-        collection(db, "products"),
-        where("merchantId", "==", user.uid),
-      );
-
-      const unsubscribeProducts = onSnapshot(
-        productsQuery,
-        (snapshot) => {
-          const productList = snapshot.docs.map(
-            (productDoc) => ({
-              id: productDoc.id,
-              ...productDoc.data(),
-            }),
-          ) as Product[];
-
-          setProducts(productList);
+    const unsubscribeAuth = onAuthStateChanged(
+      auth,
+      (user) => {
+        if (!user) {
+          setMessage("You must be logged in.");
           setLoading(false);
-        },
-        (error) => {
-          console.error(error);
-          setMessage(
-            "Unable to load your products.",
-          );
-          setLoading(false);
-        },
-      );
+          return;
+        }
 
-      return unsubscribeProducts;
-    },
-  );
+        const productsQuery = query(
+          collection(db, "products"),
+          where("merchantId", "==", user.uid),
+        );
 
-  return () => unsubscribeAuth();
-}, []);
+        const unsubscribeProducts = onSnapshot(
+          productsQuery,
+          (snapshot) => {
+            const productList = snapshot.docs.map(
+              (productDoc) => ({
+                id: productDoc.id,
+                ...productDoc.data(),
+              }),
+            ) as Product[];
 
-async function handleDelete(productId: string) {
+            setProducts(productList);
+            setLoading(false);
+          },
+          (error) => {
+            console.error(error);
+            setMessage(
+              "Unable to load your products.",
+            );
+            setLoading(false);
+          },
+        );
+
+        return unsubscribeProducts;
+      },
+    );
+
+    return () => unsubscribeAuth();
+  }, []);
+
+  async function handleDelete(productId: string) {
     const confirmed = window.confirm(
       "Are you sure you want to delete this product?",
     );
@@ -122,8 +122,8 @@ async function handleDelete(productId: string) {
       );
     }
   }
-  
-if (loading) {
+
+  if (loading) {
     return (
       <main>
         <h1>My Products</h1>
@@ -138,7 +138,7 @@ if (loading) {
 
       <p>
         Manage the digital products you have added
-        to StrongMarketStore.
+        to CHILVO.
       </p>
 
       <Link to="/merchant/products/new">
@@ -172,18 +172,21 @@ if (loading) {
                   Digital file: {product.fileName}
                 </p>
               )}
-            <Link
-  to={`/merchant/products/${product.id}/edit`}
->
-  ✏️ Edit
-</Link>
-       
-       <button
-  type="button"
-  onClick={() => handleDelete(product.id)}
->
-  🗑️ Delete
-</button>
+
+              <Link
+                to={`/merchant/products/${product.id}/edit`}
+              >
+                ✏️ Edit
+              </Link>
+
+              <button
+                type="button"
+                onClick={() =>
+                  handleDelete(product.id)
+                }
+              >
+                🗑️ Delete
+              </button>
             </article>
           ))}
         </section>
