@@ -1,11 +1,11 @@
 import type { Product } from "./types/product";
-
 export interface OrderItem {
   productId: string;
   productName: string;
   quantity: number;
   price: number;
   merchantId?: string;
+  cloudinaryPublicId?: string;
 }
 
 export type OrderStatus =
@@ -40,13 +40,19 @@ export function createOrderItems(
     ).merchantId;
 
     return {
-      productId: item.product.id,
-      productName: item.product.name,
-      quantity: item.quantity,
-      price: item.product.price,
-      ...(merchantId ? { merchantId } : {}),
-    };
-  });
+  productId: item.product.id,
+  productName: item.product.name,
+  quantity: item.quantity,
+  price: item.product.price,
+  ...(merchantId ? { merchantId } : {}),
+  ...(item.product.cloudinaryPublicId
+    ? {
+        cloudinaryPublicId:
+          item.product.cloudinaryPublicId,
+      }
+    : {}),
+};
+});
 }
 const ORDERS_KEY = "strongmarketstore-orders";
 
