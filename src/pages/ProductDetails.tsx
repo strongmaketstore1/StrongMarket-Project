@@ -110,12 +110,17 @@ export default function ProductDetails() {
     <main className="product-details-page">
       <div className="product-details">
         <div className="product-details-image">
-          <span>
-            {product.category
-              .replace("-", " ")
-              .toUpperCase()}
-          </span>
-        </div>
+  {product.image ? (
+    <img
+      src={product.image}
+      alt={product.name}
+    />
+  ) : (
+    <span>
+      {product.category.replace("-", " ").toUpperCase()}
+    </span>
+  )}
+</div>
 
         <div className="product-details-content">
           <p className="eyebrow">
