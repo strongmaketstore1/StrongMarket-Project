@@ -154,8 +154,16 @@ export default function MerchantProducts() {
       {products.length > 0 && (
         <section>
           {products.map((product) => (
-            <article key={product.id}>
-              <h2>{product.name}</h2>
+  <article key={product.id}>
+    {product.image && (
+      <img
+        src={product.image}
+        alt={product.name}
+        width="200"
+      />
+    )}
+
+    <h2>{product.name}</h2>
 
               <p>{product.shortDescription}</p>
 
