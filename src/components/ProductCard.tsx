@@ -9,8 +9,17 @@ export default function ProductCard({ product }: ProductCardProps) {
   return (
     <article className="product-card">
       <div className="product-image">
-        <span>{product.category.replace("-", " ").toUpperCase()}</span>
-      </div>
+  {product.image ? (
+    <img
+      src={product.image}
+      alt={product.name}
+    />
+  ) : (
+    <span>
+      {product.category.replace("-", " ").toUpperCase()}
+    </span>
+  )}
+</div>
 
       <div className="product-info">
         <span>{product.category.replace("-", " ")}</span>
