@@ -290,19 +290,29 @@ export default function MerchantEditProduct() {
         </div>
 
         <div>
-          <label htmlFor="image">
-            Product Image
-          </label>
+  <label htmlFor="image">
+    Product Image
+  </label>
 
-          <input
-            id="image"
-            type="text"
-            value={image}
-            onChange={(event) =>
-              setImage(event.target.value)
-            }
-          />
-        </div>
+  <input
+    id="image"
+    type="text"
+    value={image}
+    onChange={(event) =>
+      setImage(event.target.value)
+    }
+  />
+
+  {image && (
+    <div>
+      <img
+        src={image}
+        alt={name}
+        width="200"
+      />
+    </div>
+  )}
+</div>
 
         <div>
           <label htmlFor="fileName">
