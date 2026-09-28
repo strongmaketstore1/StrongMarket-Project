@@ -64,9 +64,6 @@ export default function Checkout() {
 
       const orderItems = createOrderItems(items);
 
-      console.log("CHECKOUT CART ITEMS:", items);
-console.log("CHECKOUT ORDER ITEMS:", orderItems);
-      
       const merchantIds = getMerchantIds(orderItems);
 
       const order: Order = {
