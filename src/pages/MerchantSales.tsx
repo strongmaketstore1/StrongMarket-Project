@@ -33,7 +33,7 @@ type Order = {
 export default function MerchantSales() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [, setMessage] = useState("");
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     let unsubscribeOrders: (() => void) | undefined;
@@ -104,41 +104,62 @@ export default function MerchantSales() {
 
   const merchantUid = auth.currentUser?.uid;
 
-  const merchantItems = orders.flatMap(
-    (order) =>
-      order.items.filter(
-        (item) =>
-          item.merchantId === merchantUid,
-      ),
+  const merchantOrders = orders.filter((order) =>
+    order.items.some(
+      (item) =>
+        item.merchantId === merchantUid,
+    ),
   );
 
-  const totalSales = merchantItems.reduce(
-    (total, item) => {
-      return (
-        total +
-        item.price * item.quantity
-      );
+  const paidOrders = merchantOrders.filter(
+    (order) => order.status === "paid",
+  );
+
+  const pendingOrders = merchantOrders.filter(
+    (order) => order.status === "pending",
+  );
+
+  const ngnSales = paidOrders.reduce(
+    (total, order) => {
+      const orderTotal = order.items
+        .filter(
+          (item) =>
+            item.merchantId === merchantUid,
+        )
+        .reduce(
+          (itemTotal, item) =>
+            itemTotal +
+            item.price * item.quantity,
+          0,
+        );
+
+      return order.currency === "NGN"
+        ? total + orderTotal
+        : total;
     },
     0,
   );
 
-  const completedOrders = orders.filter(
-    (order) =>
-      order.status === "paid" &&
-      order.items.some(
-        (item) =>
-          item.merchantId === merchantUid,
-      ),
-  ).length;
+  const usdSales = paidOrders.reduce(
+    (total, order) => {
+      const orderTotal = order.items
+        .filter(
+          (item) =>
+            item.merchantId === merchantUid,
+        )
+        .reduce(
+          (itemTotal, item) =>
+            itemTotal +
+            item.price * item.quantity,
+          0,
+        );
 
-  const pendingOrders = orders.filter(
-    (order) =>
-      order.status === "pending" &&
-      order.items.some(
-        (item) =>
-          item.merchantId === merchantUid,
-      ),
-  ).length;
+      return order.currency === "USD"
+        ? total + orderTotal
+        : total;
+    },
+    0,
+  );
 
   return (
     <main>
@@ -149,40 +170,52 @@ export default function MerchantSales() {
         CHILVO products.
       </p>
 
+      {message && <p>{message}</p>}
+
       <section>
         <div>
           <h2>Total Orders</h2>
-          <p>{orders.length}</p>
+          <p>{merchantOrders.length}</p>
         </div>
 
         <div>
           <h2>Completed Orders</h2>
-          <p>{completedOrders}</p>
+          <p>{paidOrders.length}</p>
         </div>
 
         <div>
           <h2>Pending Orders</h2>
-          <p>{pendingOrders}</p>
+          <p>{pendingOrders.length}</p>
         </div>
 
         <div>
-          <h2>Total Sales</h2>
+          <h2>NGN Sales</h2>
           <p>
             ₦
-            {totalSales.toLocaleString(
+            {ngnSales.toLocaleString(
               "en-NG",
+            )}
+          </p>
+        </div>
+
+        <div>
+          <h2>USD Sales</h2>
+          <p>
+            $
+            {usdSales.toLocaleString(
+              "en-US",
             )}
           </p>
         </div>
       </section>
 
-      {orders.length === 0 ? (
+      {merchantOrders.length === 0 ? (
         <p>No sales yet.</p>
       ) : (
         <section>
           <h2>Recent Orders</h2>
 
-          {orders.map((order) => {
+          {merchantOrders.map((order) => {
             const orderMerchantItems =
               order.items.filter(
                 (item) =>
@@ -190,15 +223,25 @@ export default function MerchantSales() {
                   merchantUid,
               );
 
-            if (
-              orderMerchantItems.length === 0
-            ) {
-              return null;
-            }
+            const orderTotal =
+              orderMerchantItems.reduce(
+                (total, item) =>
+                  total +
+                  item.price *
+                    item.quantity,
+                0,
+              );
+
+            const currencySymbol =
+              order.currency === "USD"
+                ? "$"
+                : "₦";
 
             return (
               <article key={order.id}>
-                <h3>Order {order.id}</h3>
+                <h3>
+                  Order {order.id}
+                </h3>
 
                 <p>
                   Customer:{" "}
@@ -213,7 +256,9 @@ export default function MerchantSales() {
                   Date:{" "}
                   {new Date(
                     order.createdAt,
-                  ).toLocaleString("en-NG")}
+                  ).toLocaleString(
+                    "en-NG",
+                  )}
                 </p>
 
                 <h4>Your Products</h4>
@@ -221,19 +266,38 @@ export default function MerchantSales() {
                 {orderMerchantItems.map(
                   (item) => (
                     <p
-                      key={item.productId}
+                      key={
+                        item.productId
+                      }
                     >
                       {item.productName} ×{" "}
-                      {item.quantity} — ₦
+                      {item.quantity} —{" "}
+                      {currencySymbol}
                       {(
                         item.price *
                         item.quantity
                       ).toLocaleString(
-                        "en-NG",
+                        order.currency ===
+                          "USD"
+                          ? "en-US"
+                          : "en-NG",
                       )}
                     </p>
                   ),
                 )}
+
+                <p>
+                  <strong>
+                    Your Total:{" "}
+                    {currencySymbol}
+                    {orderTotal.toLocaleString(
+                      order.currency ===
+                        "USD"
+                        ? "en-US"
+                        : "en-NG",
+                    )}
+                  </strong>
+                </p>
               </article>
             );
           })}
