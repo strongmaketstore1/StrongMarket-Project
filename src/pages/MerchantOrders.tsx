@@ -62,12 +62,13 @@ export default function MerchantOrders() {
         unsubscribeOrders = onSnapshot(
           ordersQuery,
           (snapshot) => {
-            const merchantOrders = snapshot.docs.map(
-              (orderDoc) => ({
-                id: orderDoc.id,
-                ...orderDoc.data(),
-              }),
-            ) as Order[];
+            const merchantOrders =
+              snapshot.docs.map(
+                (orderDoc) => ({
+                  id: orderDoc.id,
+                  ...orderDoc.data(),
+                }),
+              ) as Order[];
 
             setOrders(merchantOrders);
             setLoading(false);
@@ -115,64 +116,79 @@ export default function MerchantOrders() {
 
       {orders.length > 0 && (
         <section>
-          {orders.map((order) => (
-            <article key={order.id}>
-              <h2>
-                Order {order.id}
-              </h2>
+          {orders.map((order) => {
+            const isUSD =
+              order.currency === "USD";
 
-              <p>
-                Customer:{" "}
-                {order.customerName}
-              </p>
+            const currencySymbol =
+              isUSD ? "$" : "₦";
 
-              <p>
-                Email:{" "}
-                {order.customerEmail}
-              </p>
+            const locale =
+              isUSD ? "en-US" : "en-NG";
 
-              <p>
-                Status:{" "}
-                {order.status}
-              </p>
+            return (
+              <article key={order.id}>
+                <h2>
+                  Order {order.id}
+                </h2>
 
-              <p>
-                Total:{" "}
-                {order.currency}{" "}
-                {order.subtotal.toLocaleString(
-                  "en-NG",
-                )}
-              </p>
+                <p>
+                  Customer:{" "}
+                  {order.customerName}
+                </p>
 
-              <h3>
-                Products
-              </h3>
+                <p>
+                  Email:{" "}
+                  {order.customerEmail}
+                </p>
 
-              {order.items
-                .filter(
-                  (item) =>
-                    item.merchantId ===
-                    auth.currentUser?.uid,
-                )
-                .map((item) => (
-                  <p
-                    key={item.productId}
-                  >
-                    {item.productName} ×{" "}
-                    {item.quantity}
-                  </p>
-                ))}
+                <p>
+                  Status:{" "}
+                  {order.status}
+                </p>
 
-              <p>
-                Date:{" "}
-                {new Date(
-                  order.createdAt,
-                ).toLocaleString(
-                  "en-NG",
-                )}
-              </p>
-            </article>
-          ))}
+                <p>
+                  Total:{" "}
+                  {currencySymbol}
+                  {order.subtotal.toLocaleString(
+                    locale,
+                    {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    },
+                  )}
+                </p>
+
+                <h3>
+                  Products
+                </h3>
+
+                {order.items
+                  .filter(
+                    (item) =>
+                      item.merchantId ===
+                      auth.currentUser?.uid,
+                  )
+                  .map((item) => (
+                    <p
+                      key={item.productId}
+                    >
+                      {item.productName} ×{" "}
+                      {item.quantity}
+                    </p>
+                  ))}
+
+                <p>
+                  Date:{" "}
+                  {new Date(
+                    order.createdAt,
+                  ).toLocaleString(
+                    "en-NG",
+                  )}
+                </p>
+              </article>
+            );
+          })}
         </section>
       )}
     </main>
