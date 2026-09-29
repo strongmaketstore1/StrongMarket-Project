@@ -38,6 +38,11 @@ const firebaseApp = getApps().length
 const db = getFirestore(firebaseApp);
 const adminAuth = getAuth(firebaseApp);
 
+const ADMIN_UIDS = [
+  "RN5LrlclfrMHGxENa1O6rCNKK5p2",
+  "A1vw5apcWCaTWBBlw0zb16Pt5Pv2",
+];
+
 app.use(
   cors({
     origin: "https://strongmaketstore1.github.io",
@@ -60,11 +65,11 @@ if (!PAYSTACK_SECRET_KEY) {
 app.get("/api/health", (_req, res) => {
   res.json({
     success: true,
-    message:
-      "StrongMarketStore payment server is running.",
+    message: "CHILVO payment server is running.",
   });
 });
 
+// Product file/image upload
 app.post(
   "/api/products/upload",
   upload.single("file"),
@@ -84,10 +89,24 @@ app.post(
       const decodedToken =
         await adminAuth.verifyIdToken(idToken);
 
-      if (!decodedToken.uid) {
+      const userSnapshot = await db
+        .collection("users")
+        .doc(decodedToken.uid)
+        .get();
+
+      if (!userSnapshot.exists) {
         return res.status(403).json({
           success: false,
-          message: "Merchant authorization required.",
+          message: "User account not found.",
+        });
+      }
+
+      const userData = userSnapshot.data();
+
+      if (userData?.merchantStatus !== "approved") {
+        return res.status(403).json({
+          success: false,
+          message: "Approved merchant account required.",
         });
       }
 
@@ -103,13 +122,14 @@ app.post(
           const stream =
             cloudinary.uploader.upload_stream(
               {
-  folder: "strongmarket/products",
-  resource_type: req.file!.mimetype.startsWith("image/")
-    ? "image"
-    : "raw",
-  type: "private",
-            },
-            (error, result) => {
+                folder: "strongmarket/products",
+                resource_type:
+                  req.file!.mimetype.startsWith("image/")
+                    ? "image"
+                    : "raw",
+                type: "private",
+              },
+              (error, result) => {
                 if (error) {
                   reject(error);
                 } else {
@@ -123,15 +143,15 @@ app.post(
       );
 
       return res.json({
-  success: true,
-  message: req.file.mimetype.startsWith("image/")
-    ? "Product image uploaded successfully."
-    : "Product file uploaded successfully.",
-  publicId: result.public_id,
-  fileName: req.file.originalname,
-  secureUrl: result.secure_url,
-  resourceType: result.resource_type,
-});
+        success: true,
+        message: req.file.mimetype.startsWith("image/")
+          ? "Product image uploaded successfully."
+          : "Product file uploaded successfully.",
+        publicId: result.public_id,
+        fileName: req.file.originalname,
+        secureUrl: result.secure_url,
+        resourceType: result.resource_type,
+      });
     } catch (error) {
       console.error(
         "Cloudinary product upload error:",
@@ -164,34 +184,11 @@ app.get(
       }
 
       const idToken = authHeader.substring(7);
+
       const decodedToken =
         await adminAuth.verifyIdToken(idToken);
-const userSnapshot = await db
-  .collection("users")
-  .doc(decodedToken.uid)
-  .get();
 
-if (!userSnapshot.exists) {
-  return res.status(403).json({
-    success: false,
-    message: "User account not found.",
-  });
-}
-
-const userData = userSnapshot.data();
-
-if (userData?.merchantStatus !== "approved") {
-  return res.status(403).json({
-    success: false,
-    message: "Approved merchant account required.",
-  });
-}
-      const allowedAdminUids = [
-        "RN5LrlclfrMHGxENa1O6rCNKK5p2",
-        "A1vw5apcWCaTWBBlw0zb16Pt5Pv2",
-      ];
-
-      if (!allowedAdminUids.includes(decodedToken.uid)) {
+      if (!ADMIN_UIDS.includes(decodedToken.uid)) {
         return res.status(403).json({
           success: false,
           message: "Admin authorization required.",
@@ -229,6 +226,7 @@ if (userData?.merchantStatus !== "approved") {
   },
 );
 
+// Approve merchant application
 app.post(
   "/api/admin/merchant-applications/:applicationId/approve",
   async (req, res) => {
@@ -243,15 +241,11 @@ app.post(
       }
 
       const idToken = authHeader.substring(7);
+
       const decodedToken =
         await adminAuth.verifyIdToken(idToken);
 
-      const allowedAdminUids = [
-        "RN5LrlclfrMHGxENa1O6rCNKK5p2",
-        "A1vw5apcWCaTWBBlw0zb16Pt5Pv2",
-      ];
-
-      if (!allowedAdminUids.includes(decodedToken.uid)) {
+      if (!ADMIN_UIDS.includes(decodedToken.uid)) {
         return res.status(403).json({
           success: false,
           message: "Admin authorization required.",
@@ -344,9 +338,9 @@ app.post(
           email,
           amount,
           currency:
-  req.body?.currency === "USD"
-    ? "USD"
-    : "NGN",
+            req.body?.currency === "USD"
+              ? "USD"
+              : "NGN",
 
           ...(reference
             ? { reference }
@@ -403,191 +397,25 @@ app.post(
   },
 );
 
-// Diagnostic: list recent Paystack transactions
-app.get("/api/paystack/transactions", async (_req, res) => {
-  try {
-    const response = await axios.get(
-      "https://api.paystack.co/transaction",
-      {
-        headers: {
-          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-        },
-        params: {
-          perPage: 10,
-        },
-      },
-    );
-
-    return res.json(response.data);
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      console.error(
-        "Paystack transaction list error:",
-        error.response?.data || error.message,
-      );
-
-      return res.status(
-        error.response?.status || 500,
-      ).json({
-        success: false,
-        paystackStatus: error.response?.status,
-        paystackResponse: error.response?.data,
-        message:
-          error.response?.data?.message ||
-          "Unable to verify Paystack transaction.",
-      });
-    }
-
-    console.error(
-      "Unexpected transaction list error:",
-      error,
-    );
-
-    return res.status(500).json({
-      success: false,
-      message:
-        "Unable to fetch Paystack transactions.",
-    });
-  }
-});
-
-// Diagnostic: fetch a Paystack transaction by ID
-app.get("/api/paystack/transaction/:id", async (req, res) => {
-  try {
-    const response = await axios.get(
-      `https://api.paystack.co/transaction/${encodeURIComponent(
-        req.params.id,
-      )}`,
-      {
-        headers: {
-          Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-        },
-      },
-    );
-
-    return res.json(response.data);
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      return res.status(
-        error.response?.status || 500,
-      ).json({
-        paystackStatus: error.response?.status,
-        paystackResponse: error.response?.data,
-      });
-    }
-
-    return res.status(500).json({
-      success: false,
-      message: "Unable to fetch transaction.",
-    });
-  }
-});
-
-// Diagnostic: fetch Paystack transaction timeline
-app.get(
-  "/api/paystack/timeline/:id_or_reference",
-  async (req, res) => {
-    try {
-      const { id_or_reference } = req.params;
-
-      const response = await axios.get(
-        `https://api.paystack.co/transaction/timeline/${encodeURIComponent(
-          id_or_reference,
-        )}`,
-        {
-          headers: {
-            Authorization:
-              `Bearer ${PAYSTACK_SECRET_KEY}`,
-          },
-        },
-      );
-
-      return res.json(response.data);
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        return res.status(
-          error.response?.status || 500,
-        ).json({
-          paystackStatus: error.response?.status,
-          paystackResponse: error.response?.data,
-        });
-      }
-
-      return res.status(500).json({
-        success: false,
-        message:
-          "Unable to fetch transaction timeline.",
-      });
-    }
-  },
-);
-
-// Verify Paystack payment
-app.get(
-  "/api/paystack/verify/:reference",
-  async (req, res) => {
-    try {
-      const { reference } = req.params;
-
-      if (!reference) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "Transaction reference is required.",
-        });
-      }
-
-      const response = await axios.get(
-        `https://api.paystack.co/transaction/verify/${encodeURIComponent(
-          reference,
-        )}`,
-        {
-          headers: {
-            Authorization:
-              `Bearer ${PAYSTACK_SECRET_KEY}`,
-          },
-        },
-      );
-
-      return res.json(response.data);
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error(
-          "Paystack verification error:",
-          error.response?.data ||
-            error.message,
-        );
-
-        return res.status(
-          error.response?.status || 500,
-        ).json({
-          success: false,
-          paystackStatus: error.response?.status,
-          paystackResponse: error.response?.data,
-          message:
-            error.response?.data?.message ||
-            "Unable to verify Paystack transaction.",
-        });
-      }
-
-      console.error(
-        "Unexpected verification error:",
-        error,
-      );
-
-      return res.status(500).json({
-        success: false,
-        message:
-          "Unable to verify payment.",
-      });
-    }
-  },
-);
-
+// Confirm Paystack payment
 app.post(
   "/api/paystack/confirm",
   async (req, res) => {
     try {
+      const authHeader = req.headers.authorization;
+
+      if (!authHeader?.startsWith("Bearer ")) {
+        return res.status(401).json({
+          success: false,
+          message: "Authentication required.",
+        });
+      }
+
+      const idToken = authHeader.substring(7);
+
+      const decodedToken =
+        await adminAuth.verifyIdToken(idToken);
+
       const { reference } = req.body || {};
 
       if (!reference) {
@@ -598,7 +426,51 @@ app.post(
         });
       }
 
-      // 1. Verify the payment with Paystack
+      // 1. Find the order
+      const orderRef = db
+        .collection("orders")
+        .doc(reference);
+
+      const orderSnapshot =
+        await orderRef.get();
+
+      if (!orderSnapshot.exists) {
+        return res.status(404).json({
+          success: false,
+          message: "Order not found.",
+        });
+      }
+
+      const order = orderSnapshot.data();
+
+      if (!order) {
+        return res.status(404).json({
+          success: false,
+          message: "Order data not found.",
+        });
+      }
+
+      // 2. Verify order ownership
+      if (order.customerId !== decodedToken.uid) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "You are not authorized to confirm this order.",
+        });
+      }
+
+      const items = Array.isArray(order.items)
+        ? order.items
+        : [];
+
+      if (items.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Order contains no products.",
+        });
+      }
+
+      // 3. Verify the payment with Paystack
       const response = await axios.get(
         `https://api.paystack.co/transaction/verify/${encodeURIComponent(
           reference,
@@ -625,115 +497,95 @@ app.post(
         });
       }
 
-      // 2. Find the order using the payment reference
-      const orderRef = db
-        .collection("orders")
-        .doc(reference);
+      // 4. Recalculate the expected amount
+      // using current Firestore product prices
+      let expectedAmount = 0;
 
-      const orderSnapshot =
-        await orderRef.get();
+      for (const item of items) {
+        if (
+          typeof item.productId !== "string" ||
+          !Number.isInteger(item.quantity) ||
+          item.quantity <= 0
+        ) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid order items.",
+          });
+        }
 
-      if (!orderSnapshot.exists) {
-        return res.status(404).json({
+        const productSnapshot = await db
+          .collection("products")
+          .doc(item.productId)
+          .get();
+
+        if (!productSnapshot.exists) {
+          return res.status(400).json({
+            success: false,
+            message:
+              "A product in this order no longer exists.",
+          });
+        }
+
+        const product =
+          productSnapshot.data();
+
+        if (
+          typeof product?.price !== "number" ||
+          product.price < 0
+        ) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid product price.",
+          });
+        }
+
+        expectedAmount +=
+          product.price * item.quantity;
+      }
+
+      const orderCurrency =
+        order.currency === "USD"
+          ? "USD"
+          : "NGN";
+
+      const USD_RATE = 1500;
+
+      const expectedPaymentAmount =
+        orderCurrency === "USD"
+          ? Math.round(
+              (expectedAmount / USD_RATE) * 100,
+            )
+          : Math.round(
+              expectedAmount * 100,
+            );
+
+      // 5. Verify currency and amount
+      if (
+        transaction.currency !== orderCurrency ||
+        transaction.amount !== expectedPaymentAmount
+      ) {
+        console.error(
+          "Payment amount mismatch:",
+          {
+            reference,
+            expectedPaymentAmount,
+            actualAmount:
+              transaction.amount,
+            expectedCurrency:
+              orderCurrency,
+            actualCurrency:
+              transaction.currency,
+          },
+        );
+
+        return res.status(400).json({
           success: false,
-          message: "Order not found.",
+          message:
+            "Payment amount does not match the order.",
         });
       }
 
-      const order = orderSnapshot.data();
-
-if (!order) {
-  return res.status(404).json({
-    success: false,
-    message: "Order data not found.",
-  });
-}
-
-const items = Array.isArray(order.items)
-  ? order.items
-  : [];
-
-if (items.length === 0) {
-  return res.status(400).json({
-    success: false,
-    message: "Order contains no products.",
-  });
-}
-
-let expectedAmount = 0;
-
-for (const item of items) {
-  if (
-    typeof item.productId !== "string" ||
-    !Number.isInteger(item.quantity) ||
-    item.quantity <= 0
-  ) {
-    return res.status(400).json({
-      success: false,
-      message: "Invalid order items.",
-    });
-  }
-
-  const productSnapshot = await db
-    .collection("products")
-    .doc(item.productId)
-    .get();
-
-  if (!productSnapshot.exists) {
-    return res.status(400).json({
-      success: false,
-      message: "A product in this order no longer exists.",
-    });
-  }
-
-  const product = productSnapshot.data();
-
-  if (
-    typeof product?.price !== "number" ||
-    product.price < 0
-  ) {
-    return res.status(400).json({
-      success: false,
-      message: "Invalid product price.",
-    });
-  }
-
-  expectedAmount +=
-    product.price * item.quantity;
-}
-      const orderCurrency =
-  order.currency === "USD" ? "USD" : "NGN";
-
-const USD_RATE = 1500;
-
-const expectedPaymentAmount =
-  orderCurrency === "USD"
-    ? Math.round((expectedAmount / USD_RATE) * 100)
-    : Math.round(expectedAmount * 100);
-
-if (
-  transaction.currency !== orderCurrency ||
-  transaction.amount !== expectedPaymentAmount
-) {
-  console.error(
-    "Payment amount mismatch:",
-    {
-      reference,
-      expectedPaymentAmount,
-      actualAmount: transaction.amount,
-      expectedCurrency: orderCurrency,
-      actualCurrency: transaction.currency,
-    },
-  );
-
-  return res.status(400).json({
-    success: false,
-    message:
-      "Payment amount does not match the order.",
-  });
-}
-     
-      // 3. Mark the order as paid using Firebase Admin
+      // 6. Mark order as paid
       await orderRef.update({
         status: "paid",
         paymentReference: reference,
@@ -779,6 +631,7 @@ if (
   },
 );
 
+// Secure digital product download
 app.get(
   "/api/products/:productId/download",
   async (req, res) => {
@@ -793,10 +646,12 @@ app.get(
       }
 
       const idToken = authHeader.substring(7);
+
       const decodedToken =
         await adminAuth.verifyIdToken(idToken);
 
       const { productId } = req.params;
+
       const orderId =
         typeof req.query.orderId === "string"
           ? req.query.orderId
@@ -809,8 +664,11 @@ app.get(
         });
       }
 
-      const orderRef = db.collection("orders").doc(orderId);
-      const orderSnapshot = await orderRef.get();
+      const orderRef =
+        db.collection("orders").doc(orderId);
+
+      const orderSnapshot =
+        await orderRef.get();
 
       if (!orderSnapshot.exists) {
         return res.status(404).json({
@@ -819,7 +677,8 @@ app.get(
         });
       }
 
-      const order = orderSnapshot.data();
+      const order =
+        orderSnapshot.data();
 
       if (!order) {
         return res.status(404).json({
@@ -844,12 +703,13 @@ app.get(
         });
       }
 
-      const purchasedItem = Array.isArray(order.items)
-        ? order.items.find(
-            (item: { productId?: string }) =>
-              item.productId === productId,
-          )
-        : null;
+      const purchasedItem =
+        Array.isArray(order.items)
+          ? order.items.find(
+              (item: { productId?: string }) =>
+                item.productId === productId,
+            )
+          : null;
 
       if (!purchasedItem) {
         return res.status(403).json({
@@ -859,37 +719,50 @@ app.get(
         });
       }
 
-     const productSnapshot = await db
-  .collection("products")
-  .doc(productId)
-  .get();
+      const productSnapshot =
+        await db
+          .collection("products")
+          .doc(productId)
+          .get();
 
-if (!productSnapshot.exists) {
-  return res.status(404).json({
-    success: false,
-    message: "Product not found.",
-  });
-}
+      if (!productSnapshot.exists) {
+        return res.status(404).json({
+          success: false,
+          message: "Product not found.",
+        });
+      }
 
-const product = productSnapshot.data();
+      const product =
+        productSnapshot.data();
 
-const cloudinaryPublicId =
-  typeof product?.cloudinaryPublicId === "string"
-    ? product.cloudinaryPublicId
-    : "";
+      const cloudinaryPublicId =
+        typeof product?.cloudinaryPublicId === "string"
+          ? product.cloudinaryPublicId
+          : "";
 
-if (!cloudinaryPublicId) {
-  return res.status(404).json({
-    success: false,
-    message:
-      "This product does not have a downloadable file yet.",
-  });
-}
+      if (!cloudinaryPublicId) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "This product does not have a downloadable file yet.",
+        });
+      }
+
+      const fileName =
+        typeof product?.fileName === "string"
+          ? product.fileName
+          : "";
+
+      const fileExtension =
+        path
+          .extname(fileName)
+          .replace(".", "")
+          .toLowerCase() || "pdf";
 
       const downloadUrl =
         cloudinary.utils.private_download_url(
           cloudinaryPublicId,
-          "pdf",
+          fileExtension,
           {
             resource_type: "raw",
             type: "private",
@@ -929,7 +802,7 @@ app.listen(
   "0.0.0.0",
   () => {
     console.log(
-      `StrongMarketStore payment server running on port ${PORT}`,
+      `CHILVO payment server running on port ${PORT}`,
     );
   },
 );
