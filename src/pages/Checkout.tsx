@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
-import { createOrderItems } from "../service";
+import { createOrderItems } from "../types/order";
 import { startPaystackPayment } from "../paystackService";
 import {
   createFirestoreOrder,
