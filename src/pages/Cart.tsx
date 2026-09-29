@@ -32,6 +32,25 @@ export default function Cart() {
     );
   }
 
+  const formatCurrency = (
+    amount: number,
+    currency: string,
+  ) => {
+    if (currency === "USD") {
+      return `$${amount.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`;
+    }
+
+    return `₦${amount.toLocaleString("en-NG", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  };
+
+  const cartCurrency = items[0].product.currency || "NGN";
+
   return (
     <main className="cart-page">
       <div className="cart-header">
@@ -63,11 +82,18 @@ export default function Cart() {
               key={item.product.id}
             >
               <div className="cart-item-image">
-                <span>
-                  {item.product.category
-                    .replace("-", " ")
-                    .toUpperCase()}
-                </span>
+                {item.product.image ? (
+                  <img
+                    src={item.product.image}
+                    alt={item.product.name}
+                  />
+                ) : (
+                  <span>
+                    {item.product.category
+                      .replace("-", " ")
+                      .toUpperCase()}
+                  </span>
+                )}
               </div>
 
               <div className="cart-item-info">
@@ -84,7 +110,10 @@ export default function Cart() {
                 </p>
 
                 <strong>
-                  ₦{item.product.price.toFixed(2)}
+                  {formatCurrency(
+                    item.product.price,
+                    item.product.currency,
+                  )}
                 </strong>
               </div>
 
@@ -143,7 +172,12 @@ export default function Cart() {
 
           <div className="summary-row">
             <span>Subtotal</span>
-            <strong>₦{subtotal.toFixed(2)}</strong>
+            <strong>
+              {formatCurrency(
+                subtotal,
+                cartCurrency,
+              )}
+            </strong>
           </div>
 
           <div className="summary-row">
@@ -153,7 +187,12 @@ export default function Cart() {
 
           <div className="summary-total">
             <span>Total</span>
-            <strong>₦{subtotal.toFixed(2)}</strong>
+            <strong>
+              {formatCurrency(
+                subtotal,
+                cartCurrency,
+              )}
+            </strong>
           </div>
 
           <Link
@@ -163,7 +202,10 @@ export default function Cart() {
             Proceed to Checkout
           </Link>
 
-          <Link className="continue-shopping" to="/shop">
+          <Link
+            className="continue-shopping"
+            to="/shop"
+          >
             Continue Shopping
           </Link>
         </aside>
