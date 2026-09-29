@@ -154,21 +154,34 @@ export default function MerchantProducts() {
       {products.length > 0 && (
         <section>
           {products.map((product) => (
-  <article key={product.id}>
-    {product.image && (
-      <img
-        src={product.image}
-        alt={product.name}
-        width="200"
-      />
-    )}
+            <article key={product.id}>
+              {product.image && (
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  width="200"
+                />
+              )}
 
-    <h2>{product.name}</h2>
-
-              <p>{product.shortDescription}</p>
+              <h2>{product.name}</h2>
 
               <p>
-                {product.currency} {product.price}
+                {product.shortDescription}
+              </p>
+
+              <p>
+                {product.currency === "USD"
+                  ? "$"
+                  : "₦"}
+                {product.price.toLocaleString(
+                  product.currency === "USD"
+                    ? "en-US"
+                    : "en-NG",
+                  {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  },
+                )}
               </p>
 
               <p>
