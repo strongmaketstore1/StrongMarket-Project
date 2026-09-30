@@ -109,17 +109,22 @@ export default function OrderSuccess() {
         const result = await response.json();
 
         if (
-          !response.ok ||
-          result?.success !== true
-        ) {
-          console.error(
-            "Payment confirmation failed:",
-            result,
-          );
+  !response.ok ||
+  result?.success !== true
+) {
+  console.error(
+    "Payment confirmation failed:",
+    result,
+  );
 
-          setStatus("failed");
-          return;
-        }
+  alert(
+    result?.message ||
+      "Payment confirmation failed. Please try again.",
+  );
+
+  setStatus("failed");
+  return;
+}
 
         const paidOrder =
           await getFirestoreOrder(reference);
