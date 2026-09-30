@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import { useCart } from "../context/CartContext";
@@ -16,6 +16,8 @@ export default function OrderSuccess() {
 
   const [order, setOrder] = useState<Order | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
+
+  const confirmationStarted = useRef(false);
 
   const reference =
     searchParams.get("reference") ||
@@ -71,17 +73,24 @@ export default function OrderSuccess() {
   }
 
   useEffect(() => {
+    if (confirmationStarted.current) {
+      return;
+    }
+
+    confirmationStarted.current = true;
+
     let cancelled = false;
 
     async function confirmPayment() {
       if (!reference) {
-        setErrorMessage("No Paystack payment reference was found.");
+        setErrorMessage(
+          "No Paystack payment reference was found.",
+        );
         setStatus("failed");
         return;
       }
 
       try {
-        // Wait for Firebase authentication to restore.
         const user = await new Promise<
           typeof auth.currentUser
         >((resolve) => {
@@ -108,7 +117,7 @@ export default function OrderSuccess() {
           return;
         }
 
-        const idToken = await user.getIdToken(true);
+        const idToken = await user.getIdToken();
 
         const response = await fetch(
           "https://strongmarket-payment-server.onrender.com/api/paystack/confirm",
@@ -193,6 +202,7 @@ export default function OrderSuccess() {
     return (
       <main className="order-success-page">
         <h1>Confirming Payment...</h1>
+
         <p>
           Please wait while CHILVO verifies your payment.
         </p>
