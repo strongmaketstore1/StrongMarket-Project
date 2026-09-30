@@ -14,8 +14,8 @@ export default function OrderSuccess() {
     "checking" | "paid" | "failed"
   >("checking");
 
-  const [order, setOrder] =
-    useState<Order | null>(null);
+  const [order, setOrder] = useState<Order | null>(null);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const reference =
     searchParams.get("reference") ||
@@ -62,10 +62,7 @@ export default function OrderSuccess() {
         "noopener,noreferrer",
       );
     } catch (error) {
-      console.error(
-        "Product download error:",
-        error,
-      );
+      console.error("Product download error:", error);
 
       alert(
         "Unable to download this product. Please try again.",
@@ -74,23 +71,44 @@ export default function OrderSuccess() {
   }
 
   useEffect(() => {
+    let cancelled = false;
+
     async function confirmPayment() {
       if (!reference) {
-        console.error("No Paystack reference found.");
+        setErrorMessage("No Paystack payment reference was found.");
         setStatus("failed");
         return;
       }
 
       try {
-        const user = auth.currentUser;
+        // Wait for Firebase authentication to restore.
+        const user = await new Promise<
+          typeof auth.currentUser
+        >((resolve) => {
+          if (auth.currentUser) {
+            resolve(auth.currentUser);
+            return;
+          }
+
+          const unsubscribe = auth.onAuthStateChanged(
+            (currentUser) => {
+              unsubscribe();
+              resolve(currentUser);
+            },
+          );
+        });
+
+        if (cancelled) return;
 
         if (!user) {
-          console.error("No authenticated user found.");
+          setErrorMessage(
+            "Your CHILVO login session could not be restored. Please log in and try again.",
+          );
           setStatus("failed");
           return;
         }
 
-        const idToken = await user.getIdToken();
+        const idToken = await user.getIdToken(true);
 
         const response = await fetch(
           "https://strongmarket-payment-server.onrender.com/api/paystack/confirm",
@@ -109,35 +127,35 @@ export default function OrderSuccess() {
         const result = await response.json();
 
         if (
-  !response.ok ||
-  result?.success !== true
-) {
-  console.error(
-    "Payment confirmation failed:",
-    result,
-  );
-
-  alert(
-    result?.message ||
-      "Payment confirmation failed. Please try again.",
-  );
-
-  setStatus("failed");
-  return;
-}
-
-        const paidOrder =
-          await getFirestoreOrder(reference);
-
-        if (!paidOrder) {
+          !response.ok ||
+          result?.success !== true
+        ) {
           console.error(
-            "Paid order could not be found:",
-            reference,
+            "Payment confirmation failed:",
+            result,
+          );
+
+          setErrorMessage(
+            result?.message ||
+              "Payment confirmation failed.",
           );
 
           setStatus("failed");
           return;
         }
+
+        const paidOrder =
+          await getFirestoreOrder(reference);
+
+        if (!paidOrder) {
+          setErrorMessage(
+            "Payment was confirmed, but the order could not be loaded.",
+          );
+          setStatus("failed");
+          return;
+        }
+
+        if (cancelled) return;
 
         setOrder(paidOrder);
 
@@ -154,30 +172,30 @@ export default function OrderSuccess() {
           error,
         );
 
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : "Unable to contact the payment server.",
+        );
+
         setStatus("failed");
       }
     }
 
     confirmPayment();
+
+    return () => {
+      cancelled = true;
+    };
   }, [reference, clearCart]);
 
   if (status === "checking") {
     return (
       <main className="order-success-page">
-        <div className="order-success">
-          <p className="eyebrow">
-            VERIFYING PAYMENT
-          </p>
-
-          <h1>
-            Confirming your payment...
-          </h1>
-
-          <p>
-            Please wait while we confirm your
-            Paystack transaction.
-          </p>
-        </div>
+        <h1>Confirming Payment...</h1>
+        <p>
+          Please wait while CHILVO verifies your payment.
+        </p>
       </main>
     );
   }
@@ -185,90 +203,49 @@ export default function OrderSuccess() {
   if (status === "failed") {
     return (
       <main className="order-success-page">
-        <div className="order-success">
-          <div className="success-icon">!</div>
+        <h1>PAYMENT NOT CONFIRMED</h1>
 
-          <p className="eyebrow">
-            PAYMENT NOT CONFIRMED
-          </p>
+        <p>
+          {errorMessage ||
+            "We couldn't confirm your payment."}
+        </p>
 
-          <h1>
-            We couldn't confirm your payment.
-          </h1>
+        <p>
+          Your order has not been marked as paid.
+        </p>
 
-          <p>
-            Your order has not been marked as
-            paid. Please return to checkout and
-            try again.
-          </p>
-
-          <div className="success-actions">
-            <Link
-              className="primary-btn"
-              to="/checkout"
-            >
-              Return to Checkout
-            </Link>
-
-            <Link
-              className="secondary-btn"
-              to="/shop"
-            >
-              Continue Shopping
-            </Link>
-          </div>
-        </div>
+        <Link to="/checkout">
+          Return to Checkout
+        </Link>
       </main>
     );
   }
 
   return (
     <main className="order-success-page">
-      <div className="order-success">
-        <div className="success-icon">✓</div>
+      <h1>Payment Successful 🎉</h1>
 
-        <p className="eyebrow">
-          PAYMENT SUCCESSFUL
-        </p>
+      <p>
+        Your payment has been verified and your order is
+        now marked as paid.
+      </p>
 
-        <h1>
-          Your order has been paid.
-        </h1>
-
-        <p>
-          Your Paystack payment was successfully
-          verified and your order has been marked
-          as paid.
-        </p>
-
-        <div className="success-status">
-          <strong>Payment status</strong>
-          <span>Paid</span>
-        </div>
-
-        <div className="purchased-products">
+      {order && (
+        <section>
           <h2>Your Downloads</h2>
 
-          {order?.items.map((item) => (
+          {order.items.map((item) => (
             <div
-              className="purchased-product"
               key={item.productId}
+              className="download-item"
             >
-              <div>
-                <strong>{item.productName}</strong>
-
-                <span>
-                  Digital product — ready to download
-                </span>
-              </div>
+              <h3>{item.productName}</h3>
 
               <button
-                className="primary-btn"
-                type="button"
+                disabled={!item.cloudinaryPublicId}
                 onClick={() =>
                   downloadProduct(item.productId)
                 }
-                disabled={!item.cloudinaryPublicId}
               >
                 {item.cloudinaryPublicId
                   ? "Download Product"
@@ -276,24 +253,12 @@ export default function OrderSuccess() {
               </button>
             </div>
           ))}
-        </div>
+        </section>
+      )}
 
-        <div className="success-actions">
-          <Link
-            className="primary-btn"
-            to="/shop"
-          >
-            Continue Shopping
-          </Link>
-
-          <Link
-            className="secondary-btn"
-            to="/"
-          >
-            Return Home
-          </Link>
-        </div>
-      </div>
+      <Link to="/shop">
+        Continue Shopping
+      </Link>
     </main>
   );
 }
