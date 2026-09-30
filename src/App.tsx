@@ -98,42 +98,52 @@ function Home() {
         </div>
 
         <div className="category-grid">
+          <Link
+            className="category-card"
+            to="/shop?category=ebooks"
+          >
+            <span>01</span>
+            <h3>Ebooks & Guides</h3>
+            <p>
+              Practical knowledge for personal and professional growth.
+            </p>
+          </Link>
 
-  <Link className="category-card" to="/shop?category=ebooks">
-    <span>01</span>
-    <h3>Ebooks & Guides</h3>
-    <p>
-      Practical knowledge for personal and professional growth.
-    </p>
-  </Link>
+          <Link
+            className="category-card"
+            to="/shop?category=business"
+          >
+            <span>02</span>
+            <h3>Business</h3>
+            <p>
+              Resources designed to help businesses move faster.
+            </p>
+          </Link>
 
-  <Link className="category-card" to="/shop?category=business">
-    <span>02</span>
-    <h3>Business</h3>
-    <p>
-      Resources designed to help businesses move faster.
-    </p>
-  </Link>
+          <Link
+            className="category-card"
+            to="/shop?category=templates"
+          >
+            <span>03</span>
+            <h3>Templates</h3>
+            <p>
+              Ready-to-use templates for work, content, and projects.
+            </p>
+          </Link>
 
-  <Link className="category-card" to="/shop?category=templates">
-    <span>03</span>
-    <h3>Templates</h3>
-    <p>
-      Ready-to-use templates for work, content, and projects.
-    </p>
-  </Link>
+          <Link
+            className="category-card"
+            to="/shop?category=ai-productivity"
+          >
+            <span>04</span>
+            <h3>AI & Productivity</h3>
+            <p>
+              Digital tools and resources for smarter workflows.
+            </p>
+          </Link>
+        </div>
 
-  <Link className="category-card" to="/shop?category=ai-productivity">
-    <span>04</span>
-    <h3>AI & Productivity</h3>
-    <p>
-      Digital tools and resources for smarter workflows.
-    </p>
-  </Link>
-
-</div>
-
-  <div className="product-grid">
+        <div className="product-grid">
           {featuredProducts.map((product) => (
             <ProductCard
               key={product.id}
@@ -158,36 +168,44 @@ function CartButton() {
 
 function AppContent() {
   const [user, setUser] = useState(auth.currentUser);
-const [merchantStatus, setMerchantStatus] = useState<string>("none");
+  const [merchantStatus, setMerchantStatus] =
+    useState<string>("none");
+
   useEffect(() => {
-  const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-    setUser(currentUser);
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      async (currentUser) => {
+        setUser(currentUser);
 
-    if (!currentUser) {
-      setMerchantStatus("none");
-      return;
-    }
+        if (!currentUser) {
+          setMerchantStatus("none");
+          return;
+        }
 
-    try {
-      const userSnapshot = await getDoc(
-        doc(db, "users", currentUser.uid)
-      );
+        try {
+          const userSnapshot = await getDoc(
+            doc(db, "users", currentUser.uid)
+          );
 
-      if (userSnapshot.exists()) {
-        setMerchantStatus(
-          userSnapshot.data().merchantStatus ?? "none"
-        );
-      } else {
-        setMerchantStatus("none");
+          if (userSnapshot.exists()) {
+            setMerchantStatus(
+              userSnapshot.data().merchantStatus ?? "none"
+            );
+          } else {
+            setMerchantStatus("none");
+          }
+        } catch (error) {
+          console.error(
+            "Unable to load merchant status:",
+            error
+          );
+          setMerchantStatus("none");
+        }
       }
-    } catch (error) {
-      console.error("Unable to load merchant status:", error);
-      setMerchantStatus("none");
-    }
-  });
+    );
 
-  return unsubscribe;
-}, []);
+    return unsubscribe;
+  }, []);
 
   async function handleLogout() {
     try {
@@ -225,7 +243,10 @@ const [merchantStatus, setMerchantStatus] = useState<string>("none");
       <div className="app">
         <header className="navbar">
           <Link className="logo" to="/">
-            CHILVO
+            <img
+              src="/StrongMarket-Project/chilvo-logo.png"
+              alt="CHILVO"
+            />
           </Link>
 
           <nav>
@@ -245,11 +266,11 @@ const [merchantStatus, setMerchantStatus] = useState<string>("none");
 
             {user ? (
               <>
-               {merchantStatus === "approved" && (
-  <Link to="/merchant/dashboard">
-    Merchant Dashboard
-  </Link>
-)}
+                {merchantStatus === "approved" && (
+                  <Link to="/merchant/dashboard">
+                    Merchant Dashboard
+                  </Link>
+                )}
 
                 <button
                   type="button"
