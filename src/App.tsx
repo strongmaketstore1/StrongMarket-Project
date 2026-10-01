@@ -244,7 +244,7 @@ function AppContent() {
         <header className="navbar">
           <Link className="logo" to="/">
             <img
-              src="/StrongMarket-Project/chilvo-logo.png"
+              src="/StrongMarket-Project/chilvo-logo-1.png"
               alt="CHILVO"
             />
           </Link>
