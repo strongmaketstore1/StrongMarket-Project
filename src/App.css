@@ -54,10 +54,16 @@ a {
 }
 
 .logo {
-  font-size: 1.35rem;
-  font-weight: 800;
-  letter-spacing: -0.04em;
+  display: flex;
+  align-items: center;
   white-space: nowrap;
+}
+
+.logo img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  display: block;
 }
 
 .logo span {
