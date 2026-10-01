@@ -397,14 +397,10 @@ function AppContent() {
           />
         </Routes>
 
-        <footer>
-          <div>
-            <Link
-              className="logo"
-              to="/"
-            >
-              CHILVO
-            </Link>
+        <img
+  src="/StrongMarket-Project/chilvo-logo-1.png"
+  alt="CHILVO"
+/>
 
             <p>
               Premium digital products. Simple.
