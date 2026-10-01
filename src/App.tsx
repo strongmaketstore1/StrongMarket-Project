@@ -397,21 +397,28 @@ function AppContent() {
           />
         </Routes>
 
-        <img
-  src="/StrongMarket-Project/chilvo-logo-1.png"
-  alt="CHILVO"
-/>
+        <footer>
+  <div>
+    <Link
+      className="logo"
+      to="/"
+    >
+      <img
+        src="/StrongMarket-Project/chilvo-logo-1.png"
+        alt="CHILVO"
+      />
+    </Link>
 
-            <p>
-              Premium digital products. Simple.
-              Accessible. Instant.
-            </p>
-          </div>
+    <p>
+      Premium digital products. Simple.
+      Accessible. Instant.
+    </p>
+  </div>
 
-          <p>
-            © 2026 CHILVO. All rights reserved.
-          </p>
-        </footer>
+  <p>
+    © 2026 CHILVO. All rights reserved.
+  </p>
+</footer>
       </div>
     </BrowserRouter>
   );
