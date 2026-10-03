@@ -28,9 +28,19 @@ export default function ProductDetails() {
         return;
       }
 
-      // First check Firebase merchant products.
-      // This ensures downloadable products keep
-      // their cloudinaryPublicId.
+      // First check the existing platform products.
+      const staticProduct = products.find(
+        (item) => item.slug === slug,
+      );
+
+      if (staticProduct) {
+        setProduct(staticProduct);
+        setLoading(false);
+        return;
+      }
+
+      // If it is not a platform product,
+      // look for a merchant product in Firestore.
       try {
         const productsQuery = query(
           collection(db, "products"),
@@ -48,28 +58,15 @@ export default function ProductDetails() {
             id: productDoc.id,
             ...productDoc.data(),
           } as Product);
-
-          setLoading(false);
-          return;
         }
       } catch (error) {
         console.error(
-          "Unable to load merchant product:",
+          "Unable to load product:",
           error,
         );
+      } finally {
+        setLoading(false);
       }
-
-      // If it is not a Firebase product,
-      // fall back to the existing platform products.
-      const staticProduct = products.find(
-        (item) => item.slug === slug,
-      );
-
-      if (staticProduct) {
-        setProduct(staticProduct);
-      }
-
-      setLoading(false);
     }
 
     loadProduct();
