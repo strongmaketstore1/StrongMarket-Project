@@ -1,20 +1,20 @@
 import {
   createUserWithEmailAndPassword,
+  sendEmailVerification,
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
   deleteUser,
 } from "firebase/auth";
 
-import { auth } from "./firebase";
+import { auth, db } from "./firebase";
+
 import {
   doc,
   getDoc,
   setDoc,
   deleteDoc,
 } from "firebase/firestore";
-
-import { db } from "./firebase";
 
 export async function registerUser(
   email: string,
@@ -33,6 +33,11 @@ export async function registerUser(
     {
       displayName,
     },
+  );
+
+  // Send email verification immediately after registration.
+  await sendEmailVerification(
+    credential.user,
   );
 
   await setDoc(
@@ -86,7 +91,9 @@ export async function deleteAccount() {
   const user = auth.currentUser;
 
   if (!user) {
-    throw new Error("No user is currently signed in.");
+    throw new Error(
+      "No user is currently signed in.",
+    );
   }
 
   await deleteDoc(
