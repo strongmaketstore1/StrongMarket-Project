@@ -7,7 +7,6 @@ import {
   where,
 } from "firebase/firestore";
 
-import { products } from "../data/products";
 import { useCart } from "../context/CartContext";
 import { db } from "../firebase";
 import type { Product } from "../types/product";
@@ -28,19 +27,6 @@ export default function ProductDetails() {
         return;
       }
 
-      // First check the existing platform products.
-      const staticProduct = products.find(
-        (item) => item.slug === slug,
-      );
-
-      if (staticProduct) {
-        setProduct(staticProduct);
-        setLoading(false);
-        return;
-      }
-
-      // If it is not a platform product,
-      // look for a merchant product in Firestore.
       try {
         const productsQuery = query(
           collection(db, "products"),
@@ -198,10 +184,4 @@ export default function ProductDetails() {
       </div>
 
       <div className="product-details-description">
-        <h2>About this product</h2>
-
-        <p>{product.description}</p>
-      </div>
-    </main>
-  );
-}
+        <
