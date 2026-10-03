@@ -62,10 +62,10 @@ export default function ProductCard({
           </div>
 
           <Link
-            to={`/product/${product.slug}`}
-          >
-            View Product
-          </Link>
+  to={`/product/${product.id}`}
+>
+  View Product
+</Link>
         </div>
       </div>
     </article>
