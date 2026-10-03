@@ -327,9 +327,9 @@ function AppContent() {
           />
 
           <Route
-            path="/product/:slug"
-            element={<ProductDetails />}
-          />
+  path="/product/:productId"
+  element={<ProductDetails />}
+/>
 
           <Route
             path="/cart"
