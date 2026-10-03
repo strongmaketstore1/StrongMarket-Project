@@ -38,8 +38,44 @@ const firebaseApp = getApps().length
 const db = getFirestore(firebaseApp);
 const adminAuth = getAuth(firebaseApp);
 
+/**
+ * Resolve a product using either:
+ * 1. Its Firestore document ID, or
+ * 2. Its product slug.
+ *
+ * This keeps older orders and newer Firebase products
+ * compatible with the same backend.
+ */
+async function getProductByReference(
+  productReference: string,
+) {
+  // First try the Firestore document ID.
+  const directSnapshot = await db
+    .collection("products")
+    .doc(productReference)
+    .get();
+
+  if (directSnapshot.exists) {
+    return directSnapshot;
+  }
+
+  // If no document exists with that ID,
+  // try the product slug.
+  const slugSnapshot = await db
+    .collection("products")
+    .where("slug", "==", productReference)
+    .limit(1)
+    .get();
+
+  if (!slugSnapshot.empty) {
+    return slugSnapshot.docs[0];
+  }
+
+  return null;
+}
+
 const ADMIN_UIDS = [
-  "RN5LrlclfrMHGxENa1O6rCNKK5p2",
+  "RN5LrlclfrMHgENa1O6rCNKK5p2",
   "A1vw5apcWCaTWBBlw0zb16Pt5Pv2",
 ];
 
@@ -106,14 +142,16 @@ app.post(
       if (userData?.merchantStatus !== "approved") {
         return res.status(403).json({
           success: false,
-          message: "Approved merchant account required.",
+          message:
+            "Approved merchant account required.",
         });
       }
 
       if (!req.file) {
         return res.status(400).json({
           success: false,
-          message: "Please select a digital product file.",
+          message:
+            "Please select a digital product file.",
         });
       }
 
@@ -264,7 +302,8 @@ app.post(
       if (!applicationSnapshot.exists) {
         return res.status(404).json({
           success: false,
-          message: "Merchant application not found.",
+          message:
+            "Merchant application not found.",
         });
       }
 
@@ -451,7 +490,10 @@ app.post(
       }
 
       // 2. Verify order ownership
-      if (order.customerId !== decodedToken.uid) {
+      if (
+        order.customerId !==
+        decodedToken.uid
+      ) {
         return res.status(403).json({
           success: false,
           message:
@@ -466,7 +508,8 @@ app.post(
       if (items.length === 0) {
         return res.status(400).json({
           success: false,
-          message: "Order contains no products.",
+          message:
+            "Order contains no products.",
         });
       }
 
@@ -498,8 +541,13 @@ app.post(
       }
 
       // 4. Recalculate the expected amount
-      // using current Firestore product prices
+      // using the actual Firestore product.
+      //
+      // The product may be referenced by either
+      // a Firestore document ID or a legacy slug.
       let expectedAmount = 0;
+
+      const resolvedItems = [];
 
       for (const item of items) {
         if (
@@ -509,20 +557,24 @@ app.post(
         ) {
           return res.status(400).json({
             success: false,
-            message: "Invalid order items.",
+            message:
+              "Invalid order items.",
           });
         }
 
-        const productSnapshot = await db
-          .collection("products")
-          .doc(item.productId)
-          .get();
+        const productSnapshot =
+          await getProductByReference(
+            item.productId,
+          );
 
-        if (!productSnapshot.exists) {
+        if (
+          !productSnapshot ||
+          !productSnapshot.exists
+        ) {
           return res.status(400).json({
             success: false,
             message:
-              "A product in this order no longer exists.",
+              "A product in this order could not be found.",
           });
         }
 
@@ -535,12 +587,28 @@ app.post(
         ) {
           return res.status(400).json({
             success: false,
-            message: "Invalid product price.",
+            message:
+              "Invalid product price.",
           });
         }
 
         expectedAmount +=
           product.price * item.quantity;
+
+        // Preserve the original order item while
+        // adding the actual downloadable file ID.
+        resolvedItems.push({
+          ...item,
+
+          ...(typeof product?.cloudinaryPublicId ===
+            "string" &&
+          product.cloudinaryPublicId
+            ? {
+                cloudinaryPublicId:
+                  product.cloudinaryPublicId,
+              }
+            : {}),
+        });
       }
 
       const orderCurrency =
@@ -561,8 +629,10 @@ app.post(
 
       // 5. Verify currency and amount
       if (
-        transaction.currency !== orderCurrency ||
-        transaction.amount !== expectedPaymentAmount
+        transaction.currency !==
+          orderCurrency ||
+        transaction.amount !==
+          expectedPaymentAmount
       ) {
         console.error(
           "Payment amount mismatch:",
@@ -585,8 +655,13 @@ app.post(
         });
       }
 
-      // 6. Mark order as paid
+      // 6. Mark order as paid.
+      //
+      // Also save the resolved download information
+      // so OrderSuccess does not have to guess whether
+      // a product has a downloadable file.
       await orderRef.update({
+        items: resolvedItems,
         status: "paid",
         paymentReference: reference,
         paidAt: new Date().toISOString(),
@@ -641,7 +716,8 @@ app.get(
       if (!authHeader?.startsWith("Bearer ")) {
         return res.status(401).json({
           success: false,
-          message: "Authentication required.",
+          message:
+            "Authentication required.",
         });
       }
 
@@ -660,7 +736,8 @@ app.get(
       if (!orderId) {
         return res.status(400).json({
           success: false,
-          message: "Order ID is required.",
+          message:
+            "Order ID is required.",
         });
       }
 
@@ -687,7 +764,12 @@ app.get(
         });
       }
 
-      if (order.customerId !== decodedToken.uid) {
+      // Verify that this order belongs to the
+      // authenticated customer.
+      if (
+        order.customerId !==
+        decodedToken.uid
+      ) {
         return res.status(403).json({
           success: false,
           message:
@@ -695,6 +777,7 @@ app.get(
         });
       }
 
+      // Only paid orders can download products.
       if (order.status !== "paid") {
         return res.status(403).json({
           success: false,
@@ -703,10 +786,14 @@ app.get(
         });
       }
 
+      // Verify that the requested product is
+      // actually part of this order.
       const purchasedItem =
         Array.isArray(order.items)
           ? order.items.find(
-              (item: { productId?: string }) =>
+              (item: {
+                productId?: string;
+              }) =>
                 item.productId === productId,
             )
           : null;
@@ -719,16 +806,21 @@ app.get(
         });
       }
 
+      // Resolve the product using either its
+      // Firestore ID or its slug.
       const productSnapshot =
-        await db
-          .collection("products")
-          .doc(productId)
-          .get();
+        await getProductByReference(
+          productId,
+        );
 
-      if (!productSnapshot.exists) {
+      if (
+        !productSnapshot ||
+        !productSnapshot.exists
+      ) {
         return res.status(404).json({
           success: false,
-          message: "Product not found.",
+          message:
+            "Product not found.",
         });
       }
 
@@ -736,7 +828,8 @@ app.get(
         productSnapshot.data();
 
       const cloudinaryPublicId =
-        typeof product?.cloudinaryPublicId === "string"
+        typeof product?.cloudinaryPublicId ===
+        "string"
           ? product.cloudinaryPublicId
           : "";
 
@@ -749,7 +842,8 @@ app.get(
       }
 
       const fileName =
-        typeof product?.fileName === "string"
+        typeof product?.fileName ===
+        "string"
           ? product.fileName
           : "";
 
@@ -759,6 +853,7 @@ app.get(
           .replace(".", "")
           .toLowerCase() || "pdf";
 
+      // Generate a temporary private download URL.
       const downloadUrl =
         cloudinary.utils.private_download_url(
           cloudinaryPublicId,
@@ -768,7 +863,9 @@ app.get(
             type: "private",
             attachment: true,
             expires_at:
-              Math.floor(Date.now() / 1000) + 300,
+              Math.floor(
+                Date.now() / 1000,
+              ) + 300,
           },
         );
 
