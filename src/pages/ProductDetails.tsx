@@ -28,19 +28,9 @@ export default function ProductDetails() {
         return;
       }
 
-      // First check the existing platform products.
-      const staticProduct = products.find(
-        (item) => item.slug === slug,
-      );
-
-      if (staticProduct) {
-        setProduct(staticProduct);
-        setLoading(false);
-        return;
-      }
-
-      // If it is not a platform product,
-      // look for a merchant product in Firestore.
+      // First check Firebase merchant products.
+      // This ensures downloadable products keep
+      // their cloudinaryPublicId.
       try {
         const productsQuery = query(
           collection(db, "products"),
@@ -58,15 +48,28 @@ export default function ProductDetails() {
             id: productDoc.id,
             ...productDoc.data(),
           } as Product);
+
+          setLoading(false);
+          return;
         }
       } catch (error) {
         console.error(
-          "Unable to load product:",
+          "Unable to load merchant product:",
           error,
         );
-      } finally {
-        setLoading(false);
       }
+
+      // If it is not a Firebase product,
+      // fall back to the existing platform products.
+      const staticProduct = products.find(
+        (item) => item.slug === slug,
+      );
+
+      if (staticProduct) {
+        setProduct(staticProduct);
+      }
+
+      setLoading(false);
     }
 
     loadProduct();
@@ -110,17 +113,19 @@ export default function ProductDetails() {
     <main className="product-details-page">
       <div className="product-details">
         <div className="product-details-image">
-  {product.image ? (
-    <img
-      src={product.image}
-      alt={product.name}
-    />
-  ) : (
-    <span>
-      {product.category.replace("-", " ").toUpperCase()}
-    </span>
-  )}
-</div>
+          {product.image ? (
+            <img
+              src={product.image}
+              alt={product.name}
+            />
+          ) : (
+            <span>
+              {product.category
+                .replace("-", " ")
+                .toUpperCase()}
+            </span>
+          )}
+        </div>
 
         <div className="product-details-content">
           <p className="eyebrow">
