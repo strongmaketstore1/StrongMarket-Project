@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
-  collection,
-  getDocs,
-  query,
-  where,
+  doc,
+  getDoc,
 } from "firebase/firestore";
 
 import { useCart } from "../context/CartContext";
@@ -12,7 +10,9 @@ import { db } from "../firebase";
 import type { Product } from "../types/product";
 
 export default function ProductDetails() {
-  const { slug } = useParams<{ slug: string }>();
+  const { productId } = useParams<{
+  productId: string;
+}>();
   const { addToCart } = useCart();
 
   const [product, setProduct] =
@@ -21,43 +21,35 @@ export default function ProductDetails() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadProduct() {
-      if (!slug) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const productsQuery = query(
-          collection(db, "products"),
-          where("slug", "==", slug),
-        );
-
-        const snapshot = await getDocs(
-          productsQuery,
-        );
-
-        if (!snapshot.empty) {
-          const productDoc = snapshot.docs[0];
-
-          setProduct({
-            id: productDoc.id,
-            ...productDoc.data(),
-          } as Product);
-        }
-      } catch (error) {
-        console.error(
-          "Unable to load product:",
-          error,
-        );
-      } finally {
-        setLoading(false);
-      }
+  async function loadProduct() {
+    if (!productId) {
+      setLoading(false);
+      return;
     }
 
-    loadProduct();
-  }, [slug]);
+    try {
+      const productDoc = await getDoc(
+        doc(db, "products", productId),
+      );
 
+      if (productDoc.exists()) {
+        setProduct({
+          id: productDoc.id,
+          ...productDoc.data(),
+        } as Product);
+      }
+    } catch (error) {
+      console.error(
+        "Unable to load product:",
+        error,
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  loadProduct();
+}, [productId]);
   if (loading) {
     return (
       <main>
