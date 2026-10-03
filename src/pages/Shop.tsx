@@ -4,7 +4,6 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 
-import { products } from "../data/products";
 import ProductCard from "../components/ProductCard";
 import type {
   Product,
@@ -31,12 +30,9 @@ const categories: {
 ];
 
 export default function Shop() {
-  const [merchantProducts, setMerchantProducts] =
-    useState<Product[]>([]);
-
+  const [products, setProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] =
     useState<CategoryFilter>("all");
-
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
@@ -49,11 +45,11 @@ export default function Shop() {
             ...productDoc.data(),
           })) as Product[];
 
-        setMerchantProducts(firestoreProducts);
+        setProducts(firestoreProducts);
       },
       (error) => {
         console.error(
-          "Unable to load merchant products:",
+          "Unable to load products:",
           error,
         );
       },
@@ -62,12 +58,7 @@ export default function Shop() {
     return () => unsubscribe();
   }, []);
 
-  const allProducts = [
-    ...products,
-    ...merchantProducts,
-  ];
-
-  const filteredProducts = allProducts.filter(
+  const filteredProducts = products.filter(
     (product) => {
       const matchesCategory =
         selectedCategory === "all" ||
@@ -106,8 +97,8 @@ export default function Shop() {
         <h1>Explore our digital marketplace.</h1>
 
         <p>
-          Discover useful digital products created to help
-          you learn, create, work, and grow.
+          Discover useful digital products created to
+          help you learn, create, work, and grow.
         </p>
       </section>
 
@@ -157,7 +148,7 @@ export default function Shop() {
           <div className="product-grid">
             {filteredProducts.map((product) => (
               <ProductCard
-                key={`${product.id}-${product.slug}`}
+                key={product.id}
                 product={product}
               />
             ))}
