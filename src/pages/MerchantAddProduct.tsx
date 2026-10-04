@@ -112,7 +112,6 @@ export default function MerchantAddProduct() {
       ? `Upload error: ${error.message}`
       : "Unable to upload product file. Please try again.",
   );
-}
     } finally {
       setUploadingFile(false);
     }
