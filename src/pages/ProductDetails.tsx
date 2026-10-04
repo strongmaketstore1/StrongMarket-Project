@@ -176,4 +176,10 @@ export default function ProductDetails() {
       </div>
 
       <div className="product-details-description">
-        <
+  <h2>About this product</h2>
+
+  <p>{product.description}</p>
+</div>
+</main>
+);
+}
