@@ -108,7 +108,26 @@ app.get("/api/health", (_req, res) => {
 // Product file/image upload
 app.post(
   "/api/products/upload",
-  upload.single("file"),
+  (req, res, next) => {
+    upload.single("file")(req, res, (error) => {
+      if (error) {
+        console.error(
+          "Multer product upload error:",
+          error,
+        );
+
+        return res.status(400).json({
+          success: false,
+          message:
+            error instanceof Error
+              ? error.message
+              : "Unable to process uploaded file.",
+        });
+      }
+
+      next();
+    });
+  },
   async (req, res) => {
     try {
       const authHeader = req.headers.authorization;
@@ -166,13 +185,6 @@ app.post(
                 resource_type: isImage
                   ? "image"
                   : "raw",
-
-                // Product images must be publicly
-                // deliverable so the storefront can
-                // display them.
-                //
-                // Digital product files remain private
-                // and are only delivered after payment.
                 type: isImage
                   ? "upload"
                   : "private",
