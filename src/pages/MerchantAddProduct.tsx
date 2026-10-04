@@ -102,14 +102,17 @@ export default function MerchantAddProduct() {
         "Product file uploaded successfully.",
       );
     } catch (error) {
-      console.error(
-        "Product file upload error:",
-        error,
-      );
+  console.error(
+    "Product file upload error:",
+    error,
+  );
 
-      setMessage(
-        "Unable to upload product file. Please try again.",
-      );
+  setMessage(
+    error instanceof Error
+      ? `Upload error: ${error.message}`
+      : "Unable to upload product file. Please try again.",
+  );
+}
     } finally {
       setUploadingFile(false);
     }
