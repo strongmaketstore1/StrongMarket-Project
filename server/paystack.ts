@@ -150,10 +150,12 @@ app.post(
       if (!req.file) {
         return res.status(400).json({
           success: false,
-          message:
-            "Please select a digital product file.",
+          message: "Please select a file.",
         });
       }
+
+      const isImage =
+        req.file.mimetype.startsWith("image/");
 
       const result = await new Promise<any>(
         (resolve, reject) => {
@@ -161,17 +163,25 @@ app.post(
             cloudinary.uploader.upload_stream(
               {
                 folder: "strongmarket/products",
-                resource_type:
-                  req.file!.mimetype.startsWith("image/")
-                    ? "image"
-                    : "raw",
-                type: "private",
+                resource_type: isImage
+                  ? "image"
+                  : "raw",
+
+                // Product images must be publicly
+                // deliverable so the storefront can
+                // display them.
+                //
+                // Digital product files remain private
+                // and are only delivered after payment.
+                type: isImage
+                  ? "upload"
+                  : "private",
               },
-              (error, result) => {
+              (error, uploadedResult) => {
                 if (error) {
                   reject(error);
                 } else {
-                  resolve(result);
+                  resolve(uploadedResult);
                 }
               },
             );
@@ -182,7 +192,7 @@ app.post(
 
       return res.json({
         success: true,
-        message: req.file.mimetype.startsWith("image/")
+        message: isImage
           ? "Product image uploaded successfully."
           : "Product file uploaded successfully.",
         publicId: result.public_id,
@@ -206,7 +216,6 @@ app.post(
     }
   },
 );
-
 // Admin merchant application management
 app.get(
   "/api/admin/merchant-applications",
