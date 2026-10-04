@@ -27,50 +27,69 @@ export default function OrderSuccess() {
     );
 
   async function downloadProduct(productId: string) {
-    try {
-      const user = auth.currentUser;
+  try {
+    const user = auth.currentUser;
 
-      if (!user) {
-        alert("Please log in to download your product.");
-        return;
-      }
-
-      const idToken = await user.getIdToken();
-
-      const response = await fetch(
-        `https://strongmarket-payment-server.onrender.com/api/products/${productId}/download?orderId=${encodeURIComponent(
-          reference || "",
-        )}`,
-        {
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-          },
-        },
-      );
-
-      const result = await response.json();
-
-      if (!response.ok || result?.success !== true) {
-        alert(
-          result?.message ||
-            "Unable to download this product.",
-        );
-        return;
-      }
-
-      window.open(
-        result.downloadUrl,
-        "_blank",
-        "noopener,noreferrer",
-      );
-    } catch (error) {
-      console.error("Product download error:", error);
-
+    if (!user) {
       alert(
-        "Unable to download this product. Please try again.",
+        "Please log in to download your product.",
       );
+      return;
     }
+
+    if (!reference) {
+      alert(
+        "This order does not have a valid payment reference.",
+      );
+      return;
+    }
+
+    const idToken = await user.getIdToken();
+
+    const response = await fetch(
+      `https://strongmarket-payment-server.onrender.com/api/products/${encodeURIComponent(
+        productId,
+      )}/download?orderId=${encodeURIComponent(
+        reference,
+      )}`,
+      {
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+      },
+    );
+
+    const result = await response.json();
+
+    if (
+      !response.ok ||
+      result?.success !== true ||
+      typeof result?.downloadUrl !== "string"
+    ) {
+      alert(
+        result?.message ||
+          "Unable to download this product.",
+      );
+      return;
+    }
+
+    // Send the browser directly to Cloudinary.
+    // CHILVO does not load the file into JavaScript
+    // memory or proxy the file through Render.
+    window.location.assign(
+      result.downloadUrl,
+    );
+  } catch (error) {
+    console.error(
+      "Product download error:",
+      error,
+    );
+
+    alert(
+      "Unable to download this product. Please try again.",
+    );
   }
+}
 
   useEffect(() => {
     if (confirmationStarted.current) {
