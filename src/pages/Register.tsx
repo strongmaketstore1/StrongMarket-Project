@@ -28,7 +28,7 @@ export default function Register() {
         name.trim(),
       );
 
-      navigate("/");
+      navigate("/login");
     } catch (error) {
       setError(
         error instanceof Error
