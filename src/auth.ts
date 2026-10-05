@@ -96,6 +96,34 @@ export async function loginUser(
   return credential.user;
 }
 
+export async function resendVerificationEmail(
+  email: string,
+  password: string,
+) {
+  const credential =
+    await signInWithEmailAndPassword(
+      auth,
+      email,
+      password,
+    );
+
+  await credential.user.reload();
+
+  if (credential.user.emailVerified) {
+    await signOut(auth);
+
+    throw new Error(
+      "Your email address is already verified.",
+    );
+  }
+
+  await sendEmailVerification(
+    credential.user,
+  );
+
+  await signOut(auth);
+}
+
 export async function resetPassword(
   email: string,
 ) {
