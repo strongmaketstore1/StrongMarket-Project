@@ -1,16 +1,16 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 import { registerUser } from "../auth";
 
 export default function Register() {
-  const navigate = useNavigate();
-
+  
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(
@@ -23,12 +23,12 @@ export default function Register() {
 
     try {
       await registerUser(
-        email.trim(),
-        password,
-        name.trim(),
-      );
+  email.trim(),
+  password,
+  name.trim(),
+);
 
-      navigate("/login");
+setSuccess(true);
     } catch (error) {
       setError(
         error instanceof Error
@@ -40,6 +40,40 @@ export default function Register() {
     }
   }
 
+  if (success) {
+  return (
+    <main>
+      <section>
+        <h1>Account created successfully!</h1>
+
+        <p>
+          Please verify your email address before signing
+          in to CHILVO.
+        </p>
+
+        <p>
+          We sent a verification email to{" "}
+          <strong>{email}</strong>.
+        </p>
+
+        <p>
+          Check your inbox and click the verification link.
+          If you don't see the email, check your spam or
+          junk folder.
+        </p>
+
+        <button
+          type="button"
+          onClick={() => {
+            window.location.href = "/login";
+          }}
+        >
+          Continue to Sign In
+        </button>
+      </section>
+    </main>
+  );
+}
   return (
     <main>
       <section>
