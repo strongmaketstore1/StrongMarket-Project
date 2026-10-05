@@ -67,6 +67,8 @@ export async function registerUser(
     userDoc.data(),
   );
 
+  await signOut(auth);
+
   return credential.user;
 }
 
@@ -80,6 +82,16 @@ export async function loginUser(
       email,
       password,
     );
+
+  await credential.user.reload();
+
+  if (!credential.user.emailVerified) {
+    await signOut(auth);
+
+    throw new Error(
+      "Please verify your email address before signing in to CHILVO. Check your inbox for the verification email.",
+    );
+  }
 
   return credential.user;
 }
