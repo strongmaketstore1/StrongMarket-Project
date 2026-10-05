@@ -11,8 +11,13 @@ import "./App.css";
 
 import { auth, db } from "./firebase";
 import { logoutUser, deleteAccount } from "./auth";
-import { doc, getDoc } from "firebase/firestore";
-import { products } from "./data/products";
+import {
+  collection,
+  doc,
+  getDoc,
+  onSnapshot,
+} from "firebase/firestore";
+import type { Product } from "./types/product";
 import ProductCard from "./components/ProductCard";
 
 import Login from "./pages/Login";
@@ -35,12 +40,38 @@ import MerchantSales from "./pages/MerchantSales";
 import {
   CartProvider,
   useCart,
-} from "./context/CartContext";
+} from "./context/CartContext"; 
 
 function Home() {
-  const featuredProducts = products.filter(
-    (product) => product.featured,
-  );
+  const [featuredProducts, setFeaturedProducts] =
+    useState<Product[]>([]);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(
+      collection(db, "products"),
+      (snapshot) => {
+        const firestoreProducts =
+          snapshot.docs.map((productDoc) => ({
+            id: productDoc.id,
+            ...productDoc.data(),
+          })) as Product[];
+
+        setFeaturedProducts(
+          firestoreProducts.filter(
+            (product) => product.featured,
+          ),
+        );
+      },
+      (error) => {
+        console.error(
+          "Unable to load featured products:",
+          error,
+        );
+      },
+    );
+
+    return () => unsubscribe();
+  }, []);
 
   return (
     <main>
