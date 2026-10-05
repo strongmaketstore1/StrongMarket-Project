@@ -75,8 +75,7 @@ async function getProductByReference(
 }
 
 const ADMIN_UIDS = [
-  "RN5LrlclfrMHgENa1O6rCNKK5p2",
-  "A1vw5apcWCaTWBBlw0zb16Pt5Pv2",
+  "K2XHC9W2xxPcdEkjrtPdBAUjAjy1",
 ];
 
 app.use(
