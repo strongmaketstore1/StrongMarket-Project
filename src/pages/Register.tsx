@@ -62,14 +62,11 @@ setSuccess(true);
           junk folder.
         </p>
 
-        <button
-          type="button"
-          onClick={() => {
-            window.location.href = "/login";
-          }}
-        >
-          Continue to Sign In
-        </button>
+        <Link to="/login">
+  <button type="button">
+    Continue to Sign In
+  </button>
+</Link>
       </section>
     </main>
   );
