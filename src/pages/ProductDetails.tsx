@@ -162,8 +162,10 @@ const [loading, setLoading] = useState(true);
   }
   style={{ marginBottom: "2rem" }}
 >
+  Add to Cart
+</button>
 
-          {product.merchantId && (
+{product.merchantId && (
   <div
     className="product-merchant"
     style={{ marginTop: "2rem" }}
