@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { onAuthStateChanged, type User } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
 
 import { auth, db } from "../firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { getCustomerOrders } from "../firestoreOrders";
+import type { Order } from "../types/order";
 
 type UserProfile = {
   name?: string;
@@ -16,9 +18,18 @@ export default function Account() {
   const [user, setUser] = useState<User | null>(
     auth.currentUser,
   );
+
   const [profile, setProfile] =
     useState<UserProfile | null>(null);
+
+  const [orders, setOrders] = useState<Order[]>([]);
+
   const [loading, setLoading] = useState(true);
+  const [ordersLoading, setOrdersLoading] =
+    useState(false);
+
+  const [ordersError, setOrdersError] =
+    useState("");
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(
@@ -28,6 +39,7 @@ export default function Account() {
 
         if (!currentUser) {
           setProfile(null);
+          setOrders([]);
           setLoading(false);
           return;
         }
@@ -49,12 +61,27 @@ export default function Account() {
                 currentUser.email ?? "",
             });
           }
+
+          setOrdersLoading(true);
+          setOrdersError("");
+
+          const customerOrders =
+            await getCustomerOrders(
+              currentUser.uid,
+            );
+
+          setOrders(customerOrders);
         } catch (error) {
           console.error(
-            "Unable to load account profile:",
+            "Unable to load account:",
             error,
           );
+
+          setOrdersError(
+            "Unable to load your orders right now.",
+          );
         } finally {
+          setOrdersLoading(false);
           setLoading(false);
         }
       },
@@ -79,6 +106,7 @@ export default function Account() {
       <main>
         <section>
           <h1>My Account</h1>
+
           <p>
             Please sign in to view your account.
           </p>
@@ -136,16 +164,116 @@ export default function Account() {
         </div>
 
         <div>
-          <h2>Orders & Purchases</h2>
+          <h2>My Orders</h2>
+
+          {ordersLoading && (
+            <p>Loading your orders...</p>
+          )}
+
+          {!ordersLoading && ordersError && (
+            <p role="alert">
+              {ordersError}
+            </p>
+          )}
+
+          {!ordersLoading &&
+            !ordersError &&
+            orders.length === 0 && (
+              <div>
+                <p>
+                  You haven't placed any orders yet.
+                </p>
+
+                <Link to="/shop">
+                  Browse Products
+                </Link>
+              </div>
+            )}
+
+          {!ordersLoading &&
+            !ordersError &&
+            orders.length > 0 && (
+              <div>
+                {orders.map((order) => (
+                  <article key={order.id}>
+                    <h3>
+                      Order #{order.id}
+                    </h3>
+
+                    <p>
+                      <strong>Date:</strong>{" "}
+                      {new Date(
+                        order.createdAt,
+                      ).toLocaleDateString()}
+                    </p>
+
+                    <p>
+                      <strong>Status:</strong>{" "}
+                      {order.status}
+                    </p>
+
+                    <p>
+                      <strong>Total:</strong>{" "}
+                      {order.currency === "NGN"
+                        ? "₦"
+                        : "$"}
+                      {order.subtotal.toLocaleString()}
+                    </p>
+
+                    <div>
+                      <strong>
+                        Products:
+                      </strong>
+
+                      <ul>
+                        {order.items.map(
+                          (item) => (
+                            <li
+                              key={
+                                item.productId
+                              }
+                            >
+                              {item.productName} ×{" "}
+                              {item.quantity}
+                            </li>
+                          ),
+                        )}
+                      </ul>
+                    </div>
+
+                    {order.paymentReference && (
+                      <p>
+                        <strong>
+                          Payment reference:
+                        </strong>{" "}
+                        {order.paymentReference}
+                      </p>
+                    )}
+                  </article>
+                ))}
+              </div>
+            )}
+        </div>
+
+        <div>
+          <h2>Shopping</h2>
 
           <p>
-            View your purchases and access your
-            digital products.
+            View your purchases and continue
+            shopping on CHILVO.
           </p>
 
-          <Link to="/cart">
-            Go to Cart
-          </Link>
+          <p>
+            <Link to="/cart">
+              Go to Cart
+            </Link>
+          </p>
+
+          <p>
+            <Link to="/shop">
+              Browse Products
+            </Link>
+          </p>
         </div>
 
         {isMerchant && (
