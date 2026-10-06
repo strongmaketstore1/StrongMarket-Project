@@ -22,7 +22,8 @@ export default function MerchantStore() {
   const { merchantId } = useParams<{
     merchantId: string;
   }>();
-const { addToCart } = useCart();
+
+  const { addToCart } = useCart();
  
   const [merchant, setMerchant] =
     useState<MerchantProfile | null>(null);
