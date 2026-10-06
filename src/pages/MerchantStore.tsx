@@ -10,6 +10,7 @@ import {
 } from "firebase/firestore";
 
 import { db } from "../firebase";
+import { useCart } from "../context/CartContext";
 import type { Product } from "../types/product";
 
 type MerchantProfile = {
@@ -21,7 +22,8 @@ export default function MerchantStore() {
   const { merchantId } = useParams<{
     merchantId: string;
   }>();
-
+const { addToCart } = useCart();
+ 
   const [merchant, setMerchant] =
     useState<MerchantProfile | null>(null);
 
