@@ -1,8 +1,12 @@
 import {
+  collection,
   doc,
   getDoc,
+  getDocs,
+  query,
   setDoc,
   updateDoc,
+  where,
 } from "firebase/firestore";
 
 import { db } from "./firebase";
@@ -38,6 +42,30 @@ export async function getFirestoreOrder(
     ...(orderSnapshot.data() as Order),
     id: orderSnapshot.id,
   };
+}
+
+export async function getCustomerOrders(
+  customerId: string,
+): Promise<Order[]> {
+  const ordersQuery = query(
+    collection(db, "orders"),
+    where("customerId", "==", customerId),
+  );
+
+  const ordersSnapshot = await getDocs(
+    ordersQuery,
+  );
+
+  return ordersSnapshot.docs
+    .map((orderDocument) => ({
+      ...(orderDocument.data() as Order),
+      id: orderDocument.id,
+    }))
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() -
+        new Date(a.createdAt).getTime(),
+    );
 }
 
 export async function updateFirestoreOrderStatus(
