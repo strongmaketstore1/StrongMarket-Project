@@ -29,6 +29,7 @@ import ProductDetails from "./pages/ProductDetails";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import OrderSuccess from "./pages/OrderSuccess";
+import Account from "./pages/Account";
 
 import MerchantDashboard from "./pages/MerchantDashboard";
 import MerchantAddProduct from "./pages/MerchantAddProduct";
@@ -296,14 +297,18 @@ function AppContent() {
             </Link>
 
             {user ? (
-              <>
-                {merchantStatus === "approved" && (
-                  <Link to="/merchant/dashboard">
-                    Merchant Dashboard
-                  </Link>
-                )}
+  <>
+    <Link to="/account">
+      My Account
+    </Link>
 
-                <button
+    {merchantStatus === "approved" && (
+      <Link to="/merchant/dashboard">
+        Merchant Dashboard
+      </Link>
+    )}
+
+    <button
                   type="button"
                   onClick={handleLogout}
                 >
@@ -358,9 +363,9 @@ function AppContent() {
           />
 
           <Route
-  path="/product/:productId"
-  element={<ProductDetails />}
-/>
+            path="/product/:productId"
+            element={<ProductDetails />}
+          />
 
           <Route
             path="/cart"
@@ -377,6 +382,11 @@ function AppContent() {
             element={<OrderSuccess />}
           />
 
+          <Route
+            path="/account"
+            element={<Account />}
+          />
+          
           <Route
             path="/login"
             element={<Login />}
