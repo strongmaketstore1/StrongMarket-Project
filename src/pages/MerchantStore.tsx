@@ -151,25 +151,7 @@ export default function MerchantStore() {
     </div>
   </div>
 </section>
-          <div className="merchant-store-avatar">
-            {merchant.name
-              ?.charAt(0)
-              .toUpperCase() || "C"}
-          </div>
-
-          <div>
-            <h1>
-              {merchant.name ||
-                "CHILVO Merchant"}
-            </h1>
-
-            <p>
-              Digital products on CHILVO
-            </p>
-          </div>
-        </div>
-      </section>
-
+          
       <section>
         <div>
           <p className="eyebrow">
