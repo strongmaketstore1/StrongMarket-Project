@@ -30,6 +30,7 @@ import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import OrderSuccess from "./pages/OrderSuccess";
 import Account from "./pages/Account";
+import MerchantStore from "./pages/MerchantStore";
 
 import MerchantDashboard from "./pages/MerchantDashboard";
 import MerchantAddProduct from "./pages/MerchantAddProduct";
@@ -385,6 +386,11 @@ function AppContent() {
           <Route
             path="/account"
             element={<Account />}
+          />
+          
+          <Route
+            path="/merchant/:merchantId"
+            element={<MerchantStore />}
           />
           
           <Route
