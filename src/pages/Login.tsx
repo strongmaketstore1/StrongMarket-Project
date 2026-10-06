@@ -2,7 +2,11 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-import { loginUser, resetPassword } from "../auth";
+import {
+  loginUser,
+  resetPassword,
+  resendVerificationEmail,
+} from "../auth";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -57,6 +61,41 @@ export default function Login() {
     }
   }
 
+async function handleResendVerification() {
+    setError("");
+    setMessage("");
+
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail || !password) {
+      setError(
+        "Enter your email address and password first.",
+      );
+      return;
+    }
+
+    setResetLoading(true);
+
+    try {
+      await resendVerificationEmail(
+        trimmedEmail,
+        password,
+      );
+
+      setMessage(
+        "Verification email sent. Check your inbox and spam or junk folder.",
+      );
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Unable to send verification email.",
+      );
+    } finally {
+      setResetLoading(false);
+    }
+  }
+  
   return (
     <main>
       <section>
@@ -84,16 +123,27 @@ export default function Login() {
             />
           </label>
 
+     <p>
+  <button
+    type="button"
+    onClick={handleForgotPassword}
+    disabled={resetLoading}  
+  >
+    {resetLoading ? "Sending..." : "Forgot password?"}
+  </button>
+</p>
           <p>
-            <button
-              type="button"
-              onClick={handleForgotPassword}
-              disabled={resetLoading}
-            >
-              {resetLoading ? "Sending..." : "Forgot password?"}
-            </button>
-          </p>
-
+  <button
+    type="button"
+    onClick={handleResendVerification}
+    disabled={resetLoading}
+  >
+    {resetLoading
+      ? "Sending..."
+      : "Resend verification email"}
+  </button>
+</p>
+          
           {error && <p role="alert">{error}</p>}
 
           {message && <p role="status">{message}</p>}
