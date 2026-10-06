@@ -165,7 +165,10 @@ const [loading, setLoading] = useState(true);
           </button>
 
           {product.merchantId && (
-  <div className="product-merchant">
+  <div
+    className="product-merchant"
+    style={{ marginTop: "2rem" }}
+  >
     <p className="eyebrow">
       SOLD BY
     </p>
