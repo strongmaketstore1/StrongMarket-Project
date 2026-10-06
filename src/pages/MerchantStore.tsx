@@ -230,6 +230,22 @@ export default function MerchantStore() {
                       "en-NG",
                     )}
                   </strong>
+                 <div>
+                   <Link
+                     className="secondary-btn"
+                     to={`/product/${product.id}`}
+                   >
+                     View Product
+                   </Link>
+
+                   <button
+                     className="primary-btn"
+                     type="button"
+                     onClick={() => addToCart(product)}
+                   >
+                     Add to Cart
+                 </button>
+                </div>  
                 </div>
               </article>
             ))}
