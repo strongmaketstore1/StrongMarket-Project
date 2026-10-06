@@ -16,9 +16,12 @@ export default function ProductDetails() {
   const { addToCart } = useCart();
 
   const [product, setProduct] =
-    useState<Product | null>(null);
+  useState<Product | null>(null);
 
-  const [loading, setLoading] = useState(true);
+const [merchantName, setMerchantName] =
+  useState("");
+
+const [loading, setLoading] = useState(true);
 
   useEffect(() => {
   async function loadProduct() {
@@ -33,11 +36,33 @@ export default function ProductDetails() {
       );
 
       if (productDoc.exists()) {
-        setProduct({
-          id: productDoc.id,
-          ...productDoc.data(),
-        } as Product);
-      }
+  const loadedProduct = {
+    id: productDoc.id,
+    ...productDoc.data(),
+  } as Product;
+
+  setProduct(loadedProduct);
+
+  if (loadedProduct.merchantId) {
+    const merchantDoc = await getDoc(
+      doc(
+        db,
+        "users",
+        loadedProduct.merchantId,
+      ),
+    );
+
+    if (merchantDoc.exists()) {
+      const merchantData =
+        merchantDoc.data();
+
+      setMerchantName(
+        merchantData.name ||
+          "CHILVO Merchant",
+      );
+    }
+  }
+}
     } catch (error) {
       console.error(
         "Unable to load product:",
@@ -139,6 +164,30 @@ export default function ProductDetails() {
             Add to Cart
           </button>
 
+          {product.merchantId && (
+  <div className="product-merchant">
+    <p className="eyebrow">
+      SOLD BY
+    </p>
+
+    <h2>
+      {merchantName ||
+        "CHILVO Merchant"}
+    </h2>
+
+    <p>
+      Digital products on CHILVO
+    </p>
+
+    <Link
+      className="secondary-btn"
+      to={`/merchant/${product.merchantId}`}
+    >
+      Visit Store →
+    </Link>
+  </div>
+)}
+          
           <div className="purchase-benefits">
             <div>
               <strong>
