@@ -120,11 +120,37 @@ export default function MerchantStore() {
   return (
     <main className="merchant-store-page">
       <section className="merchant-store-header">
-        <p className="eyebrow">
-          CHILVO STORE
-        </p>
+  <p className="eyebrow">
+    CHILVO STORE
+  </p>
 
-        <div className="merchant-store-profile">
+  <div className="merchant-store-profile">
+    <div className="merchant-store-avatar">
+      {merchant.name
+        ?.charAt(0)
+        .toUpperCase() || "C"}
+    </div>
+
+    <div>
+      <h1>
+        {merchant.name ||
+          "CHILVO Merchant"}
+      </h1>
+
+      <p>
+        Digital products on CHILVO
+      </p>
+
+      <p>
+        {products.length}{" "}
+        {products.length === 1
+          ? "product"
+          : "products"}{" "}
+        available
+      </p>
+    </div>
+  </div>
+</section>
           <div className="merchant-store-avatar">
             {merchant.name
               ?.charAt(0)
