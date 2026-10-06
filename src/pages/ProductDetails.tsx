@@ -155,14 +155,13 @@ const [loading, setLoading] = useState(true);
           </div>
 
           <button
-            className="primary-btn"
-            type="button"
-            onClick={() =>
-              addToCart(product)
-            }
-          >
-            Add to Cart
-          </button>
+  className="primary-btn"
+  type="button"
+  onClick={() =>
+    addToCart(product)
+  }
+  style={{ marginBottom: "2rem" }}
+>
 
           {product.merchantId && (
   <div
