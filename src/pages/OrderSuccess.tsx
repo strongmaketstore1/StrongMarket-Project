@@ -271,15 +271,12 @@ export default function OrderSuccess() {
               <h3>{item.productName}</h3>
 
               <button
-                disabled={!item.cloudinaryPublicId}
-                onClick={() =>
-                  downloadProduct(item.productId)
-                }
-              >
-                {item.cloudinaryPublicId
-                  ? "Download Product"
-                  : "File Coming Soon"}
-              </button>
+  onClick={() =>
+    downloadProduct(item.productId)
+  }
+>
+  Download Product
+</button>
             </div>
           ))}
         </section>
