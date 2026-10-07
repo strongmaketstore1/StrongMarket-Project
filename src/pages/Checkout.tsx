@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { createOrderItems } from "../types/order";
@@ -22,6 +22,22 @@ export default function Checkout() {
 
   const USD_RATE = 1500;
 
+  useEffect(() => {
+    const user = auth.currentUser;
+
+    if (!user) {
+      return;
+    }
+
+    setCustomerName(
+      user.displayName || "",
+    );
+
+    setCustomerEmail(
+      user.email || "",
+    );
+  }, []);
+  
   const currencySymbol =
     currency === "USD" ? "$" : "₦";
 
