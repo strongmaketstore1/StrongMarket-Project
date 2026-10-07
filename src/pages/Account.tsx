@@ -12,6 +12,7 @@ type UserProfile = {
   email?: string;
   role?: string;
   merchantStatus?: string;
+  photoURL?: string;
 };
 
 export default function Account() {
@@ -132,36 +133,93 @@ export default function Account() {
         </p>
 
         <div>
-          <h2>Profile</h2>
+  <h2>Profile</h2>
 
-          <p>
-            <strong>Name:</strong>{" "}
-            {profile?.name ||
-              user.displayName ||
-              "Not provided"}
-          </p>
+  <div>
+    {profile?.photoURL || user.photoURL ? (
+      <img
+        src={
+          profile?.photoURL ||
+          user.photoURL ||
+          ""
+        }
+        alt={
+          profile?.name ||
+          user.displayName ||
+          "Profile"
+        }
+        width="96"
+        height="96"
+      />
+    ) : (
+      <div
+        aria-label="Profile placeholder"
+        style={{
+          width: "96px",
+          height: "96px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          borderRadius: "50%",
+          fontSize: "2rem",
+          fontWeight: "700",
+          background: "#f1f5f9",
+        }}
+      >
+        {(profile?.name ||
+          user.displayName ||
+          "C")
+          .charAt(0)
+          .toUpperCase()}
+      </div>
+    )}
+  </div>
 
-          <p>
-            <strong>Email:</strong>{" "}
-            {profile?.email ||
-              user.email ||
-              "Not available"}
-          </p>
+  <p>
+    <strong>Name:</strong>{" "}
+    {profile?.name ||
+      user.displayName ||
+      "Not provided"}
+  </p>
 
-          <p>
-            <strong>Account type:</strong>{" "}
-            {isMerchant
-              ? "Merchant"
-              : "Customer"}
-          </p>
+  <p>
+    <strong>Email:</strong>{" "}
+    {profile?.email ||
+      user.email ||
+      "Not available"}
+  </p>
 
-          {isMerchant && (
-            <p>
-              <strong>Merchant status:</strong>{" "}
-              Approved
-            </p>
-          )}
-        </div>
+  <p>
+    <strong>Account type:</strong>{" "}
+    {isMerchant
+      ? "Merchant"
+      : "Customer"}
+  </p>
+
+  <p>
+    <strong>Email verification:</strong>{" "}
+    {user.emailVerified
+      ? "Verified"
+      : "Not verified"}
+  </p>
+
+  {isMerchant && (
+    <p>
+      <strong>Merchant status:</strong>{" "}
+      Approved
+    </p>
+  )}
+
+  <p>
+    <button
+      type="button"
+      className="secondary-btn"
+      disabled
+    >
+      Edit Profile
+    </button>
+  </p>
+</div>
 
         <div>
           <h2>My Orders</h2>
