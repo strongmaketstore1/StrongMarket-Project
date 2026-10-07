@@ -16,6 +16,7 @@ import type { Product } from "../types/product";
 type MerchantProfile = {
   name?: string;
   merchantStatus?: string;
+  photoURL?: string;
 };
 
 export default function MerchantStore() {
@@ -129,10 +130,17 @@ export default function MerchantStore() {
 
   <div className="merchant-store-profile">
     <div className="merchant-store-avatar">
-      {merchant.name
-        ?.charAt(0)
-        .toUpperCase() || "C"}
-    </div>
+  {merchant.photoURL ? (
+    <img
+      src={merchant.photoURL}
+      alt={merchant.name || "Merchant"}
+    />
+  ) : (
+    merchant.name
+      ?.charAt(0)
+      .toUpperCase() || "C"
+  )}
+</div>
 
     <div>
       <h1>
