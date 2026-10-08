@@ -5,8 +5,6 @@ import {
   getDocs,
   query,
   where,
-  doc,
-  getDoc,
 } from "firebase/firestore";
 
 import { db } from "../firebase";
@@ -43,15 +41,26 @@ export default function MerchantStore() {
       }
 
       try {
-        const merchantDoc = await getDoc(
-          doc(db, "users", merchantId),
-        );
+        const merchantResponse = await fetch(
+  `https://strongmarket-payment-server.onrender.com/api/merchants/${merchantId}`,
+);
 
-        if (merchantDoc.exists()) {
-          setMerchant(
-            merchantDoc.data() as MerchantProfile,
-          );
-        }
+const merchantData =
+  await merchantResponse.json();
+
+if (
+  !merchantResponse.ok ||
+  !merchantData.success
+) {
+  throw new Error(
+    merchantData.message ||
+      "Merchant not found.",
+  );
+}
+
+setMerchant(
+  merchantData.merchant as MerchantProfile,
+);
 
         const productsQuery = query(
           collection(db, "products"),
