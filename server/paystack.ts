@@ -340,6 +340,70 @@ app.post(
   },
 );
 
+// Public merchant profile
+app.get(
+  "/api/merchants/:merchantId",
+  async (req, res) => {
+    try {
+      const { merchantId } = req.params;
+
+      if (!merchantId) {
+        return res.status(400).json({
+          success: false,
+          message: "Merchant ID is required.",
+        });
+      }
+
+      const merchantSnapshot = await db
+        .collection("users")
+        .doc(merchantId)
+        .get();
+
+      if (!merchantSnapshot.exists) {
+        return res.status(404).json({
+          success: false,
+          message: "Merchant not found.",
+        });
+      }
+
+      const merchantData =
+        merchantSnapshot.data();
+
+      if (
+        merchantData?.merchantStatus !==
+        "approved"
+      ) {
+        return res.status(404).json({
+          success: false,
+          message: "Merchant not found.",
+        });
+      }
+
+      return res.json({
+        success: true,
+        merchant: {
+          name:
+            merchantData?.name ||
+            "CHILVO Merchant",
+          photoURL:
+            merchantData?.photoURL || "",
+        },
+      });
+    } catch (error) {
+      console.error(
+        "Unable to load merchant profile:",
+        error,
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "Unable to load merchant profile.",
+      });
+    }
+  },
+);
+
 // Admin merchant application management
 app.get(
   "/api/admin/merchant-applications",
