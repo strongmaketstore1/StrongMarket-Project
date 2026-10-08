@@ -621,13 +621,21 @@ app.post(
           ...item,
 
           ...(typeof product?.cloudinaryPublicId ===
-            "string" &&
-          product.cloudinaryPublicId
-            ? {
-                cloudinaryPublicId:
-                  product.cloudinaryPublicId,
-              }
-            : {}),
+  "string" &&
+product.cloudinaryPublicId
+  ? {
+      cloudinaryPublicId:
+        product.cloudinaryPublicId,
+    }
+  : {}),
+...(typeof product?.fileName ===
+  "string" &&
+product.fileName
+  ? {
+      fileName:
+        product.fileName,
+    }
+  : {}),
         });
       }
 
@@ -845,15 +853,15 @@ app.get(
       }
 
       const product =
-        productSnapshot.data();
+  productSnapshot.data();
 
-      const cloudinaryPublicId =
-        typeof product?.cloudinaryPublicId ===
-        "string"
-          ? product.cloudinaryPublicId
-          : "";
+const cloudinaryPublicId =
+  typeof purchasedItem.cloudinaryPublicId ===
+  "string"
+    ? purchasedItem.cloudinaryPublicId
+    : "";
 
-      if (!cloudinaryPublicId) {
+if (!cloudinaryPublicId) {
         return res.status(404).json({
           success: false,
           message:
@@ -862,10 +870,13 @@ app.get(
       }
 
       const fileName =
-        typeof product?.fileName ===
+  typeof purchasedItem.fileName ===
+  "string"
+    ? purchasedItem.fileName
+    : typeof product?.fileName ===
         "string"
-          ? product.fileName
-          : "";
+      ? product.fileName
+      : "";
 
       const fileExtension =
         path
