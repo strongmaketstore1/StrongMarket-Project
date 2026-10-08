@@ -204,14 +204,22 @@ function AppContent() {
   const [merchantStatus, setMerchantStatus] =
     useState<string>("none");
 
+  const [isAdmin, setIsAdmin] = useState(false);
+  
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(
       auth,
       async (currentUser) => {
         setUser(currentUser);
 
+        setIsAdmin(
+  currentUser?.uid ===
+    "K2XHC9W2xxPcdEkjrtPdBAUjAjy1",
+);
+        
         if (!currentUser) {
           setMerchantStatus("none");
+          setIsAdmin(false);
           return;
         }
 
@@ -309,6 +317,12 @@ function AppContent() {
       </Link>
     )}
 
+    {isAdmin && (
+  <Link to="/admin/merchant-applications">
+    Admin
+  </Link>
+)}
+    
     <button
                   type="button"
                   onClick={handleLogout}
