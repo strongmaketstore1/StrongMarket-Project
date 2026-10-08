@@ -227,6 +227,119 @@ app.post(
     }
   },
 );
+
+// Profile photo upload
+app.post(
+  "/api/profile/upload",
+  (req, res, next) => {
+    upload.single("file")(req, res, (error) => {
+      if (error) {
+        console.error(
+          "Multer profile photo upload error:",
+          error,
+        );
+
+        return res.status(400).json({
+          success: false,
+          message:
+            error instanceof Error
+              ? error.message
+              : "Unable to process profile photo.",
+        });
+      }
+
+      next();
+    });
+  },
+  async (req, res) => {
+    try {
+      const authHeader =
+        req.headers.authorization;
+
+      if (!authHeader?.startsWith("Bearer ")) {
+        return res.status(401).json({
+          success: false,
+          message: "Authentication required.",
+        });
+      }
+
+      const idToken =
+        authHeader.substring(7);
+
+      const decodedToken =
+        await adminAuth.verifyIdToken(
+          idToken,
+        );
+
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Please select a profile photo.",
+        });
+      }
+
+      if (
+        !req.file.mimetype.startsWith("image/")
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Profile photo must be an image.",
+        });
+      }
+
+      const result = await new Promise<any>(
+        (resolve, reject) => {
+          const stream =
+            cloudinary.uploader.upload_stream(
+              {
+                folder:
+                  "strongmarket/profile-photos",
+                resource_type: "image",
+                type: "upload",
+              },
+              (error, uploadedResult) => {
+                if (error) {
+                  reject(error);
+                } else {
+                  resolve(uploadedResult);
+                }
+              },
+            );
+
+          stream.end(req.file!.buffer);
+        },
+      );
+
+      return res.json({
+        success: true,
+        message:
+          "Profile photo uploaded successfully.",
+        publicId:
+          result.public_id,
+        secureUrl:
+          result.secure_url,
+        userId:
+          decodedToken.uid,
+      });
+    } catch (error) {
+      console.error(
+        "Cloudinary profile photo upload error:",
+        error,
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Unable to upload profile photo.",
+      });
+    }
+  },
+);
+
 // Admin merchant application management
 app.get(
   "/api/admin/merchant-applications",
