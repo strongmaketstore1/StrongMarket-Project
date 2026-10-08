@@ -185,7 +185,7 @@ export default function Account() {
 
       const response =
         await fetch(
-          "https://strongmarket-payment-server.onrender.com/api/products/upload",
+          "https://strongmarket-payment-server.onrender.com/api/profile/upload",
           {
             method: "POST",
             headers: {
