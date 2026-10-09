@@ -366,16 +366,7 @@ footer p {
     grid-template-columns: 1fr;
   }
 
-  .category-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .product-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-  .category-grid {
+   .category-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 
