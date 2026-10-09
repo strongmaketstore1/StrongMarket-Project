@@ -355,6 +355,7 @@ export default function MerchantAddProduct() {
                   return;
                 }
 
+                setUploadingImage(true);
                 setMessage(
                   "Uploading product image...",
                 );
@@ -414,6 +415,8 @@ export default function MerchantAddProduct() {
                     ? error.message
                     : "Unable to upload product image.",
                 );
+              } finally {
+                setUploadingImage(false);
               }
             }}
           />
