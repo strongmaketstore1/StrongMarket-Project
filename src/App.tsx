@@ -284,104 +284,114 @@ function AppContent() {
     <BrowserRouter basename="/StrongMarket-Project">
       <div className="app">
         <header className="navbar">
-          <Link className="logo" to="/">
-            <img
-              src="/StrongMarket-Project/chilvo-logo-1.png"
-              alt="CHILVO"
-            />
-          </Link>
+  <Link
+    className="logo"
+    to="/"
+    onClick={() => setMobileMenuOpen(false)}
+  >
+    <img
+      src="/StrongMarket-Project/chilvo-logo-1.png"
+      alt="CHILVO"
+    />
+  </Link>
 
-          <nav>
-            <Link to="/">Home</Link>
-
-            <Link to="/shop">
-              Shop
-            </Link>
-
-            <Link to="/shop">
-              Categories
-            </Link>
-
-            <Link to="/merchant/apply">
-              Become a Merchant
-            </Link>
-
-            {user ? (
-  <>
-    <Link to="/account">
-      My Account
+  <nav className={mobileMenuOpen ? "mobile-nav-open" : ""}>
+    <Link to="/" onClick={() => setMobileMenuOpen(false)}>
+      Home
     </Link>
 
-    {merchantStatus === "approved" && (
-      <Link to="/merchant/dashboard">
-        Merchant Dashboard
-      </Link>
+    <Link to="/shop" onClick={() => setMobileMenuOpen(false)}>
+      Shop
+    </Link>
+
+    <Link to="/shop" onClick={() => setMobileMenuOpen(false)}>
+      Categories
+    </Link>
+
+    <Link to="/merchant/apply" onClick={() => setMobileMenuOpen(false)}>
+      Become a Merchant
+    </Link>
+
+    {user ? (
+      <>
+        <Link to="/account" onClick={() => setMobileMenuOpen(false)}>
+          My Account
+        </Link>
+
+        {merchantStatus === "approved" && (
+          <Link
+            to="/merchant/dashboard"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Merchant Dashboard
+          </Link>
+        )}
+
+        {isAdmin && (
+          <Link
+            to="/admin/merchant-applications"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Admin
+          </Link>
+        )}
+
+        <button type="button" onClick={() => {
+          setMobileMenuOpen(false);
+          void handleLogout();
+        }}>
+          Logout
+        </button>
+
+        <button type="button" onClick={() => {
+          setMobileMenuOpen(false);
+          void handleDeleteAccount();
+        }}>
+          Delete Account
+        </button>
+      </>
+    ) : (
+      <>
+        <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+          Login
+        </Link>
+
+        <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
+          Register
+        </Link>
+      </>
     )}
 
-    {isAdmin && (
-  <Link to="/admin/merchant-applications">
-    Admin
-  </Link>
-)}
-    
+    <Link to="/" onClick={() => setMobileMenuOpen(false)}>
+      About
+    </Link>
+  </nav>
+
+  <div className="nav-actions">
+    <Link
+      className="search-btn"
+      to="/shop"
+      aria-label="Search products"
+    >
+      <span className="search-icon" aria-hidden="true">
+        ⌕
+      </span>
+      <span className="search-label">Search</span>
+    </Link>
+
+    <CartButton />
+
     <button
-                  type="button"
-                  onClick={handleLogout}
-                >
-                  Logout
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleDeleteAccount}
-                >
-                  Delete Account
-                </button>
-              </>
-            ) : (
-              <>
-                <Link to="/login">
-                  Login
-                </Link>
-
-                <Link to="/register">
-                  Register
-                </Link>
-              </>
-            )}
-
-            <Link to="/">
-              About
-            </Link>
-          </nav>
-
-          <div className="nav-actions">
-  <Link
-    className="search-btn"
-    to="/shop"
-    aria-label="Search products"
-  >
-    <span className="search-icon" aria-hidden="true">
-      ⌕
-    </span>
-    <span className="search-label">Search</span>
-  </Link>
-
-  <CartButton />
-
-  <button
-    type="button"
-    className="mobile-menu-btn"
-    aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-    aria-expanded={mobileMenuOpen}
-    onClick={() =>
-      setMobileMenuOpen(!mobileMenuOpen)
-    }
-  >
-    {mobileMenuOpen ? "✕" : "☰"}
-  </button>
-</div>
-        </header>
+      type="button"
+      className="mobile-menu-btn"
+      aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+      aria-expanded={mobileMenuOpen}
+      onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+    >
+      {mobileMenuOpen ? "✕" : "☰"}
+    </button>
+  </div>
+</header>
 
         <Routes>
           <Route
