@@ -21,6 +21,12 @@ import { db } from "../firebase";
 
 type CategoryFilter = "all" | ProductCategory;
 
+type SortOption =
+  | "newest"
+  | "price-low"
+  | "price-high"
+  | "name";
+
 const PAGE_SIZE = 12;
 
 const categories: {
@@ -39,21 +45,29 @@ const categories: {
   { label: "Marketing", value: "marketing" },
 ];
 
+const sortOptions: {
+  label: string;
+  value: SortOption;
+}[] = [
+  { label: "Newest First", value: "newest" },
+  { label: "Price: Low to High", value: "price-low" },
+  { label: "Price: High to Low", value: "price-high" },
+  { label: "Name: A–Z", value: "name" },
+];
+
 export default function Shop() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [searchProducts, setSearchProducts] =
-    useState<Product[]>([]);
+  const [searchProducts, setSearchProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] =
     useState<CategoryFilter>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [pageIndex, setPageIndex] = useState(0);
   const [cursors, setCursors] = useState<
     QueryDocumentSnapshot<DocumentData>[]
   >([]);
   const [lastVisible, setLastVisible] =
-    useState<QueryDocumentSnapshot<DocumentData> | null>(
-      null,
-    );
+    useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [hasNextPage, setHasNextPage] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -93,6 +107,16 @@ export default function Shop() {
           constraints.push(
             where("category", "==", selectedCategory),
           );
+        }
+
+        if (sortBy === "price-low") {
+          constraints.push(orderBy("price", "asc"));
+        } else if (sortBy === "price-high") {
+          constraints.push(orderBy("price", "desc"));
+        } else if (sortBy === "name") {
+          constraints.push(orderBy("name", "asc"));
+        } else {
+          constraints.push(orderBy("createdAt", "desc"));
         }
 
         constraints.push(orderBy(documentId()));
@@ -151,25 +175,33 @@ export default function Shop() {
     return () => {
       cancelled = true;
     };
-  }, [selectedCategory, searchTerm, pageIndex, cursors]);
+  }, [
+    selectedCategory,
+    searchTerm,
+    sortBy,
+    pageIndex,
+    cursors,
+  ]);
 
   const search = searchTerm.trim().toLowerCase();
 
   const filteredProducts = search
-    ? searchProducts.filter((product) => {
-        const matchesCategory =
-          selectedCategory === "all" ||
-          product.category === selectedCategory;
+    ? searchProducts
+        .filter((product) => {
+          const matchesCategory =
+            selectedCategory === "all" ||
+            product.category === selectedCategory;
 
-        return (
-          matchesCategory &&
-          (
-            (product.name ?? "").toLowerCase().includes(search) ||
-            (product.description ?? "").toLowerCase().includes(search) ||
-            (product.category ?? "").toLowerCase().includes(search)
-          )
-        );
-      })
+          return (
+            matchesCategory &&
+            (
+              (product.name ?? "").toLowerCase().includes(search) ||
+              (product.description ?? "").toLowerCase().includes(search) ||
+              (product.category ?? "").toLowerCase().includes(search)
+            )
+          );
+        })
+        .sort((a, b) => compareProducts(a, b, sortBy))
     : products;
 
   const selectedCategoryLabel =
@@ -187,6 +219,13 @@ export default function Shop() {
     setSearchTerm(value);
     setPageIndex(0);
     setCursors([]);
+  }
+
+  function changeSort(value: SortOption) {
+    setSortBy(value);
+    setPageIndex(0);
+    setCursors([]);
+    setLastVisible(null);
   }
 
   function goToNextPage() {
@@ -249,6 +288,29 @@ export default function Shop() {
           ))}
         </div>
 
+        <div className="shop-sort">
+          <label htmlFor="product-sort">
+            Sort products
+          </label>
+
+          <select
+            id="product-sort"
+            value={sortBy}
+            onChange={(event) =>
+              changeSort(event.target.value as SortOption)
+            }
+          >
+            {sortOptions.map((option) => (
+              <option
+                key={option.value}
+                value={option.value}
+              >
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className="shop-results">
           <div className="results-heading">
             <h2>{selectedCategoryLabel}</h2>
@@ -304,4 +366,25 @@ export default function Shop() {
       </section>
     </main>
   );
+}
+
+function compareProducts(
+  a: Product,
+  b: Product,
+  sortBy: SortOption,
+): number {
+  switch (sortBy) {
+    case "price-low":
+      return a.price - b.price;
+
+    case "price-high":
+      return b.price - a.price;
+
+    case "name":
+      return a.name.localeCompare(b.name);
+
+    case "newest":
+    default:
+      return b.createdAt.localeCompare(a.createdAt);
+  }
 }
