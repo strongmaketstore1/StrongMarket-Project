@@ -356,15 +356,31 @@ function AppContent() {
           </nav>
 
           <div className="nav-actions">
-            <Link
-              className="search-btn"
-              to="/shop"
-            >
-              Search
-            </Link>
+  <Link
+    className="search-btn"
+    to="/shop"
+    aria-label="Search products"
+  >
+    <span className="search-icon" aria-hidden="true">
+      ⌕
+    </span>
+    <span className="search-label">Search</span>
+  </Link>
 
-            <CartButton />
-          </div>
+  <CartButton />
+
+  <button
+    type="button"
+    className="mobile-menu-btn"
+    aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+    aria-expanded={mobileMenuOpen}
+    onClick={() =>
+      setMobileMenuOpen(!mobileMenuOpen)
+    }
+  >
+    {mobileMenuOpen ? "✕" : "☰"}
+  </button>
+</div>
         </header>
 
         <Routes>
