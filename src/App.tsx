@@ -200,6 +200,7 @@ function CartButton() {
 }
 
 function AppContent() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(auth.currentUser);
   const [merchantStatus, setMerchantStatus] =
     useState<string>("none");
