@@ -523,3 +523,108 @@ footer p {
   object-fit: cover;
   display: block;
 }
+
+/* CHILVO responsive mobile navigation */
+.mobile-menu-btn {
+  display: none;
+}
+
+.search-icon {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .navbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 5%;
+  }
+
+  .navbar > .logo {
+    flex-shrink: 0;
+  }
+
+  .navbar .logo img {
+    width: 40px;
+    height: 40px;
+  }
+
+  .nav-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-left: auto;
+  }
+
+  .search-btn,
+  .cart-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 9px 11px;
+    border-radius: 10px;
+  }
+
+  .search-icon {
+    display: inline;
+    font-size: 1.5rem;
+    line-height: 1;
+  }
+
+  .search-label {
+    display: none;
+  }
+
+  .mobile-menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    background: white;
+    color: #111827;
+    font-size: 1.4rem;
+  }
+
+  .navbar nav {
+    display: none;
+    flex-basis: 100%;
+    width: 100%;
+    flex-direction: column;
+    gap: 0;
+    padding-top: 10px;
+    border-top: 1px solid #e5e7eb;
+    font-size: 0.95rem;
+  }
+
+  .navbar nav.mobile-nav-open {
+    display: flex;
+  }
+
+  .navbar nav a,
+  .navbar nav button {
+    display: block;
+    width: 100%;
+    padding: 13px 8px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #374151;
+    text-align: left;
+    font-weight: 600;
+  }
+
+  .navbar nav a:hover,
+  .navbar nav button:hover {
+    background: #eff6ff;
+    color: #2563eb;
+  }
+}
