@@ -1,39 +1,20 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import type {
+  ChangeEvent,
+  FormEvent,
+} from "react";
 import {
+  addDoc,
   collection,
-  documentId,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  startAfter,
-  where,
-  type DocumentData,
-  type QueryDocumentSnapshot,
 } from "firebase/firestore";
 
-import ProductCard from "../components/ProductCard";
-import type {
-  Product,
-  ProductCategory,
-} from "../types/product";
-import { db } from "../firebase";
-
-type CategoryFilter = "all" | ProductCategory;
-
-type SortOption =
-  | "newest"
-  | "price-low"
-  | "price-high"
-  | "name";
-
-const PAGE_SIZE = 12;
+import { auth, db } from "../firebase";
+import type { ProductCategory } from "../types/product";
 
 const categories: {
   label: string;
-  value: CategoryFilter;
+  value: ProductCategory;
 }[] = [
-  { label: "All Products", value: "all" },
   { label: "Ebooks", value: "ebooks" },
   { label: "Business", value: "business" },
   { label: "Templates", value: "templates" },
@@ -45,346 +26,430 @@ const categories: {
   { label: "Marketing", value: "marketing" },
 ];
 
-const sortOptions: {
-  label: string;
-  value: SortOption;
-}[] = [
-  { label: "Newest First", value: "newest" },
-  { label: "Price: Low to High", value: "price-low" },
-  { label: "Price: High to Low", value: "price-high" },
-  { label: "Name: A–Z", value: "name" },
-];
+export default function MerchantAddProduct() {
+  const [name, setName] = useState("");
+  const [description, setDescription] =
+    useState("");
+  const [shortDescription, setShortDescription] =
+    useState("");
+  const [price, setPrice] = useState("");
+  const [category, setCategory] =
+    useState<ProductCategory>("ebooks");
+  const [image, setImage] = useState("");
+  const [fileName, setFileName] = useState("");
+  const [cloudinaryPublicId, setCloudinaryPublicId] =
+    useState("");
+  const [uploadingFile, setUploadingFile] =
+    useState(false);
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
-export default function Shop() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [searchProducts, setSearchProducts] = useState<Product[]>([]);
-  const [selectedCategory, setSelectedCategory] =
-    useState<CategoryFilter>("all");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState<SortOption>("newest");
-  const [pageIndex, setPageIndex] = useState(0);
-  const [cursors, setCursors] = useState<
-    QueryDocumentSnapshot<DocumentData>[]
-  >([]);
-  const [lastVisible, setLastVisible] =
-    useState<QueryDocumentSnapshot<DocumentData> | null>(null);
-  const [hasNextPage, setHasNextPage] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
+  async function uploadProductFile(
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = event.target.files?.[0];
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadProducts() {
-      setLoading(true);
-      setLoadError("");
-
-      try {
-        if (searchTerm.trim()) {
-          const snapshot = await getDocs(
-            collection(db, "products"),
-          );
-
-          if (cancelled) return;
-
-          const allProducts = snapshot.docs.map(
-            (productDoc) => ({
-              id: productDoc.id,
-              ...productDoc.data(),
-            }) as Product,
-          );
-
-          setSearchProducts(allProducts);
-          setProducts([]);
-          setHasNextPage(false);
-          setLastVisible(null);
-          return;
-        }
-
-        const constraints = [];
-
-        if (selectedCategory !== "all") {
-          constraints.push(
-            where("category", "==", selectedCategory),
-          );
-        }
-
-        if (sortBy === "price-low") {
-          constraints.push(orderBy("price", "asc"));
-        } else if (sortBy === "price-high") {
-          constraints.push(orderBy("price", "desc"));
-        } else if (sortBy === "name") {
-          constraints.push(orderBy("name", "asc"));
-        } else {
-          constraints.push(orderBy("createdAt", "desc"));
-        }
-
-        constraints.push(orderBy(documentId()));
-
-        if (pageIndex > 0 && cursors[pageIndex - 1]) {
-          constraints.push(
-            startAfter(cursors[pageIndex - 1]),
-          );
-        }
-
-        constraints.push(limit(PAGE_SIZE + 1));
-
-        const productsQuery = query(
-          collection(db, "products"),
-          ...constraints,
-        );
-
-        const snapshot = await getDocs(productsQuery);
-
-        if (cancelled) return;
-
-        const pageDocs = snapshot.docs.slice(0, PAGE_SIZE);
-
-        setProducts(
-          pageDocs.map((productDoc) => ({
-            id: productDoc.id,
-            ...productDoc.data(),
-          })) as Product[],
-        );
-
-        setLastVisible(
-          pageDocs.length > 0
-            ? pageDocs[pageDocs.length - 1]
-            : null,
-        );
-
-        setHasNextPage(snapshot.docs.length > PAGE_SIZE);
-        setSearchProducts([]);
-      } catch (error) {
-        console.error("Unable to load products:", error);
-
-        if (!cancelled) {
-          setLoadError(
-            "Unable to load products. Please try again.",
-          );
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    }
-
-    void loadProducts();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    selectedCategory,
-    searchTerm,
-    sortBy,
-    pageIndex,
-    cursors,
-  ]);
-
-  const search = searchTerm.trim().toLowerCase();
-
-  const filteredProducts = search
-    ? searchProducts
-        .filter((product) => {
-          const matchesCategory =
-            selectedCategory === "all" ||
-            product.category === selectedCategory;
-
-          return (
-            matchesCategory &&
-            (
-              (product.name ?? "").toLowerCase().includes(search) ||
-              (product.description ?? "").toLowerCase().includes(search) ||
-              (product.category ?? "").toLowerCase().includes(search)
-            )
-          );
-        })
-        .sort((a, b) => compareProducts(a, b, sortBy))
-    : products;
-
-  const selectedCategoryLabel =
-    categories.find(
-      (category) => category.value === selectedCategory,
-    )?.label ?? "All Products";
-
-  function changeCategory(category: CategoryFilter) {
-    setSelectedCategory(category);
-    setPageIndex(0);
-    setCursors([]);
-  }
-
-  function changeSearch(value: string) {
-    setSearchTerm(value);
-    setPageIndex(0);
-    setCursors([]);
-  }
-
-  function changeSort(value: SortOption) {
-    setSortBy(value);
-    setPageIndex(0);
-    setCursors([]);
-    setLastVisible(null);
-  }
-
-  function goToNextPage() {
-    if (!lastVisible || !hasNextPage || searchTerm.trim()) {
+    if (!file) {
       return;
     }
 
-    setCursors((previous) => [
-      ...previous.slice(0, pageIndex),
-      lastVisible,
-    ]);
-    setPageIndex((previous) => previous + 1);
+    try {
+      const user = auth.currentUser;
+
+      if (!user) {
+        setMessage("You must be logged in.");
+        return;
+      }
+
+      setUploadingFile(true);
+      setMessage("");
+
+      const idToken = await user.getIdToken();
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch(
+        "https://strongmarket-payment-server.onrender.com/api/products/upload",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: formData,
+        },
+      );
+
+      const result = await response.json();
+
+      if (
+        !response.ok ||
+        result?.success !== true
+      ) {
+        setMessage(
+          result?.message ||
+            "Unable to upload product file.",
+        );
+        return;
+      }
+
+      setCloudinaryPublicId(result.publicId);
+      setFileName(
+        result.fileName || file.name,
+      );
+
+      setMessage(
+        "Product file uploaded successfully.",
+      );
+    } catch (error) {
+  console.error(
+    "Product file upload error:",
+    error,
+  );
+
+  setMessage(
+    error instanceof Error
+      ? `Upload error: ${error.message}`
+      : "Unable to upload product file. Please try again.",
+  );
+    } finally {
+      setUploadingFile(false);
+    }
   }
 
-  function goToPreviousPage() {
-    if (pageIndex === 0 || searchTerm.trim()) return;
-    setPageIndex((previous) => previous - 1);
+  async function handleSubmit(
+    event: FormEvent,
+  ) {
+    event.preventDefault();
+
+    setMessage("");
+    setLoading(true);
+
+    try {
+      const user = auth.currentUser;
+
+      if (!user) {
+        setMessage("You must be logged in.");
+        return;
+      }
+
+      const productSlug = name
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+
+      await addDoc(
+        collection(db, "products"),
+        {
+          name: name.trim(),
+          slug: productSlug,
+          description: description.trim(),
+          shortDescription:
+            shortDescription.trim(),
+          price: Number(price),
+          currency: "NGN",
+          category,
+          image: image.trim(),
+          fileName: fileName.trim(),
+          cloudinaryPublicId:
+            cloudinaryPublicId.trim(),
+          featured: false,
+          rating: 0,
+          reviewCount: 0,
+          createdAt:
+            new Date().toISOString(),
+          merchantId: user.uid,
+        },
+      );
+
+      setMessage(
+        "Product added successfully.",
+      );
+
+      setName("");
+      setDescription("");
+      setShortDescription("");
+      setPrice("");
+      setCategory("ebooks");
+      setImage("");
+      setFileName("");
+      setCloudinaryPublicId("");
+    } catch (error) {
+      console.error(
+        "Add product error:",
+        error,
+      );
+
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to add product. Please try again.",
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <main className="shop-page">
-      <section className="shop-hero">
-        <p className="eyebrow">CHILVO</p>
+    <main>
+      <h1>Add Product</h1>
 
-        <h1>Explore our digital marketplace.</h1>
+      <p>
+        Add a digital product to CHILVO.
+      </p>
 
-        <p>
-          Discover useful digital products created to
-          help you learn, create, work, and grow.
-        </p>
-      </section>
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label htmlFor="name">
+            Product Name
+          </label>
 
-      <section className="shop-content">
-        <div className="shop-search">
           <input
-            type="search"
-            placeholder="Search digital products..."
-            value={searchTerm}
+            id="name"
+            type="text"
+            value={name}
             onChange={(event) =>
-              changeSearch(event.target.value)
+              setName(event.target.value)
             }
-            aria-label="Search digital products"
+            required
           />
         </div>
 
-        <div className="category-filter">
-          {categories.map((category) => (
-            <button
-              key={category.value}
-              type="button"
-              className={
-                selectedCategory === category.value
-                  ? "active"
-                  : ""
-              }
-              onClick={() => changeCategory(category.value)}
-            >
-              {category.label}
-            </button>
-          ))}
+        <div>
+          <label htmlFor="shortDescription">
+            Short Description
+          </label>
+
+          <input
+            id="shortDescription"
+            type="text"
+            value={shortDescription}
+            onChange={(event) =>
+              setShortDescription(
+                event.target.value,
+              )
+            }
+            required
+          />
         </div>
 
-        <div className="shop-sort">
-          <label htmlFor="product-sort">
-            Sort products
+        <div>
+          <label htmlFor="description">
+            Description
+          </label>
+
+          <textarea
+            id="description"
+            value={description}
+            onChange={(event) =>
+              setDescription(
+                event.target.value,
+              )
+            }
+            required
+          />
+        </div>
+
+        <div>
+          <label htmlFor="price">
+            Price (NGN)
+          </label>
+
+          <input
+            id="price"
+            type="number"
+            min="0"
+            step="0.01"
+            value={price}
+            onChange={(event) =>
+              setPrice(event.target.value)
+            }
+            required
+          />
+        </div>
+
+        <div>
+          <label htmlFor="category">
+            Category
           </label>
 
           <select
-            id="product-sort"
-            value={sortBy}
+            id="category"
+            value={category}
             onChange={(event) =>
-              changeSort(event.target.value as SortOption)
+              setCategory(
+                event.target.value as ProductCategory,
+              )
             }
           >
-            {sortOptions.map((option) => (
+            {categories.map((item) => (
               <option
-                key={option.value}
-                value={option.value}
+                key={item.value}
+                value={item.value}
               >
-                {option.label}
+                {item.label}
               </option>
             ))}
           </select>
         </div>
 
-        <div className="shop-results">
-          <div className="results-heading">
-            <h2>{selectedCategoryLabel}</h2>
+        <div>
+          <label htmlFor="image">
+            Product Image
+          </label>
 
-            <span>
-              {loading
-                ? "Loading products..."
-                : searchTerm.trim()
-                  ? `${filteredProducts.length} products`
-                  : `${filteredProducts.length} products · Page ${pageIndex + 1}`}
-            </span>
-          </div>
+          <input
+            id="image"
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            onChange={async (event) => {
+              const file =
+                event.target.files?.[0];
 
-          {loadError && <p role="alert">{loadError}</p>}
+              if (!file) {
+                return;
+              }
 
-          {!loadError && !loading && filteredProducts.length === 0 && (
-            <p>No products found.</p>
-          )}
+              try {
+                const user =
+                  auth.currentUser;
 
-          <div className="product-grid">
-            {filteredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-              />
-            ))}
-          </div>
+                if (!user) {
+                  setMessage(
+                    "You must be logged in.",
+                  );
+                  return;
+                }
 
-          {!loading &&
-            !loadError &&
-            !searchTerm.trim() && (
-              <div className="shop-pagination">
-                <button
-                  type="button"
-                  onClick={goToPreviousPage}
-                  disabled={pageIndex === 0}
-                >
-                  Previous
-                </button>
+                setMessage(
+                  "Uploading product image...",
+                );
 
-                <span>Page {pageIndex + 1}</span>
+                const idToken =
+                  await user.getIdToken();
 
-                <button
-                  type="button"
-                  onClick={goToNextPage}
-                  disabled={!hasNextPage}
-                >
-                  Next
-                </button>
-              </div>
-            )}
+                const formData =
+                  new FormData();
+
+                formData.append(
+                  "file",
+                  file,
+                );
+
+                const response =
+                  await fetch(
+                    "https://strongmarket-payment-server.onrender.com/api/products/upload",
+                    {
+                      method: "POST",
+                      headers: {
+                        Authorization: `Bearer ${idToken}`,
+                      },
+                      body: formData,
+                    },
+                  );
+
+                const result =
+                  await response.json();
+
+                if (
+                  !response.ok ||
+                  result?.success !== true
+                ) {
+                  setMessage(
+                    result?.message ||
+                      "Unable to upload product image.",
+                  );
+                  return;
+                }
+
+                setImage(
+                  result.secureUrl || "",
+                );
+
+                setMessage(
+                  "Product image uploaded successfully.",
+                );
+              } catch (error) {
+                console.error(
+                  "Product image upload error:",
+                  error,
+                );
+
+                setMessage(
+                  error instanceof Error
+                    ? error.message
+                    : "Unable to upload product image.",
+                );
+              }
+            }}
+          />
         </div>
-      </section>
+
+        <div>
+          <label htmlFor="fileName">
+            Digital File Name
+          </label>
+
+          <input
+            id="fileName"
+            type="text"
+            value={fileName}
+            onChange={(event) =>
+              setFileName(
+                event.target.value,
+              )
+            }
+            placeholder="my-product.pdf"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="productFile">
+            Digital Product File
+          </label>
+
+          <input
+            id="productFile"
+            type="file"
+            accept=".pdf,.zip,.doc,.docx"
+            onChange={uploadProductFile}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="cloudinaryPublicId">
+            Cloudinary Public ID
+          </label>
+
+          <input
+            id="cloudinaryPublicId"
+            type="text"
+            value={cloudinaryPublicId}
+            onChange={(event) =>
+              setCloudinaryPublicId(
+                event.target.value,
+              )
+            }
+            placeholder="strongmarket/products/my-product"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={
+            loading || uploadingFile
+          }
+        >
+          {uploadingFile
+            ? "Uploading File..."
+            : loading
+              ? "Adding Product..."
+              : "Add Product"}
+        </button>
+      </form>
+
+      {message && <p>{message}</p>}
     </main>
   );
-}
-
-function compareProducts(
-  a: Product,
-  b: Product,
-  sortBy: SortOption,
-): number {
-  switch (sortBy) {
-    case "price-low":
-      return a.price - b.price;
-
-    case "price-high":
-      return b.price - a.price;
-
-    case "name":
-      return a.name.localeCompare(b.name);
-
-    case "newest":
-    default:
-      return b.createdAt.localeCompare(a.createdAt);
-  }
 }
