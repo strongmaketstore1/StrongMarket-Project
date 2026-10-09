@@ -362,13 +362,18 @@ footer p {
 }
 
 @media (max-width: 1000px) {
-  .navbar nav {
-    display: flex;
-  }
-
   .hero {
     grid-template-columns: 1fr;
   }
+
+  .category-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .product-grid {
+    grid-template-columns: 1fr;
+  }
+}
 
   .category-grid {
     grid-template-columns: repeat(2, 1fr);
