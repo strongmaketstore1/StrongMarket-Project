@@ -43,9 +43,11 @@ export default function MerchantAddProduct() {
     useState("");
   const [uploadingFile, setUploadingFile] =
     useState(false);
+  const [uploadingImage, setUploadingImage] =
+  useState(false);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-
+  
   async function uploadProductFile(
     event: ChangeEvent<HTMLInputElement>,
   ) {
