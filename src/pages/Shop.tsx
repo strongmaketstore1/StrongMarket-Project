@@ -1,7 +1,15 @@
 import { useEffect, useState } from "react";
 import {
   collection,
-  onSnapshot,
+  documentId,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  startAfter,
+  where,
+  type DocumentData,
+  type QueryDocumentSnapshot,
 } from "firebase/firestore";
 
 import ProductCard from "../components/ProductCard";
@@ -12,6 +20,8 @@ import type {
 import { db } from "../firebase";
 
 type CategoryFilter = "all" | ProductCategory;
+
+const PAGE_SIZE = 12;
 
 const categories: {
   label: string;
@@ -31,63 +41,170 @@ const categories: {
 
 export default function Shop() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [searchProducts, setSearchProducts] =
+    useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] =
     useState<CategoryFilter>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [pageIndex, setPageIndex] = useState(0);
+  const [cursors, setCursors] = useState<
+    QueryDocumentSnapshot<DocumentData>[]
+  >([]);
+  const [lastVisible, setLastVisible] =
+    useState<QueryDocumentSnapshot<DocumentData> | null>(
+      null,
+    );
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(
-      collection(db, "products"),
-      (snapshot) => {
-        const firestoreProducts =
-          snapshot.docs.map((productDoc) => ({
+    let cancelled = false;
+
+    async function loadProducts() {
+      setLoading(true);
+      setLoadError("");
+
+      try {
+        if (searchTerm.trim()) {
+          const snapshot = await getDocs(
+            collection(db, "products"),
+          );
+
+          if (cancelled) return;
+
+          const allProducts = snapshot.docs.map(
+            (productDoc) => ({
+              id: productDoc.id,
+              ...productDoc.data(),
+            }) as Product,
+          );
+
+          setSearchProducts(allProducts);
+          setProducts([]);
+          setHasNextPage(false);
+          setLastVisible(null);
+          return;
+        }
+
+        const constraints = [];
+
+        if (selectedCategory !== "all") {
+          constraints.push(
+            where("category", "==", selectedCategory),
+          );
+        }
+
+        constraints.push(orderBy(documentId()));
+
+        if (pageIndex > 0 && cursors[pageIndex - 1]) {
+          constraints.push(
+            startAfter(cursors[pageIndex - 1]),
+          );
+        }
+
+        constraints.push(limit(PAGE_SIZE + 1));
+
+        const productsQuery = query(
+          collection(db, "products"),
+          ...constraints,
+        );
+
+        const snapshot = await getDocs(productsQuery);
+
+        if (cancelled) return;
+
+        const pageDocs = snapshot.docs.slice(0, PAGE_SIZE);
+
+        setProducts(
+          pageDocs.map((productDoc) => ({
             id: productDoc.id,
             ...productDoc.data(),
-          })) as Product[];
-
-        setProducts(firestoreProducts);
-      },
-      (error) => {
-        console.error(
-          "Unable to load products:",
-          error,
+          })) as Product[],
         );
-      },
-    );
 
-    return () => unsubscribe();
-  }, []);
+        setLastVisible(
+          pageDocs.length > 0
+            ? pageDocs[pageDocs.length - 1]
+            : null,
+        );
 
-  const filteredProducts = products.filter(
-    (product) => {
-      const matchesCategory =
-        selectedCategory === "all" ||
-        product.category === selectedCategory;
+        setHasNextPage(snapshot.docs.length > PAGE_SIZE);
+        setSearchProducts([]);
+      } catch (error) {
+        console.error("Unable to load products:", error);
 
-      const search =
-        searchTerm.trim().toLowerCase();
+        if (!cancelled) {
+          setLoadError(
+            "Unable to load products. Please try again.",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
 
-      const matchesSearch =
-        !search ||
-        product.name
-          .toLowerCase()
-          .includes(search) ||
-        product.description
-          .toLowerCase()
-          .includes(search) ||
-        product.category
-          .toLowerCase()
-          .includes(search);
+    void loadProducts();
 
-      return matchesCategory && matchesSearch;
-    },
-  );
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCategory, searchTerm, pageIndex, cursors]);
+
+  const search = searchTerm.trim().toLowerCase();
+
+  const filteredProducts = search
+    ? searchProducts.filter((product) => {
+        const matchesCategory =
+          selectedCategory === "all" ||
+          product.category === selectedCategory;
+
+        return (
+          matchesCategory &&
+          (
+            (product.name ?? "").toLowerCase().includes(search) ||
+            (product.description ?? "").toLowerCase().includes(search) ||
+            (product.category ?? "").toLowerCase().includes(search)
+          )
+        );
+      })
+    : products;
 
   const selectedCategoryLabel =
     categories.find(
-      (category) =>
-        category.value === selectedCategory,
+      (category) => category.value === selectedCategory,
     )?.label ?? "All Products";
+
+  function changeCategory(category: CategoryFilter) {
+    setSelectedCategory(category);
+    setPageIndex(0);
+    setCursors([]);
+  }
+
+  function changeSearch(value: string) {
+    setSearchTerm(value);
+    setPageIndex(0);
+    setCursors([]);
+  }
+
+  function goToNextPage() {
+    if (!lastVisible || !hasNextPage || searchTerm.trim()) {
+      return;
+    }
+
+    setCursors((previous) => [
+      ...previous.slice(0, pageIndex),
+      lastVisible,
+    ]);
+    setPageIndex((previous) => previous + 1);
+  }
+
+  function goToPreviousPage() {
+    if (pageIndex === 0 || searchTerm.trim()) return;
+    setPageIndex((previous) => previous - 1);
+  }
 
   return (
     <main className="shop-page">
@@ -109,7 +226,7 @@ export default function Shop() {
             placeholder="Search digital products..."
             value={searchTerm}
             onChange={(event) =>
-              setSearchTerm(event.target.value)
+              changeSearch(event.target.value)
             }
             aria-label="Search digital products"
           />
@@ -125,11 +242,7 @@ export default function Shop() {
                   ? "active"
                   : ""
               }
-              onClick={() =>
-                setSelectedCategory(
-                  category.value,
-                )
-              }
+              onClick={() => changeCategory(category.value)}
             >
               {category.label}
             </button>
@@ -141,9 +254,19 @@ export default function Shop() {
             <h2>{selectedCategoryLabel}</h2>
 
             <span>
-              {filteredProducts.length} products
+              {loading
+                ? "Loading products..."
+                : searchTerm.trim()
+                  ? `${filteredProducts.length} products`
+                  : `${filteredProducts.length} products · Page ${pageIndex + 1}`}
             </span>
           </div>
+
+          {loadError && <p role="alert">{loadError}</p>}
+
+          {!loadError && !loading && filteredProducts.length === 0 && (
+            <p>No products found.</p>
+          )}
 
           <div className="product-grid">
             {filteredProducts.map((product) => (
@@ -153,6 +276,30 @@ export default function Shop() {
               />
             ))}
           </div>
+
+          {!loading &&
+            !loadError &&
+            !searchTerm.trim() && (
+              <div className="shop-pagination">
+                <button
+                  type="button"
+                  onClick={goToPreviousPage}
+                  disabled={pageIndex === 0}
+                >
+                  Previous
+                </button>
+
+                <span>Page {pageIndex + 1}</span>
+
+                <button
+                  type="button"
+                  onClick={goToNextPage}
+                  disabled={!hasNextPage}
+                >
+                  Next
+                </button>
+              </div>
+            )}
         </div>
       </section>
     </main>
