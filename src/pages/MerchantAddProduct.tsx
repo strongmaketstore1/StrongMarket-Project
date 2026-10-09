@@ -472,16 +472,18 @@ export default function MerchantAddProduct() {
         </div>
 
         <button
-          type="submit"
-          disabled={
-            loading || uploadingFile
-          }
-        >
-          {uploadingFile
-            ? "Uploading File..."
-            : loading
-              ? "Adding Product..."
-              : "Add Product"}
+  type="submit"
+  disabled={
+    loading || uploadingFile || uploadingImage
+  }
+>
+          {uploadingImage
+  ? "Uploading Image..."
+  : uploadingFile
+    ? "Uploading File..."
+    : loading
+      ? "Adding Product..."
+      : "Add Product"}
         </button>
       </form>
 
