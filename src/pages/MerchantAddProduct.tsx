@@ -135,6 +135,35 @@ export default function MerchantAddProduct() {
         return;
       }
 
+      const userSnapshot = await getDoc(
+        doc(db, "users", user.uid),
+      );
+
+      if (
+        !userSnapshot.exists() ||
+        userSnapshot.data().merchantStatus !== "approved"
+      ) {
+        setMessage(
+          "Only approved merchants can add products.",
+        );
+        return;
+      }
+
+      if (!image.trim()) {
+        setMessage("Please upload a product image first.");
+        return;
+      }
+
+      if (!cloudinaryPublicId.trim() || !fileName.trim()) {
+        setMessage("Please upload the digital product file first.");
+        return;
+      }
+
+      if (!Number.isFinite(Number(price)) || Number(price) <= 0) {
+        setMessage("Enter a valid price greater than zero.");
+        return;
+      }
+      
       const productSlug = name
         .toLowerCase()
         .trim()
