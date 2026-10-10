@@ -39,6 +39,7 @@ a {
   min-height: 100vh;
 }
 
+/* Header and desktop navigation */
 .navbar {
   position: sticky;
   top: 0;
@@ -84,6 +85,7 @@ a {
 
 .nav-actions {
   display: flex;
+  align-items: center;
   gap: 10px;
 }
 
@@ -104,6 +106,15 @@ a {
   color: white;
 }
 
+.mobile-menu-btn {
+  display: none;
+}
+
+.search-icon {
+  display: none;
+}
+
+/* Homepage hero */
 .hero {
   display: grid;
   grid-template-columns: 1.15fr 0.85fr;
@@ -165,6 +176,7 @@ a {
   background: #1d4ed8;
 }
 
+/* Featured homepage card */
 .hero-card {
   position: relative;
   min-height: 420px;
@@ -216,6 +228,7 @@ a {
   color: #cbd5e1;
 }
 
+/* Homepage categories and featured products */
 .categories,
 .featured {
   padding: 100px 6%;
@@ -348,6 +361,7 @@ a {
   font-weight: 700;
 }
 
+/* Footer */
 footer {
   display: flex;
   justify-content: space-between;
@@ -361,12 +375,13 @@ footer p {
   color: #9ca3af;
 }
 
+/* Tablet layouts */
 @media (max-width: 1000px) {
   .hero {
     grid-template-columns: 1fr;
   }
 
-   .category-grid {
+  .category-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 
@@ -375,15 +390,8 @@ footer p {
   }
 }
 
+/* General mobile page layouts */
 @media (max-width: 600px) {
-  .navbar {
-    padding: 16px 5%;
-  }
-
-  .search-btn {
-    display: none;
-  }
-
   .hero,
   .categories,
   .featured {
@@ -412,6 +420,7 @@ footer p {
   }
 }
 
+/* Shop page */
 .shop-page {
   min-height: 100vh;
   background: #f8fafc;
@@ -503,7 +512,7 @@ footer p {
   font-size: 0.8rem;
 }
 
-/* Product Details image */
+/* Product details image */
 .product-details-image {
   min-height: 420px;
   display: grid;
@@ -520,22 +529,14 @@ footer p {
   display: block;
 }
 
-/* CHILVO responsive mobile navigation */
-.mobile-menu-btn {
-  display: none;
-}
-
-.search-icon {
-  display: none;
-}
-
+/* Mobile navigation */
 @media (max-width: 600px) {
   .navbar {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 8px;
     padding: 12px 5%;
   }
 
@@ -552,8 +553,9 @@ footer p {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 8px;
+    gap: 6px;
     margin-left: auto;
+    flex-shrink: 0;
   }
 
   .search-btn,
@@ -562,7 +564,7 @@ footer p {
     align-items: center;
     justify-content: center;
     min-height: 42px;
-    padding: 9px 11px;
+    padding: 8px 10px;
     border-radius: 10px;
   }
 
@@ -580,6 +582,7 @@ footer p {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
     width: 42px;
     height: 42px;
     padding: 0;
@@ -592,12 +595,18 @@ footer p {
 
   .navbar nav {
     display: none;
-    flex-basis: 100%;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 49;
     width: 100%;
     flex-direction: column;
     gap: 0;
-    padding-top: 10px;
+    padding: 10px 5% 16px;
     border-top: 1px solid #e5e7eb;
+    background: white;
+    box-shadow: 0 12px 20px rgba(15, 23, 42, 0.1);
     font-size: 0.95rem;
   }
 
