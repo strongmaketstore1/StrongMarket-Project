@@ -633,3 +633,30 @@ footer p {
     color: #2563eb;
   }
 }
+
+/* CHILVO mobile menu visibility fix */
+@media (max-width: 600px) {
+  header.navbar {
+    position: sticky;
+    isolation: isolate;
+  }
+
+  #chilvo-mobile-navigation {
+    display: none;
+  }
+
+  #chilvo-mobile-navigation.mobile-nav-open {
+    display: flex;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    width: 100%;
+    flex-direction: column;
+    gap: 0;
+    padding: 12px 5% 16px;
+    background: #ffffff;
+    border-top: 1px solid #e5e7eb;
+    box-shadow: 0 12px 20px rgba(15, 23, 42, 0.1);
+  }
+}
