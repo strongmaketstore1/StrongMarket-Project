@@ -667,10 +667,11 @@ display: none;
 }
 
 @media (max-width: 600px) {
-.mobile-menu-btn {
-display: inline-flex;
+header.navbar .mobile-menu-btn {
+display: inline-flex !important;
 align-items: center;
 justify-content: center;
+flex-shrink: 0;
 width: 42px;
 height: 42px;
 padding: 0;
@@ -680,5 +681,25 @@ background: #ffffff;
 color: #111827;
 font-size: 1.4rem;
 cursor: pointer;
+}
+
+header.navbar #chilvo-mobile-navigation {
+display: none !important;
+}
+
+header.navbar #chilvo-mobile-navigation.mobile-nav-open {
+display: flex !important;
+position: absolute;
+top: 100%;
+left: 0;
+right: 0;
+width: 100%;
+flex-direction: column;
+gap: 0;
+padding: 12px 5% 16px;
+background: #ffffff;
+border-top: 1px solid #e5e7eb;
+box-shadow: 0 12px 20px rgba(15, 23, 42, 0.1);
+z-index: 100;
 }
 }
