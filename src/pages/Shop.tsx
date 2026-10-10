@@ -168,6 +168,7 @@ export default function Shop() {
           setLoading(false);
         }
       }
+    }
 
     void loadProducts();
 
