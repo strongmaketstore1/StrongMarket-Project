@@ -295,7 +295,10 @@ function AppContent() {
     />
   </Link>
 
-  <nav className={mobileMenuOpen ? "mobile-nav-open" : ""}>
+    <nav
+  id="chilvo-mobile-navigation"
+  className={mobileMenuOpen ? "mobile-nav-open" : ""}
+>
     <Link to="/" onClick={() => setMobileMenuOpen(false)}>
       Home
     </Link>
