@@ -660,3 +660,25 @@ footer p {
     box-shadow: 0 12px 20px rgba(15, 23, 42, 0.1);
   }
 }
+
+/* CHILVO mobile menu button */
+.mobile-menu-btn {
+display: none;
+}
+
+@media (max-width: 600px) {
+.mobile-menu-btn {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+width: 42px;
+height: 42px;
+padding: 0;
+border: 1px solid #d1d5db;
+border-radius: 10px;
+background: #ffffff;
+color: #111827;
+font-size: 1.4rem;
+cursor: pointer;
+}
+}
