@@ -159,17 +159,15 @@ export default function Shop() {
         console.error("Unable to load products:", error);
 
         if (!cancelled) {
-  setLoadError(
-    error instanceof Error ? error.message : String(error)
-  );
-}
+          setLoadError(
+            error instanceof Error ? error.message : String(error)
+          );
         }
       } finally {
         if (!cancelled) {
           setLoading(false);
         }
       }
-    }
 
     void loadProducts();
 
