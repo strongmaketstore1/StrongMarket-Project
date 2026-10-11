@@ -39,8 +39,8 @@ export default function MerchantAddProduct() {
     useState<ProductCategory>("ebooks");
   const [image, setImage] = useState("");
   const [fileName, setFileName] = useState("");
-  const [cloudinaryPublicId, setCloudinaryPublicId] =
-    useState("");
+  const [cloudinaryFileRef, setCloudinaryFileRef] =
+  useState("");
   const [uploadingFile, setUploadingFile] =
     useState(false);
   const [uploadingImage, setUploadingImage] =
@@ -97,7 +97,12 @@ export default function MerchantAddProduct() {
         return;
       }
 
-      setCloudinaryPublicId(result.publicId);
+      if (!result.fileReference) {
+  setMessage("File reference missing. Please try again.");
+  return;
+}
+
+setCloudinaryFileRef(result.fileReference);
       setFileName(
         result.fileName || file.name,
       );
@@ -156,7 +161,7 @@ export default function MerchantAddProduct() {
         return;
       }
 
-      if (!cloudinaryPublicId.trim() || !fileName.trim()) {
+      if (!cloudinaryFileRef.trim() || !fileName.trim()) {
         setMessage("Please upload the digital product file first.");
         return;
       }
@@ -185,8 +190,8 @@ export default function MerchantAddProduct() {
           category,
           image: image.trim(),
           fileName: fileName.trim(),
-          cloudinaryPublicId:
-            cloudinaryPublicId.trim(),
+          cloudinaryFileRef:
+          cloudinaryFileRef.trim(),
           featured: false,
           rating: 0,
           reviewCount: 0,
@@ -207,7 +212,7 @@ export default function MerchantAddProduct() {
       setCategory("ebooks");
       setImage("");
       setFileName("");
-      setCloudinaryPublicId("");
+      setCloudinaryFileRef("");
     } catch (error) {
       console.error(
         "Add product error:",
