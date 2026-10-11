@@ -453,24 +453,6 @@ export default function MerchantAddProduct() {
           />
         </div>
 
-        <div>
-          <label htmlFor="cloudinaryPublicId">
-            Cloudinary Public ID
-          </label>
-
-          <input
-            id="cloudinaryPublicId"
-            type="text"
-            value={cloudinaryPublicId}
-            onChange={(event) =>
-              setCloudinaryPublicId(
-                event.target.value,
-              )
-            }
-            placeholder="strongmarket/products/my-product"
-          />
-        </div>
-
         <button
   type="submit"
   disabled={
