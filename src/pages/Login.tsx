@@ -28,7 +28,32 @@ export default function Login() {
       await loginUser(email.trim(), password);
       navigate("/");
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Unable to sign in.");
+      const errorCode =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error
+          ? String(error.code)
+          : "";
+
+      if (
+        errorCode === "auth/invalid-credential" ||
+        errorCode === "auth/wrong-password" ||
+        errorCode === "auth/user-not-found"
+      ) {
+        setError(
+          "Invalid email or password. Please check your login details and try again.",
+        );
+      } else if (errorCode === "auth/too-many-requests") {
+        setError(
+          "Too many sign-in attempts. Please wait a while and try again.",
+        );
+      } else if (errorCode === "auth/network-request-failed") {
+        setError(
+          "Connection problem. Please check your internet and try again.",
+        );
+      } else {
+        setError("Unable to sign in. Please check your details and try again.");
+      }
     } finally {
       setLoading(false);
     }
