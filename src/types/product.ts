@@ -18,6 +18,7 @@ export interface Product {
   image: string;
   fileName?: string;
   cloudinaryPublicId?: string;
+  cloudinaryFileRef?: string;
   featured: boolean;
   rating: number;
   reviewCount: number;
