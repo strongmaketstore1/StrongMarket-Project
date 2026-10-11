@@ -806,28 +806,42 @@ app.post(
         expectedAmount +=
           product.price * item.quantity;
 
-        // Preserve the original order item while
-        // adding the actual downloadable file ID.
-        resolvedItems.push({
-          ...item,
+        // Keep the private file reference in the order.
+  const fileReference =
+  typeof product?.cloudinaryFileRef === "string"
+    ? product.cloudinaryFileRef
+    : "";
 
-          ...(typeof product?.cloudinaryPublicId ===
-  "string" &&
-product.cloudinaryPublicId
-  ? {
-      cloudinaryPublicId:
-        product.cloudinaryPublicId,
-    }
-  : {}),
-...(typeof product?.fileName ===
-  "string" &&
-product.fileName
-  ? {
-      fileName:
-        product.fileName,
-    }
-  : {}),
-        });
+if (fileReference) {
+  const privateFile = await db
+    .collection("privateProductFiles")
+    .doc(fileReference)
+    .get();
+
+  if (
+    !privateFile.exists ||
+    privateFile.data()?.merchantId !== product?.merchantId
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: "Unable to verify the product file.",
+    });
+  }
+}
+
+resolvedItems.push({
+  ...item,
+  ...(fileReference
+    ? { cloudinaryFileRef: fileReference }
+    : {}),
+  ...(typeof product?.cloudinaryPublicId === "string" &&
+  product.cloudinaryPublicId
+    ? { cloudinaryPublicId: product.cloudinaryPublicId }
+    : {}),
+  ...(typeof product?.fileName === "string" && product.fileName
+    ? { fileName: product.fileName }
+    : {}),
+});
       }
 
       const orderCurrency =
@@ -1046,19 +1060,41 @@ app.get(
       const product =
   productSnapshot.data();
 
-const cloudinaryPublicId =
-  typeof purchasedItem.cloudinaryPublicId ===
-  "string"
-    ? purchasedItem.cloudinaryPublicId
-    : "";
+let cloudinaryPublicId = "";
+
+if (
+  typeof purchasedItem.cloudinaryFileRef === "string"
+) {
+  const privateFile = await db
+    .collection("privateProductFiles")
+    .doc(purchasedItem.cloudinaryFileRef)
+    .get();
+
+  const privateData = privateFile.data();
+
+  if (
+    privateFile.exists &&
+    privateData?.merchantId === product?.merchantId &&
+    typeof privateData.cloudinaryPublicId === "string"
+  ) {
+    cloudinaryPublicId =
+      privateData.cloudinaryPublicId;
+  }
+} else if (
+  typeof purchasedItem.cloudinaryPublicId === "string"
+) {
+  // Keep downloads working for older paid orders.
+  cloudinaryPublicId =
+    purchasedItem.cloudinaryPublicId;
+}
 
 if (!cloudinaryPublicId) {
-        return res.status(404).json({
-          success: false,
-          message:
-            "This product does not have a downloadable file yet.",
-        });
-      }
+  return res.status(404).json({
+    success: false,
+    message:
+      "This product does not have a downloadable file yet.",
+  });
+}
 
       const fileName =
   typeof purchasedItem.fileName ===
