@@ -7,6 +7,7 @@ import path from "path";
 import { cert, getApps, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { getAuth } from "firebase-admin/auth";
+import { randomUUID } from "crypto";
 import cloudinary from "./cloudinary";
 import { readFileSync } from "fs";
 import multer from "multer";
@@ -201,16 +202,29 @@ app.post(
         },
       );
 
-      return res.json({
-        success: true,
-        message: isImage
-          ? "Product image uploaded successfully."
-          : "Product file uploaded successfully.",
-        publicId: result.public_id,
-        fileName: req.file.originalname,
-        secureUrl: result.secure_url,
-        resourceType: result.resource_type,
-      });
+      let fileReference: string | undefined;
+
+if (!isImage) {
+  fileReference = randomUUID();
+
+  await db.collection("privateProductFiles").doc(fileReference).set({
+    cloudinaryPublicId: result.public_id,
+    fileName: req.file.originalname,
+    merchantId: decodedToken.uid,
+    createdAt: new Date().toISOString(),
+  });
+}
+
+return res.json({
+  success: true,
+  message: isImage
+    ? "Product image uploaded successfully."
+    : "Product file uploaded successfully.",
+  ...(fileReference ? { fileReference } : {}),
+  fileName: req.file.originalname,
+  ...(isImage ? { secureUrl: result.secure_url } : {}),
+  resourceType: result.resource_type,
+});
     } catch (error) {
       console.error(
         "Cloudinary product upload error:",
