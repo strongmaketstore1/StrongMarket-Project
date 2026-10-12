@@ -17,10 +17,13 @@ export default function Checkout() {
   const [customerEmail, setCustomerEmail] = useState("");
   const [error, setError] = useState("");
   const [isPaying, setIsPaying] = useState(false);
-  const [currency, setCurrency] =
-    useState<"NGN" | "USD">("NGN");
 
-  const USD_RATE = 1500;
+  const currencySymbol = "$";
+  const displayLocale = "en-US";
+
+  // Paystack expects payment amounts in the smallest
+  // currency unit: cents for USD.
+  const paymentAmount = Math.round(subtotal * 100);
 
   useEffect(() => {
     const user = auth.currentUser;
@@ -29,25 +32,9 @@ export default function Checkout() {
       return;
     }
 
-    setCustomerName(
-      user.displayName || "",
-    );
-
-    setCustomerEmail(
-      user.email || "",
-    );
+    setCustomerName(user.displayName || "");
+    setCustomerEmail(user.email || "");
   }, []);
-  
-  const currencySymbol =
-    currency === "USD" ? "$" : "₦";
-
-  const displayLocale =
-    currency === "USD" ? "en-US" : "en-NG";
-
-  const paymentAmount =
-    currency === "USD"
-      ? Math.round((subtotal / USD_RATE) * 100)
-      : Math.round(subtotal * 100);
 
   if (items.length === 0) {
     return (
@@ -62,10 +49,7 @@ export default function Checkout() {
             checkout.
           </p>
 
-          <Link
-            className="primary-btn"
-            to="/shop"
-          >
+          <Link className="primary-btn" to="/shop">
             Browse Products
           </Link>
         </div>
@@ -82,87 +66,73 @@ export default function Checkout() {
     }
 
     if (!customerEmail.trim()) {
-      setError(
-        "Please enter your email address.",
-      );
+      setError("Please enter your email address.");
+      return;
+    }
+
+    if (!Number.isFinite(subtotal) || subtotal <= 0) {
+      setError("Your order total is invalid. Please review your cart.");
       return;
     }
 
     setIsPaying(true);
 
     try {
-      const orderId = `SMS-${Date.now()}`;
+      const orderId = `CHILVO-${Date.now()}`;
       const paymentReference = orderId;
 
-      const orderItems =
-        createOrderItems(items);
-
-      const merchantIds =
-        getMerchantIds(orderItems);
+      const orderItems = createOrderItems(items);
+      const merchantIds = getMerchantIds(orderItems);
 
       const order: Order = {
         id: orderId,
         customerId: auth.currentUser?.uid,
-        customerName:
-          customerName.trim(),
-        customerEmail:
-          customerEmail.trim(),
+        customerName: customerName.trim(),
+        customerEmail: customerEmail.trim(),
         items: orderItems,
         merchantIds,
         subtotal,
-        currency,
+        currency: "USD",
         status: "pending",
         paymentReference,
-        createdAt:
-          new Date().toISOString(),
+        createdAt: new Date().toISOString(),
       };
 
       await createFirestoreOrder(order);
 
       startPaystackPayment(
         {
-          email:
-            customerEmail.trim(),
+          email: customerEmail.trim(),
           amount: paymentAmount,
-          currency,
-          reference:
-            paymentReference,
+          currency: "USD",
+          reference: paymentReference,
           callback_url:
             `${window.location.origin}/StrongMarket-Project/order-success`,
           metadata: {
-            customerName:
-              customerName.trim(),
+            customerName: customerName.trim(),
             orderId,
             itemCount,
             subtotal,
-            currency,
+            currency: "USD",
             merchantIds,
             items: orderItems,
           },
         },
-        import.meta.env
-          .VITE_PAYSTACK_PUBLIC_KEY,
+        import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
         () => {
           setIsPaying(false);
         },
         () => {
           setIsPaying(false);
-          setError(
-            "Payment was cancelled.",
-          );
+          setError("Payment was cancelled.");
         },
         (paymentError) => {
           setIsPaying(false);
-          setError(
-            paymentError.message,
-          );
+          setError(paymentError.message);
         },
       );
     } catch (error) {
-      console.error(
-        "PAYMENT START ERROR:",
-        error,
-      );
+      console.error("PAYMENT START ERROR:", error);
 
       setIsPaying(false);
 
@@ -177,26 +147,20 @@ export default function Checkout() {
   return (
     <main className="checkout-page">
       <div className="checkout-header">
-        <p className="eyebrow">
-          SECURE CHECKOUT
-        </p>
+        <p className="eyebrow">SECURE CHECKOUT</p>
 
-        <h1>
-          Complete your purchase.
-        </h1>
+        <h1>Complete your purchase.</h1>
 
         <p>
-          Review your order and enter
-          your details to continue.
+          Review your order and enter your details to
+          continue.
         </p>
       </div>
 
       <div className="checkout-layout">
         <section className="checkout-form">
           <div className="checkout-section">
-            <h2>
-              Customer information
-            </h2>
+            <h2>Customer information</h2>
 
             <label>
               Full name
@@ -205,9 +169,7 @@ export default function Checkout() {
                 type="text"
                 value={customerName}
                 onChange={(event) =>
-                  setCustomerName(
-                    event.target.value,
-                  )
+                  setCustomerName(event.target.value)
                 }
                 placeholder="Your full name"
               />
@@ -220,36 +182,15 @@ export default function Checkout() {
                 type="email"
                 value={customerEmail}
                 onChange={(event) =>
-                  setCustomerEmail(
-                    event.target.value,
-                  )
+                  setCustomerEmail(event.target.value)
                 }
                 placeholder="you@example.com"
               />
             </label>
 
-            <label>
-              Currency
-
-              <select
-                value={currency}
-                onChange={(event) =>
-                  setCurrency(
-                    event.target.value as
-                      | "NGN"
-                      | "USD",
-                  )
-                }
-              >
-                <option value="NGN">
-                  ₦ NGN — Nigerian Naira
-                </option>
-
-                <option value="USD">
-                  $ USD — US Dollar
-                </option>
-              </select>
-            </label>
+            <p className="checkout-note">
+              All prices and payments are in US Dollars (USD).
+            </p>
 
             {error && (
               <p className="form-error">
@@ -267,9 +208,8 @@ export default function Checkout() {
               </strong>
 
               <p>
-                You will be redirected to
-                Paystack to complete your
-                payment securely.
+                You will be redirected to Paystack to
+                complete your payment securely in USD.
               </p>
             </div>
           </div>
@@ -280,16 +220,12 @@ export default function Checkout() {
             onClick={handleContinue}
             disabled={isPaying}
           >
-            {isPaying
-              ? "Opening Paystack..."
-              : "Pay now"}
+            {isPaying ? "Opening Paystack..." : "Pay now"}
           </button>
         </section>
 
         <aside className="checkout-summary">
-          <p className="eyebrow">
-            YOUR ORDER
-          </p>
+          <p className="eyebrow">YOUR ORDER</p>
 
           <h2>Order summary</h2>
 
@@ -310,19 +246,12 @@ export default function Checkout() {
 
               <strong>
                 {currencySymbol}
-                {(currency === "USD"
-                  ? (item.product.price *
-                      item.quantity) /
-                    USD_RATE
-                  : item.product.price *
-                    item.quantity
-                ).toLocaleString(
-                  displayLocale,
-                  {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  },
-                )}
+                {(
+                  item.product.price * item.quantity
+                ).toLocaleString(displayLocale, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
               </strong>
             </div>
           ))}
@@ -338,23 +267,16 @@ export default function Checkout() {
 
             <strong>
               {currencySymbol}
-              {(currency === "USD"
-                ? subtotal / USD_RATE
-                : subtotal
-              ).toLocaleString(
-                displayLocale,
-                {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                },
-              )}
+              {subtotal.toLocaleString(displayLocale, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </strong>
           </div>
 
           <p className="checkout-note">
-            Digital products are delivered
-            electronically after successful
-            payment.
+            Digital products are delivered electronically
+            after successful payment.
           </p>
         </aside>
       </div>
