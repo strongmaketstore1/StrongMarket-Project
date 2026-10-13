@@ -188,10 +188,6 @@ export default function Checkout() {
               />
             </label>
 
-            <p className="checkout-note">
-              All prices and payments are in US Dollars (USD).
-            </p>
-
             {error && (
               <p className="form-error">
                 {error}
@@ -201,17 +197,6 @@ export default function Checkout() {
 
           <div className="checkout-section">
             <h2>Payment</h2>
-
-            <div className="payment-placeholder">
-              <strong>
-                Secure payment with Paystack
-              </strong>
-
-              <p>
-                You will be redirected to Paystack to
-                complete your payment securely in USD.
-              </p>
-            </div>
           </div>
 
           <button
