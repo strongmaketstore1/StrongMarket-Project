@@ -567,30 +567,40 @@ app.post(
   async (req, res) => {
     try {
       const {
-        email,
-        amount,
-        reference,
-        callback_url,
-        metadata,
-      } = req.body || {};
+  email,
+  amount,
+  reference,
+  callback_url,
+  metadata,
+  currency,
+} = req.body || {};
 
-      if (!email || !amount) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "Email and amount are required.",
-        });
-      }
+if (
+  typeof email !== "string" ||
+  !email.trim() ||
+  typeof amount !== "number" ||
+  !Number.isSafeInteger(amount) ||
+  amount <= 0
+) {
+  return res.status(400).json({
+    success: false,
+    message: "A valid email and amount in cents are required.",
+  });
+}
+
+if (currency !== "USD") {
+  return res.status(400).json({
+    success: false,
+    message: "CHILVO accepts USD payments only.",
+  });
+}
 
       const response = await axios.post(
         "https://api.paystack.co/transaction/initialize",
         {
           email,
           amount,
-          currency:
-            req.body?.currency === "USD"
-              ? "USD"
-              : "NGN",
+          currency: "USD",
 
           ...(reference
             ? { reference }
