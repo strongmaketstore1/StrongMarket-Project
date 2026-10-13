@@ -8,14 +8,6 @@ interface ProductCardProps {
 export default function ProductCard({
   product,
 }: ProductCardProps) {
-  const currencySymbol =
-    product.currency === "USD" ? "$" : "₦";
-
-  const locale =
-    product.currency === "USD"
-      ? "en-US"
-      : "en-NG";
-
   return (
     <article className="product-card">
       <div className="product-image">
@@ -45,14 +37,12 @@ export default function ProductCard({
         <div className="product-meta">
           <div>
             <strong>
-              {currencySymbol}
-              {product.price.toLocaleString(
-                locale,
-                {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                },
-              )}
+              {product.price.toLocaleString("en-US", {
+                style: "currency",
+                currency: "USD",
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </strong>
 
             <span className="rating">
@@ -61,11 +51,9 @@ export default function ProductCard({
             </span>
           </div>
 
-          <Link
-  to={`/product/${product.id}`}
->
-  View Product
-</Link>
+          <Link to={`/product/${product.id}`}>
+            View Product
+          </Link>
         </div>
       </div>
     </article>
