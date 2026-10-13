@@ -11,70 +11,72 @@ import type { Product } from "../types/product";
 
 export default function ProductDetails() {
   const { productId } = useParams<{
-  productId: string;
-}>();
+    productId: string;
+  }>();
+
   const { addToCart } = useCart();
 
   const [product, setProduct] =
-  useState<Product | null>(null);
+    useState<Product | null>(null);
 
-const [merchantName, setMerchantName] =
-  useState("");
+  const [merchantName, setMerchantName] =
+    useState("");
 
-const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-  async function loadProduct() {
-    if (!productId) {
-      setLoading(false);
-      return;
+    async function loadProduct() {
+      if (!productId) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const productDoc = await getDoc(
+          doc(db, "products", productId),
+        );
+
+        if (productDoc.exists()) {
+          const loadedProduct = {
+            id: productDoc.id,
+            ...productDoc.data(),
+          } as Product;
+
+          setProduct(loadedProduct);
+
+          if (loadedProduct.merchantId) {
+            const merchantDoc = await getDoc(
+              doc(
+                db,
+                "users",
+                loadedProduct.merchantId,
+              ),
+            );
+
+            if (merchantDoc.exists()) {
+              const merchantData =
+                merchantDoc.data();
+
+              setMerchantName(
+                merchantData.name ||
+                  "CHILVO Merchant",
+              );
+            }
+          }
+        }
+      } catch (error) {
+        console.error(
+          "Unable to load product:",
+          error,
+        );
+      } finally {
+        setLoading(false);
+      }
     }
 
-    try {
-      const productDoc = await getDoc(
-        doc(db, "products", productId),
-      );
+    loadProduct();
+  }, [productId]);
 
-      if (productDoc.exists()) {
-  const loadedProduct = {
-    id: productDoc.id,
-    ...productDoc.data(),
-  } as Product;
-
-  setProduct(loadedProduct);
-
-  if (loadedProduct.merchantId) {
-    const merchantDoc = await getDoc(
-      doc(
-        db,
-        "users",
-        loadedProduct.merchantId,
-      ),
-    );
-
-    if (merchantDoc.exists()) {
-      const merchantData =
-        merchantDoc.data();
-
-      setMerchantName(
-        merchantData.name ||
-          "CHILVO Merchant",
-      );
-    }
-  }
-}
-    } catch (error) {
-      console.error(
-        "Unable to load product:",
-        error,
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  loadProduct();
-}, [productId]);
   if (loading) {
     return (
       <main>
@@ -146,57 +148,53 @@ const [loading, setLoading] = useState(true);
           </p>
 
           <div className="product-price">
-            {product.currency === "NGN"
-              ? "₦"
-              : product.currency}
-            {product.price.toLocaleString(
-              "en-NG",
-            )}
+            {product.price.toLocaleString("en-US", {
+              style: "currency",
+              currency: "USD",
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
           </div>
 
           <button
-  className="primary-btn"
-  type="button"
-  onClick={() =>
-    addToCart(product)
-  }
-  style={{ marginBottom: "2rem" }}
->
-  Add to Cart
-</button>
+            className="primary-btn"
+            type="button"
+            onClick={() => addToCart(product)}
+            style={{ marginBottom: "2rem" }}
+          >
+            Add to Cart
+          </button>
 
-{product.merchantId && (
-  <div
-    className="product-merchant"
-    style={{ marginTop: "2rem" }}
-  >
-    <p className="eyebrow">
-      SOLD BY
-    </p>
+          {product.merchantId && (
+            <div
+              className="product-merchant"
+              style={{ marginTop: "2rem" }}
+            >
+              <p className="eyebrow">
+                SOLD BY
+              </p>
 
-    <h2>
-      {merchantName ||
-        "CHILVO Merchant"}
-    </h2>
+              <h2>
+                {merchantName ||
+                  "CHILVO Merchant"}
+              </h2>
 
-    <p>
-      Digital products on CHILVO
-    </p>
+              <p>
+                Digital products on CHILVO
+              </p>
 
-    <Link
-      className="secondary-btn"
-      to={`/merchant/${product.merchantId}`}
-    >
-      Visit Store →
-    </Link>
-  </div>
-)}
-          
+              <Link
+                className="secondary-btn"
+                to={`/merchant/${product.merchantId}`}
+              >
+                Visit Store →
+              </Link>
+            </div>
+          )}
+
           <div className="purchase-benefits">
             <div>
-              <strong>
-                Instant access
-              </strong>
+              <strong>Instant access</strong>
 
               <span>
                 Download your purchase after
@@ -205,9 +203,7 @@ const [loading, setLoading] = useState(true);
             </div>
 
             <div>
-              <strong>
-                Digital product
-              </strong>
+              <strong>Digital product</strong>
 
               <span>
                 No physical shipping required.
@@ -215,9 +211,7 @@ const [loading, setLoading] = useState(true);
             </div>
 
             <div>
-              <strong>
-                Secure checkout
-              </strong>
+              <strong>Secure checkout</strong>
 
               <span>
                 Your purchase is processed
@@ -229,10 +223,10 @@ const [loading, setLoading] = useState(true);
       </div>
 
       <div className="product-details-description">
-  <h2>About this product</h2>
+        <h2>About this product</h2>
 
-  <p>{product.description}</p>
-</div>
-</main>
-);
+        <p>{product.description}</p>
+      </div>
+    </main>
+  );
 }
