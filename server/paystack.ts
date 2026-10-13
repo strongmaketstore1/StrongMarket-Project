@@ -801,18 +801,21 @@ app.post(
 
         const product =
           productSnapshot.data();
-
+        
         if (
-          typeof product?.price !== "number" ||
-          product.price < 0
-        ) {
-          return res.status(400).json({
-            success: false,
-            message:
-              "Invalid product price.",
-          });
-        }
-
+  !product ||
+  product.currency !== "USD" ||
+  typeof product.price !== "number" ||
+  !Number.isFinite(product.price) ||
+  product.price <= 0
+) {
+  return res.status(400).json({
+    success: false,
+    message:
+      "This product is not available for USD checkout.",
+  });
+}
+        
         expectedAmount +=
           product.price * item.quantity;
 
