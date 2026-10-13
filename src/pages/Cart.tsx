@@ -32,24 +32,13 @@ export default function Cart() {
     );
   }
 
-  const formatCurrency = (
-    amount: number,
-    currency: string,
-  ) => {
-    if (currency === "USD") {
-      return `$${amount.toLocaleString("en-US", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })}`;
-    }
-
-    return `₦${amount.toLocaleString("en-NG", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
-  };
-
-  const cartCurrency = items[0].product.currency || "NGN";
+  const formatCurrency = (amount: number) =>
+  amount.toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 
   return (
     <main className="cart-page">
@@ -110,10 +99,7 @@ export default function Cart() {
                 </p>
 
                 <strong>
-                  {formatCurrency(
-                    item.product.price,
-                    item.product.currency,
-                  )}
+                  {formatCurrency(item.product.price)}
                 </strong>
               </div>
 
@@ -188,10 +174,7 @@ export default function Cart() {
           <div className="summary-total">
             <span>Total</span>
             <strong>
-              {formatCurrency(
-                subtotal,
-                cartCurrency,
-              )}
+              {formatCurrency(subtotal)}
             </strong>
           </div>
 
