@@ -157,15 +157,11 @@ export default function Cart() {
           </div>
 
           <div className="summary-row">
-            <span>Subtotal</span>
-            <strong>
-              {formatCurrency(
-                subtotal,
-                cartCurrency,
-              )}
-            </strong>
-          </div>
-
+  <span>Subtotal</span>
+  <strong>
+    {formatCurrency(subtotal)}
+  </strong>
+</div>
           <div className="summary-row">
             <span>Delivery</span>
             <span>Instant</span>
