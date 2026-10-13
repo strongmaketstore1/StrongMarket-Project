@@ -63,15 +63,16 @@ export function CartProvider({
       );
 
       if (existingItem) {
-        return currentItems.map((item) =>
-          item.product.id === product.id
-            ? {
-                ...item,
-                quantity: item.quantity + 1,
-              }
-            : item,
-        );
-      }
+  return currentItems.map((item) =>
+    item.product.id === product.id
+      ? {
+          ...item,
+          product,
+          quantity: item.quantity + 1,
+        }
+      : item,
+  );
+}
 
       return [
         ...currentItems,
