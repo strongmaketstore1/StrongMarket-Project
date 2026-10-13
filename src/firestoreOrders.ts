@@ -19,12 +19,42 @@ import type {
 export async function createFirestoreOrder(
   order: Order,
 ): Promise<string> {
+  const orderId = order.id?.trim();
+
+  if (!orderId) {
+    throw new Error("A valid order ID is required.");
+  }
+
+  if (
+    !order.paymentReference ||
+    order.paymentReference.trim() !== orderId
+  ) {
+    throw new Error(
+      "The payment reference must match the order ID.",
+    );
+  }
+
+  if (
+    order.currency !== "USD" ||
+    !Number.isFinite(order.subtotal) ||
+    order.subtotal <= 0
+  ) {
+    throw new Error(
+      "The order must have a valid USD total.",
+    );
+  }
+
   await setDoc(
-    doc(db, "orders", order.id),
-    order,
+    doc(db, "orders", orderId),
+    {
+      ...order,
+      id: orderId,
+      currency: "USD",
+      status: "pending",
+    },
   );
 
-  return order.id;
+  return orderId;
 }
 
 export async function getFirestoreOrder(
