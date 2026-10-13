@@ -186,7 +186,7 @@ setCloudinaryFileRef(result.fileReference);
           shortDescription:
             shortDescription.trim(),
           price: Number(price),
-          currency: "NGN",
+          currency: "USD",
           category,
           image: image.trim(),
           fileName: fileName.trim(),
@@ -291,7 +291,7 @@ setCloudinaryFileRef(result.fileReference);
 
         <div>
           <label htmlFor="price">
-            Price (NGN)
+            Price (USD)
           </label>
 
           <input
