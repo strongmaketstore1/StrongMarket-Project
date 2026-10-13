@@ -561,65 +561,224 @@ app.post(
   },
 );
 
-// Initialize Paystack payment
+// Initialize Paystack payment securely
 app.post(
   "/api/paystack/initialize",
   async (req, res) => {
     try {
+      // 1. Authenticate the customer.
+      const authHeader = req.headers.authorization;
+
+      if (!authHeader?.startsWith("Bearer ")) {
+        return res.status(401).json({
+          success: false,
+          message: "Authentication required.",
+        });
+      }
+
+      const idToken = authHeader.substring(7);
+      const decodedToken = await adminAuth.verifyIdToken(idToken);
+
       const {
-  email,
-  amount,
-  reference,
-  callback_url,
-  metadata,
-  currency,
-} = req.body || {};
+        email,
+        reference,
+        callback_url,
+        currency,
+      } = req.body || {};
 
-if (
-  typeof email !== "string" ||
-  !email.trim() ||
-  typeof amount !== "number" ||
-  !Number.isSafeInteger(amount) ||
-  amount <= 0
-) {
-  return res.status(400).json({
-    success: false,
-    message: "A valid email and amount in cents are required.",
-  });
-}
+      // 2. Validate the checkout reference and currency.
+      if (
+        typeof reference !== "string" ||
+        !reference.trim() ||
+        reference.length > 200
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "A valid order reference is required.",
+        });
+      }
 
-if (currency !== "USD") {
-  return res.status(400).json({
-    success: false,
-    message: "CHILVO accepts USD payments only.",
-  });
-}
+      if (currency !== "USD") {
+        return res.status(400).json({
+          success: false,
+          message: "CHILVO accepts USD payments only.",
+        });
+      }
 
+      if (
+        typeof email !== "string" ||
+        !email.trim()
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "A valid customer email is required.",
+        });
+      }
+
+      // Accept only CHILVO's known checkout callback.
+      const allowedCallback =
+        "https://strongmaketstore1.github.io/StrongMarket-Project/order-success";
+
+      if (
+        typeof callback_url !== "string" ||
+        callback_url !== allowedCallback
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid payment callback URL.",
+        });
+      }
+
+      // 3. Load the order created by Checkout.tsx.
+      const orderRef = db.collection("orders").doc(reference);
+      const orderSnapshot = await orderRef.get();
+
+      if (!orderSnapshot.exists) {
+        return res.status(404).json({
+          success: false,
+          message: "Checkout order not found.",
+        });
+      }
+
+      const order = orderSnapshot.data();
+
+      if (!order) {
+        return res.status(404).json({
+          success: false,
+          message: "Checkout order data not found.",
+        });
+      }
+
+      // 4. Verify order ownership and payment state.
+      if (order.customerId !== decodedToken.uid) {
+        return res.status(403).json({
+          success: false,
+          message: "You are not authorized to pay for this order.",
+        });
+      }
+
+      if (
+        order.status !== "pending" ||
+        order.paymentReference !== reference
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "This order is not available for payment.",
+        });
+      }
+
+      if (
+        order.currency !== "USD" ||
+        typeof order.customerEmail !== "string" ||
+        order.customerEmail.trim().toLowerCase() !==
+          email.trim().toLowerCase()
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Order currency or customer details do not match.",
+        });
+      }
+
+      if (
+        !Array.isArray(order.items) ||
+        order.items.length === 0
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "This order contains no products.",
+        });
+      }
+
+      // 5. Recalculate the total from trusted product records.
+      let expectedAmount = 0;
+
+      for (const item of order.items) {
+        if (
+          typeof item.productId !== "string" ||
+          !Number.isSafeInteger(item.quantity) ||
+          item.quantity <= 0
+        ) {
+          return res.status(400).json({
+            success: false,
+            message: "The order contains invalid items.",
+          });
+        }
+
+        const productSnapshot = await getProductByReference(
+          item.productId,
+        );
+
+        if (!productSnapshot || !productSnapshot.exists) {
+          return res.status(400).json({
+            success: false,
+            message: "A product in this order could not be found.",
+          });
+        }
+
+        const product = productSnapshot.data();
+
+        if (
+          !product ||
+          product.currency !== "USD" ||
+          typeof product.price !== "number" ||
+          !Number.isFinite(product.price) ||
+          product.price <= 0
+        ) {
+          return res.status(400).json({
+            success: false,
+            message: "A product has an invalid USD price.",
+          });
+        }
+
+        expectedAmount += product.price * item.quantity;
+      }
+
+      if (
+        !Number.isFinite(expectedAmount) ||
+        expectedAmount <= 0
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Unable to calculate a valid order total.",
+        });
+      }
+
+      // Paystack expects the amount in the currency's
+      // smallest unit: cents for USD.
+      const amountInCents = Math.round(expectedAmount * 100);
+      const savedSubtotalInCents =
+        typeof order.subtotal === "number" &&
+        Number.isFinite(order.subtotal)
+          ? Math.round(order.subtotal * 100)
+          : -1;
+
+      if (savedSubtotalInCents !== amountInCents) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "The order total has changed or does not match its products. Please refresh your cart and try again.",
+        });
+      }
+
+      // 6. Initialize Paystack using only the server-calculated amount.
       const response = await axios.post(
         "https://api.paystack.co/transaction/initialize",
         {
-          email,
-          amount,
+          email: order.customerEmail.trim(),
+          amount: amountInCents,
           currency: "USD",
-
-          ...(reference
-            ? { reference }
-            : {}),
-
-          ...(callback_url
-            ? { callback_url }
-            : {}),
-
-          ...(metadata
-            ? { metadata }
-            : {}),
+          reference,
+          callback_url: allowedCallback,
+          metadata: {
+            orderId: reference,
+            customerId: decodedToken.uid,
+            currency: "USD",
+          },
         },
         {
           headers: {
-            Authorization:
-              `Bearer ${PAYSTACK_SECRET_KEY}`,
-            "Content-Type":
-              "application/json",
+            Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
+            "Content-Type": "application/json",
           },
         },
       );
@@ -629,13 +788,10 @@ if (currency !== "USD") {
       if (axios.isAxiosError(error)) {
         console.error(
           "Paystack initialization error:",
-          error.response?.data ||
-            error.message,
+          error.response?.data || error.message,
         );
 
-        return res.status(
-          error.response?.status || 500,
-        ).json({
+        return res.status(error.response?.status || 500).json({
           success: false,
           message:
             error.response?.data?.message ||
@@ -643,15 +799,11 @@ if (currency !== "USD") {
         });
       }
 
-      console.error(
-        "Unexpected initialization error:",
-        error,
-      );
+      console.error("Unexpected initialization error:", error);
 
       return res.status(500).json({
         success: false,
-        message:
-          "Payment initialization failed.",
+        message: "Payment initialization failed.",
       });
     }
   },
