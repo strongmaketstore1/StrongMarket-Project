@@ -854,21 +854,18 @@ resolvedItems.push({
 });
       }
 
-      const orderCurrency =
-        order.currency === "USD"
-          ? "USD"
-          : "NGN";
+      if (order.currency !== "USD") {
+  return res.status(400).json({
+    success: false,
+    message: "CHILVO accepts USD orders only.",
+  });
+}
 
-      const USD_RATE = 1500;
+const orderCurrency = "USD";
 
-      const expectedPaymentAmount =
-        orderCurrency === "USD"
-          ? Math.round(
-              (expectedAmount / USD_RATE) * 100,
-            )
-          : Math.round(
-              expectedAmount * 100,
-            );
+const expectedPaymentAmount = Math.round(
+  expectedAmount * 100,
+);
 
       // 5. Verify currency and amount
       if (
