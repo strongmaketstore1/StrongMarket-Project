@@ -76,7 +76,6 @@ const merchantEarnings: MerchantEarning[] =
   })) as MerchantEarning[];
 
 setEarnings(merchantEarnings);
-          );
         } catch (error) {
           console.error(
             "Unable to verify merchant status:",
