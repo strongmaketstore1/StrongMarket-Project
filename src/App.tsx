@@ -38,6 +38,7 @@ import MerchantProducts from "./pages/MerchantProduct";
 import MerchantEditProduct from "./pages/MerchantEditProduct";
 import MerchantOrders from "./pages/MerchantOrders";
 import MerchantSales from "./pages/MerchantSales";
+import MerchantEarnings from "./pages/MerchantEarnings";
 
 import {
   CartProvider,
@@ -482,6 +483,11 @@ function AppContent() {
             element={<MerchantSales />}
           />
 
+          <Route
+            path="/merchant/earnings"
+            element={<MerchantEarnings />}
+          />
+          
           <Route
             path="/admin/merchant-applications"
             element={<AdminMerchantApplications />}
