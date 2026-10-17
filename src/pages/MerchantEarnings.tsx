@@ -1,15 +1,36 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
 
 import { auth, db } from "../firebase";
+
+type MerchantEarning = {
+  id: string;
+  orderId: string;
+  merchantId: string;
+  currency: string;
+  grossSales: number;
+  commissionRate: number;
+  commissionAmount: number;
+  netEarnings: number;
+  status: string;
+  createdAt: string;
+};
 
 export default function MerchantEarnings() {
   const [loading, setLoading] = useState(true);
   const [merchantStatus, setMerchantStatus] =
     useState("none");
-
+  const [earnings, setEarnings] = useState<MerchantEarning[]>([]);
+  
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(
       auth,
@@ -30,8 +51,31 @@ export default function MerchantEarnings() {
             return;
           }
 
-          setMerchantStatus(
-            userSnapshot.data().merchantStatus ?? "none",
+          const status =
+  userSnapshot.data().merchantStatus ?? "none";
+
+setMerchantStatus(status);
+
+if (status !== "approved") {
+  setEarnings([]);
+  return;
+}
+
+// Retrieve only this merchant's earnings.
+const earningsQuery = query(
+  collection(db, "merchantEarnings"),
+  where("merchantId", "==", user.uid),
+);
+
+const earningsSnapshot = await getDocs(earningsQuery);
+
+const merchantEarnings: MerchantEarning[] =
+  earningsSnapshot.docs.map((earningDoc) => ({
+    id: earningDoc.id,
+    ...earningDoc.data(),
+  })) as MerchantEarning[];
+
+setEarnings(merchantEarnings);
           );
         } catch (error) {
           console.error(
@@ -48,6 +92,47 @@ export default function MerchantEarnings() {
     return () => unsubscribe();
   }, []);
 
+  // Calculate totals from actual earnings records.
+const totalSales = earnings.reduce(
+  (total, earning) =>
+    total + earning.grossSales,
+  0,
+);
+
+const totalCommission = earnings.reduce(
+  (total, earning) =>
+    total + earning.commissionAmount,
+  0,
+);
+
+const totalMerchantEarnings = earnings.reduce(
+  (total, earning) =>
+    total + earning.netEarnings,
+  0,
+);
+
+const pendingEarnings = earnings
+  .filter((earning) => earning.status === "pending")
+  .reduce(
+    (total, earning) =>
+      total + earning.netEarnings,
+    0,
+  );
+
+const availableBalance = earnings
+  .filter((earning) => earning.status === "available")
+  .reduce(
+    (total, earning) =>
+      total + earning.netEarnings,
+    0,
+  );
+
+const formatUSD = (amount: number) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount);
+ 
   if (loading) {
     return (
       <main>
@@ -108,17 +193,44 @@ export default function MerchantEarnings() {
       </section>
 
       <section>
-        <h2>Your Earnings</h2>
+  <h2>Your Earnings</h2>
 
-        <p>
-          Earnings and withdrawal balances will appear
-          here when verified financial records are available.
-        </p>
+  <p>
+    <strong>Total Sales:</strong>{" "}
+    {formatUSD(totalSales)}
+  </p>
 
-        <p>
-          No withdrawal has been recorded by this page.
-        </p>
-      </section>
+  <p>
+    <strong>CHILVO Commission:</strong>{" "}
+    {formatUSD(totalCommission)}
+  </p>
+
+  <p>
+    <strong>Total Merchant Earnings:</strong>{" "}
+    {formatUSD(totalMerchantEarnings)}
+  </p>
+
+  <p>
+    <strong>Pending Earnings:</strong>{" "}
+    {formatUSD(pendingEarnings)}
+  </p>
+
+  <p>
+    <strong>Available Balance:</strong>{" "}
+    {formatUSD(availableBalance)}
+  </p>
+
+  <p>
+    <strong>Total Withdrawn:</strong> $0.00
+  </p>
+
+  <p>
+    CHILVO's commission is 10% of verified sales.
+    Pending earnings are not yet available for withdrawal.
+    Withdrawals have not been activated, so no payouts
+    have been recorded.
+  </p>
+</section>
 
       <Link
         className="primary-btn"
