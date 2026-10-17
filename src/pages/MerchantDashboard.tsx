@@ -155,8 +155,15 @@ export default function MerchantDashboard() {
           >
             💰 Sales & Earnings
           </Link>
-        </div>
-      </section>
-    </main>
+          
+          <Link
+            className="primary-btn"
+            to="/merchant/earnings"
+          >
+            💳 Earnings & Withdrawals
+          </Link>
+          </div>
+        </section>
+     </main>
   );
 }
