@@ -178,14 +178,14 @@ const formatUSD = (amount: number) =>
       </section>
 
       <section>
-        <h2>Currency Support</h2>
+  <h2>Currency Support</h2>
 
-        <p>
-          US dollars (USD),British pounds (GBP), euros (EUR), and other
-          currencies may be supported as suitable payment
-          and payout services become available.
-        </p>
-      </section>
+  <p>
+    US dollars (USD) are currently supported. British pounds
+    (GBP), euros (EUR), and other currencies may be supported
+    as suitable payment and payout services become available.
+  </p>
+</section>
 
       <section>
   <h2>Your Earnings</h2>
