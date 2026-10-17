@@ -39,6 +39,150 @@ const firebaseApp = getApps().length
 const db = getFirestore(firebaseApp);
 const adminAuth = getAuth(firebaseApp);
 
+// ============================================
+// CHILVO MERCHANT EARNINGS LEDGER
+// Initial commission: 10%
+// ============================================
+
+const CHILVO_COMMISSION_BPS = Number(
+  process.env.CHILVO_COMMISSION_BPS ?? 1000
+);
+
+// 1000 basis points = 10%.
+if (
+  !Number.isInteger(CHILVO_COMMISSION_BPS) ||
+  CHILVO_COMMISSION_BPS < 0 ||
+  CHILVO_COMMISSION_BPS > 10000
+) {
+  throw new Error(
+    "CHILVO_COMMISSION_BPS must be between 0 and 10000."
+  );
+}
+
+type VerifiedEarningLine = {
+  productId: string;
+  merchantId: string;
+  price: number;
+  quantity: number;
+};
+
+async function recordMerchantEarnings(
+  orderId: string,
+  currency: string,
+  verifiedLines: VerifiedEarningLine[]
+): Promise<void> {
+  if (!orderId || verifiedLines.length === 0) {
+    throw new Error(
+      "Cannot record earnings without verified products."
+    );
+  }
+
+  if (currency !== "USD") {
+    throw new Error(
+      "Merchant earnings currently support USD only."
+    );
+  }
+
+  const merchantTotals = new Map<
+    string,
+    {
+      grossCents: number;
+      productIds: Set<string>;
+    }
+  >();
+
+  for (const line of verifiedLines) {
+    if (
+      !line.productId ||
+      !line.merchantId ||
+      !Number.isFinite(line.price) ||
+      line.price <= 0 ||
+      !Number.isInteger(line.quantity) ||
+      line.quantity < 1
+    ) {
+      throw new Error(
+        "Invalid verified product information."
+      );
+    }
+
+    const priceCents = Math.round(
+      line.price * 100
+    );
+
+    const lineTotalCents =
+      priceCents * line.quantity;
+
+    if (!Number.isSafeInteger(lineTotalCents)) {
+      throw new Error(
+        "Product total exceeds the supported amount."
+      );
+    }
+
+    const current =
+      merchantTotals.get(line.merchantId) ?? {
+        grossCents: 0,
+        productIds: new Set<string>(),
+      };
+
+    current.grossCents += lineTotalCents;
+    current.productIds.add(line.productId);
+
+    if (!Number.isSafeInteger(current.grossCents)) {
+      throw new Error(
+        "Merchant total exceeds the supported amount."
+      );
+    }
+
+    merchantTotals.set(line.merchantId, current);
+  }
+
+  for (const [merchantId, totals] of merchantTotals) {
+    const commissionCents = Math.round(
+      totals.grossCents *
+        CHILVO_COMMISSION_BPS /
+        10000
+    );
+
+    const netEarningsCents =
+      totals.grossCents - commissionCents;
+
+    const earningId =
+      `${encodeURIComponent(orderId)}__${encodeURIComponent(merchantId)}`;
+
+    const earningRef = db
+      .collection("merchantEarnings")
+      .doc(earningId);
+
+    await db.runTransaction(async (transaction) => {
+      const existing =
+        await transaction.get(earningRef);
+
+      // Never credit the same order and merchant twice.
+      if (existing.exists) {
+        return;
+      }
+
+      transaction.create(earningRef, {
+        orderId,
+        merchantId,
+        productIds: Array.from(totals.productIds),
+        currency: "USD",
+
+        grossSales: totals.grossCents / 100,
+        commissionRate:
+          CHILVO_COMMISSION_BPS / 10000,
+        commissionAmount:
+          commissionCents / 100,
+        netEarnings:
+          netEarningsCents / 100,
+
+        status: "pending",
+        createdAt: new Date().toISOString(),
+      });
+    });
+  }
+}
+
 /**
  * Resolve a product using either:
  * 1. Its Firestore document ID, or
@@ -918,11 +1062,14 @@ app.post(
       //
       // The product may be referenced by either
       // a Firestore document ID or a legacy slug.
-      let expectedAmount = 0;
+        let expectedAmount = 0;
 
-      const resolvedItems = [];
+        const resolvedItems = [];
 
-      for (const item of items) {
+        const verifiedEarningLines: VerifiedEarningLine[] = [];
+
+        for (const item of items) {
+        
         if (
           typeof item.productId !== "string" ||
           !Number.isInteger(item.quantity) ||
