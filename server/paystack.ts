@@ -1118,7 +1118,21 @@ app.post(
         expectedAmount +=
           product.price * item.quantity;
 
-        // Keep the private file reference in the order.
+          // Collect earnings details from the verified
+// Firestore product, not customer-supplied data.
+if (
+  typeof product.merchantId === "string" &&
+  product.merchantId.trim() !== ""
+) {
+  verifiedEarningLines.push({
+    productId: productSnapshot.id,
+    merchantId: product.merchantId,
+    price: product.price,
+    quantity: item.quantity,
+  });
+}
+          
+          // Keep the private file reference in the order.
   const fileReference =
   typeof product?.cloudinaryFileRef === "string"
     ? product.cloudinaryFileRef
@@ -1197,6 +1211,16 @@ const expectedPaymentAmount = Math.round(
         });
       }
 
+      // 6. Record merchant earnings only after
+      // Paystack has verified the payment amount.
+      if (verifiedEarningLines.length > 0) {
+      await recordMerchantEarnings(
+      orderRef.id,
+      orderCurrency,
+      verifiedEarningLines,
+  );
+}
+      
       // 6. Mark order as paid.
       //
       // Also save the resolved download information
