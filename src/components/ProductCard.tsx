@@ -10,11 +10,12 @@ export default function ProductCard({
 }: ProductCardProps) {
   return (
     <article className="product-card">
-      <div className="product-image">
+      <div className="product-image" style={{ width: "100%", height: "220px", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#fff" }}>
         {product.image ? (
           <img
             src={product.image}
             alt={product.name}
+            style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
           />
         ) : (
           <span>
