@@ -259,10 +259,11 @@ export default function Shop() {
       </section>
 
       <section className="shop-content">
-        <div className="shop-search">
-          <input
-            type="search"
-            placeholder="Search digital products..."
+        <div className="shop-search" style={{ width: "100%", maxWidth: "700px", margin: "0 auto 20px" }}>
+  <input
+    type="search"
+    placeholder="Search digital products..."
+    style={{ width: "100%", padding: "14px 16px", fontSize: "16px", borderRadius: "12px" }}
             value={searchTerm}
             onChange={(event) =>
               changeSearch(event.target.value)
