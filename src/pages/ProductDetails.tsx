@@ -114,11 +114,12 @@ export default function ProductDetails() {
   return (
     <main className="product-details-page">
       <div className="product-details">
-        <div className="product-details-image">
+        <div className="product-details-image" style={{ width: "100%", maxWidth: "600px", height: "320px", margin: "0 auto 20px", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#fff", borderRadius: "12px" }}>
           {product.image ? (
             <img
               src={product.image}
               alt={product.name}
+              style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
             />
           ) : (
             <span>
@@ -192,7 +193,7 @@ export default function ProductDetails() {
             </div>
           )}
 
-          <div className="purchase-benefits">
+          <div className="purchase-benefits" style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "24px" }}>
             <div>
               <strong>Instant access</strong>
 
