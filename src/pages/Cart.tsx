@@ -1,193 +1,219 @@
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import {
+  doc,
+  getDoc,
+} from "firebase/firestore";
+
 import { useCart } from "../context/CartContext";
+import { db } from "../firebase";
+import type { Product } from "../types/product";
 
-export default function Cart() {
-  const {
-    items,
-    itemCount,
-    subtotal,
-    removeFromCart,
-    updateQuantity,
-    clearCart,
-  } = useCart();
+export default function ProductDetails() {
+  const { productId } = useParams<{
+    productId: string;
+  }>();
 
-  if (items.length === 0) {
+  const { addToCart } = useCart();
+
+  const [product, setProduct] =
+    useState<Product | null>(null);
+
+  const [merchantName, setMerchantName] =
+    useState("");
+
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadProduct() {
+      if (!productId) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const productDoc = await getDoc(
+          doc(db, "products", productId),
+        );
+
+        if (productDoc.exists()) {
+          const loadedProduct = {
+            id: productDoc.id,
+            ...productDoc.data(),
+          } as Product;
+
+          setProduct(loadedProduct);
+
+          if (loadedProduct.merchantId) {
+            const merchantDoc = await getDoc(
+              doc(
+                db,
+                "users",
+                loadedProduct.merchantId,
+              ),
+            );
+
+            if (merchantDoc.exists()) {
+              const merchantData =
+                merchantDoc.data();
+
+              setMerchantName(
+                merchantData.name ||
+                  "CHILVO Merchant",
+              );
+            }
+          }
+        }
+      } catch (error) {
+        console.error(
+          "Unable to load product:",
+          error,
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadProduct();
+  }, [productId]);
+
+  if (loading) {
     return (
-      <main className="cart-page">
-        <div className="empty-cart">
-          <p className="eyebrow">YOUR CART</p>
-
-          <h1>Your cart is empty.</h1>
-
-          <p>
-            Discover something useful from the
-            CHILVO marketplace.
-          </p>
-
-          <Link className="primary-btn" to="/shop">
-            Browse Products
-          </Link>
-        </div>
+      <main>
+        <p>Loading product...</p>
       </main>
     );
   }
 
-  const formatCurrency = (amount: number) =>
-  amount.toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  if (!product) {
+    return (
+      <main className="product-not-found">
+        <p className="eyebrow">
+          PRODUCT NOT FOUND
+        </p>
+
+        <h1>
+          We couldn't find that product.
+        </h1>
+
+        <p>
+          The product may have been removed or
+          the link may be incorrect.
+        </p>
+
+        <Link
+          className="primary-btn"
+          to="/shop"
+        >
+          Back to Shop
+        </Link>
+      </main>
+    );
+  }
 
   return (
-    <main className="cart-page">
-      <div className="cart-header">
-        <div>
-          <p className="eyebrow">YOUR CART</p>
-
-          <h1>Your digital products</h1>
-
-          <p>
-            {itemCount}{" "}
-            {itemCount === 1 ? "item" : "items"} in your cart.
-          </p>
+    <main className="product-details-page" style={{ padding: "16px", maxWidth: "800px", margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
+      <div className="product-details">
+        <div className="product-details-image" style={{ width: "100%", maxWidth: "600px", height: "240px", margin: "0 auto 20px", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#fff", borderRadius: "12px" }}>
+          {product.image ? (
+            <img
+              src={product.image}
+              alt={product.name}
+              style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+            />
+          ) : (
+            <span>
+              {product.category
+                .replace("-", " ")
+                .toUpperCase()}
+            </span>
+          )}
         </div>
 
-        <button
-          className="clear-cart-btn"
-          type="button"
-          onClick={clearCart}
-        >
-          Clear Cart
-        </button>
+        <div className="product-details-content">
+          <p className="eyebrow">
+            {product.category
+              .replace("-", " ")
+              .toUpperCase()}
+          </p>
+
+          <h1>{product.name}</h1>
+
+          <div className="product-rating">
+            ★ {product.rating} (
+            {product.reviewCount} reviews)
+          </div>
+
+          <p className="product-description">
+            {product.description}
+          </p>
+
+          <div className="product-price">
+            {product.price.toLocaleString("en-US", {
+              style: "currency",
+              currency: "USD",
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
+          </div>
+
+          <button
+            className="primary-btn"
+            type="button"
+            onClick={() => addToCart(product)}
+            style={{ marginBottom: "2rem" }}
+          >
+            Add to Cart
+          </button>
+
+          {product.merchantId && (
+            <div
+              className="product-merchant"
+              style={{ marginTop: "2rem" }}
+            >
+              <p className="eyebrow">
+                SOLD BY
+              </p>
+
+              <h2>
+                {merchantName ||
+                  "CHILVO Merchant"}
+              </h2>
+
+              <p>
+                Digital products on CHILVO
+              </p>
+
+              <Link
+                className="secondary-btn"
+                to={`/merchant/${product.merchantId}`}
+              >
+                Visit Store →
+              </Link>
+            </div>
+          )}
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "28px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <strong style={{ display: "block" }}>Instant access</strong>
+              <span style={{ display: "block" }}>Download your purchase after payment.</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <strong style={{ display: "block" }}>Digital product</strong>
+              <span style={{ display: "block" }}>No physical shipping required.</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <strong style={{ display: "block" }}>Secure checkout</strong>
+              <span style={{ display: "block" }}>Your purchase is processed securely.</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="cart-layout">
-        <section className="cart-items">
-          {items.map((item) => (
-            <article
-              className="cart-item"
-              key={item.product.id}
-            >
-              <div className="cart-item-image">
-                {item.product.image ? (
-                  <img
-                    src={item.product.image}
-                    alt={item.product.name}
-                  />
-                ) : (
-                  <span>
-                    {item.product.category
-                      .replace("-", " ")
-                      .toUpperCase()}
-                  </span>
-                )}
-              </div>
+      <div className="product-details-description">
+        <h2>About this product</h2>
 
-              <div className="cart-item-info">
-                <p className="eyebrow">
-                  {item.product.category
-                    .replace("-", " ")
-                    .toUpperCase()}
-                </p>
-
-                <h2>{item.product.name}</h2>
-
-                <p>
-                  {item.product.shortDescription}
-                </p>
-
-                <strong>
-                  {formatCurrency(item.product.price)}
-                </strong>
-              </div>
-
-              <div className="cart-item-actions">
-                <div className="quantity-control">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateQuantity(
-                        item.product.id,
-                        item.quantity - 1,
-                      )
-                    }
-                  >
-                    −
-                  </button>
-
-                  <span>{item.quantity}</span>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateQuantity(
-                        item.product.id,
-                        item.quantity + 1,
-                      )
-                    }
-                  >
-                    +
-                  </button>
-                </div>
-
-                <button
-                  className="remove-item"
-                  type="button"
-                  onClick={() =>
-                    removeFromCart(item.product.id)
-                  }
-                >
-                  Remove
-                </button>
-              </div>
-            </article>
-          ))}
-        </section>
-
-        <aside className="cart-summary">
-          <p className="eyebrow">ORDER SUMMARY</p>
-
-          <h2>Summary</h2>
-
-          <div className="summary-row">
-            <span>Items</span>
-            <span>{itemCount}</span>
-          </div>
-
-          <div className="summary-row">
-  <span>Subtotal</span>
-  <strong>
-    {formatCurrency(subtotal)}
-  </strong>
-</div>
-          <div className="summary-row">
-            <span>Delivery</span>
-            <span>Instant</span>
-          </div>
-
-          <div className="summary-total">
-            <span>Total</span>
-            <strong>
-              {formatCurrency(subtotal)}
-            </strong>
-          </div>
-
-          <Link
-            className="primary-btn checkout-btn"
-            to="/checkout"
-          >
-            Proceed to Checkout
-          </Link>
-
-          <Link
-            className="continue-shopping"
-            to="/shop"
-          >
-            Continue Shopping
-          </Link>
-        </aside>
+        <p>{product.description}</p>
       </div>
     </main>
   );
