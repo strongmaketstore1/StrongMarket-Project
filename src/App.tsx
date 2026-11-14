@@ -43,7 +43,7 @@ import MerchantEarnings from "./pages/MerchantEarnings";
 import {
   CartProvider,
   useCart,
-} from "./context/CartContext"; 
+} from "./context/CartContext";
 
 function Home() {
   const [featuredProducts, setFeaturedProducts] =
@@ -211,7 +211,7 @@ function AppContent() {
     useState<string>("none");
 
   const [isAdmin, setIsAdmin] = useState(false);
-  
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(
       auth,
@@ -219,10 +219,10 @@ function AppContent() {
         setUser(currentUser);
 
         setIsAdmin(
-  currentUser?.uid ===
-    "K2XHC9W2xxPcdEkjrtPdBAUjAjy1",
-);
-        
+          currentUser?.uid ===
+            "K2XHC9W2xxPcdEkjrtPdBAUjAjy1",
+        );
+
         if (!currentUser) {
           setMerchantStatus("none");
           setIsAdmin(false);
@@ -299,142 +299,125 @@ function AppContent() {
   return (
     <BrowserRouter basename="/StrongMarket-Project">
       <div className="app" style={{ width: "100%", overflowX: "hidden" }}>
-        <header className="navbar" style={{ position: "relative", top: 0, zIndex: 100, background: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "10px 12px", width: "100%", boxSizing: "border-box", borderBottom: "1px solid #eee", flexWrap: "wrap" }}>
-  <Link
-    className="logo"
-    to="/"
-    onClick={() => setMobileMenuOpen(false)}
-    style={{ flexShrink: 0, order: 1 }}
-  >
-    <img
-      src="/StrongMarket-Project/chilvo-logo-1.png"
-      alt="CHILVO"
-      style={{ height: "32px", width: "auto", display: "block" }}
-    />
-  </Link>
-
-    <nav
-  id="chilvo-mobile-navigation"
-  className=""
-  style={mobileMenuOpen ? {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0px",
-    position: "static",
-    top: "auto",
-    left: "auto",
-    right: "auto",
-    order: 3,
-    flexBasis: "100%",
-    flexGrow: 1,
-    flexShrink: 0,
-    background: "#fff",
-    padding: "8px 4px 8px",
-    borderTop: "1px solid #eee",
-    boxShadow: "none",
-    width: "100%",
-    boxSizing: "border-box",
-  } : { display: "none" }}
->
-    <Link to="/" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
-      Home
-    </Link>
-
-    <Link to="/shop" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
-      Shop
-    </Link>
-
-    <Link to="/shop" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
-      Categories
-    </Link>
-
-    <Link to="/merchant/apply" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
-      Become a Merchant
-    </Link>
-
-    {user ? (
-      <>
-        <Link to="/account" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
-          My Account
-        </Link>
-
-        {merchantStatus === "approved" && (
+        <header className="navbar" style={{ position: "relative", background: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "10px 12px", width: "100%", boxSizing: "border-box", borderBottom: "1px solid #eee" }}>
           <Link
-            to="/merchant/dashboard"
+            className="logo"
+            to="/"
             onClick={() => setMobileMenuOpen(false)}
-            style={navLinkStyle}
+            style={{ flexShrink: 0 }}
           >
-            Merchant Dashboard
+            <img
+              src="/StrongMarket-Project/chilvo-logo-1.png"
+              alt="CHILVO"
+              style={{ height: "32px", width: "auto", display: "block" }}
+            />
           </Link>
-        )}
 
-        {isAdmin && (
-          <Link
-            to="/admin/merchant-applications"
-            onClick={() => setMobileMenuOpen(false)}
-            style={navLinkStyle}
+          <div className="nav-actions" style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+            <Link
+              className="search-btn"
+              to="/shop"
+              aria-label="Search products"
+            >
+              <span className="search-icon" aria-hidden="true">
+                ⌕
+              </span>
+              <span className="search-label">Search</span>
+            </Link>
+
+            <CartButton />
+
+            <button
+              type="button"
+              className="mobile-menu-btn"
+              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileMenuOpen}
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              style={{ fontSize: "20px", padding: "6px 10px", background: "none", border: "none", cursor: "pointer" }}
+            >
+              {mobileMenuOpen ? "✕" : "☰"}
+            </button>
+          </div>
+        </header>
+
+        {mobileMenuOpen && (
+          <nav
+            id="chilvo-mobile-navigation"
+            style={{ display: "flex", flexDirection: "column", background: "#fff", padding: "8px 16px 16px", borderBottom: "1px solid #eee", width: "100%", boxSizing: "border-box" }}
           >
-            Admin
-          </Link>
+            <Link to="/" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
+              Home
+            </Link>
+
+            <Link to="/shop" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
+              Shop
+            </Link>
+
+            <Link to="/shop" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
+              Categories
+            </Link>
+
+            <Link to="/merchant/apply" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
+              Become a Merchant
+            </Link>
+
+            {user ? (
+              <>
+                <Link to="/account" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
+                  My Account
+                </Link>
+
+                {merchantStatus === "approved" && (
+                  <Link
+                    to="/merchant/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    style={navLinkStyle}
+                  >
+                    Merchant Dashboard
+                  </Link>
+                )}
+
+                {isAdmin && (
+                  <Link
+                    to="/admin/merchant-applications"
+                    onClick={() => setMobileMenuOpen(false)}
+                    style={navLinkStyle}
+                  >
+                    Admin
+                  </Link>
+                )}
+
+                <button type="button" onClick={() => {
+                  setMobileMenuOpen(false);
+                  void handleLogout();
+                }} style={{ ...navLinkStyle, background: "none", border: "none", borderBottom: "1px solid #f0f0f0", textAlign: "left", cursor: "pointer" }}>
+                  Logout
+                </button>
+
+                <button type="button" onClick={() => {
+                  setMobileMenuOpen(false);
+                  void handleDeleteAccount();
+                }} style={{ ...navLinkStyle, background: "none", border: "none", borderBottom: "none", textAlign: "left", cursor: "pointer", color: "#d00" }}>
+                  Delete Account
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
+                  Login
+                </Link>
+
+                <Link to="/register" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
+                  Register
+                </Link>
+              </>
+            )}
+
+            <Link to="/" onClick={() => setMobileMenuOpen(false)} style={{ ...navLinkStyle, borderBottom: "none" }}>
+              About
+            </Link>
+          </nav>
         )}
-
-        <button type="button" onClick={() => {
-          setMobileMenuOpen(false);
-          void handleLogout();
-        }} style={{ ...navLinkStyle, background: "none", border: "none", borderBottom: "1px solid #f0f0f0", textAlign: "left", cursor: "pointer" }}>
-          Logout
-        </button>
-
-        <button type="button" onClick={() => {
-          setMobileMenuOpen(false);
-          void handleDeleteAccount();
-        }} style={{ ...navLinkStyle, background: "none", border: "none", borderBottom: "none", textAlign: "left", cursor: "pointer", color: "#d00" }}>
-          Delete Account
-        </button>
-      </>
-    ) : (
-      <>
-        <Link to="/login" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
-          Login
-        </Link>
-
-        <Link to="/register" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
-          Register
-        </Link>
-      </>
-    )}
-
-    <Link to="/" onClick={() => setMobileMenuOpen(false)} style={{ ...navLinkStyle, borderBottom: "none" }}>
-      About
-    </Link>
-  </nav>
-
-  <div className="nav-actions" style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0, order: 2 }}>
-    <Link
-      className="search-btn"
-      to="/shop"
-      aria-label="Search products"
-    >
-      <span className="search-icon" aria-hidden="true">
-        ⌕
-      </span>
-      <span className="search-label">Search</span>
-    </Link>
-
-    <CartButton />
-
-    <button
-      type="button"
-      className="mobile-menu-btn"
-      aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-      aria-expanded={mobileMenuOpen}
-      onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-      style={{ fontSize: "20px", padding: "6px 10px", background: "none", border: "none", cursor: "pointer" }}
-    >
-      {mobileMenuOpen ? "✕" : "☰"}
-    </button>
-  </div>
-</header>
 
         <Routes>
           <Route
@@ -471,12 +454,12 @@ function AppContent() {
             path="/account"
             element={<Account />}
           />
-          
+
           <Route
             path="/merchant/:merchantId"
             element={<MerchantStore />}
           />
-          
+
           <Route
             path="/login"
             element={<Login />}
@@ -526,7 +509,7 @@ function AppContent() {
             path="/merchant/earnings"
             element={<MerchantEarnings />}
           />
-          
+
           <Route
             path="/admin/merchant-applications"
             element={<AdminMerchantApplications />}
@@ -534,28 +517,28 @@ function AppContent() {
         </Routes>
 
         <footer style={{ padding: "24px 16px", boxSizing: "border-box" }}>
-  <div>
-    <Link
-      className="logo"
-      to="/"
-    >
-      <img
-        src="/StrongMarket-Project/chilvo-logo-1.png"
-        alt="CHILVO"
-        style={{ height: "32px", width: "auto" }}
-      />
-    </Link>
+          <div>
+            <Link
+              className="logo"
+              to="/"
+            >
+              <img
+                src="/StrongMarket-Project/chilvo-logo-1.png"
+                alt="CHILVO"
+                style={{ height: "32px", width: "auto" }}
+              />
+            </Link>
 
-    <p>
-      Premium digital products. Simple.
-      Accessible. Instant.
-    </p>
-  </div>
+            <p>
+              Premium digital products. Simple.
+              Accessible. Instant.
+            </p>
+          </div>
 
-  <p>
-    © 2026 CHILVO. All rights reserved.
-  </p>
-</footer>
+          <p>
+            © 2026 CHILVO. All rights reserved.
+          </p>
+        </footer>
       </div>
     </BrowserRouter>
   );
