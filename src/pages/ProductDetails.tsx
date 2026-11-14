@@ -207,31 +207,6 @@ export default function ProductDetails() {
               <span style={{ display: "block" }}>Your purchase is processed securely.</span>
             </div>
           </div>
-            <strong>Instant access</strong>
-
-              <span>
-                Download your purchase after
-                payment.
-              </span>
-            </div>
-
-            <div>
-              <strong>Digital product</strong>
-
-              <span>
-                No physical shipping required.
-              </span>
-            </div>
-
-            <div>
-              <strong>Secure checkout</strong>
-
-              <span>
-                Your purchase is processed
-                securely.
-              </span>
-            </div>
-          </div>
         </div>
       </div>
 
