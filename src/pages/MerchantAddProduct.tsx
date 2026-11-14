@@ -30,7 +30,7 @@ export default function MerchantAddProduct() {
     useState("");
   const [price, setPrice] = useState("");
   const [category, setCategory] =
-    useState<ProductCategory>("ebooks");
+    useState<ProductCategory>("templates");
   const [image, setImage] = useState("");
   const [fileName, setFileName] = useState("");
   const [cloudinaryFileRef, setCloudinaryFileRef] =
