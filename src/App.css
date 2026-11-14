@@ -758,3 +758,14 @@ z-index: 100;
     z-index: 1000;
   }
 }
+
+/* FORCE BIG MOBILE MENU - must be last */
+#chilvo-mobile-navigation a,
+#chilvo-mobile-navigation button {
+  font-size: 22px !important;
+  font-weight: 800 !important;
+  line-height: 1.4 !important;
+  padding: 18px 12px !important;
+  min-height: 58px !important;
+  color: #111 !important;
+}
