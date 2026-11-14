@@ -304,7 +304,7 @@ function AppContent() {
     className="logo"
     to="/"
     onClick={() => setMobileMenuOpen(false)}
-    style={{ flexShrink: 0 }}
+    style={{ flexShrink: 0, order: 1 }}
   >
     <img
       src="/StrongMarket-Project/chilvo-logo-1.png"
@@ -315,15 +315,23 @@ function AppContent() {
 
     <nav
   id="chilvo-mobile-navigation"
-  className={mobileMenuOpen ? "mobile-nav-open" : ""}
+  className=""
   style={mobileMenuOpen ? {
     display: "flex",
     flexDirection: "column",
     gap: "0px",
+    position: "static",
+    top: "auto",
+    left: "auto",
+    right: "auto",
     order: 3,
+    flexBasis: "100%",
+    flexGrow: 1,
+    flexShrink: 0,
     background: "#fff",
     padding: "8px 4px 8px",
     borderTop: "1px solid #eee",
+    boxShadow: "none",
     width: "100%",
     boxSizing: "border-box",
   } : { display: "none" }}
@@ -401,7 +409,7 @@ function AppContent() {
     </Link>
   </nav>
 
-  <div className="nav-actions" style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+  <div className="nav-actions" style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0, order: 2 }}>
     <Link
       className="search-btn"
       to="/shop"
