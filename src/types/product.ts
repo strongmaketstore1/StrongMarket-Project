@@ -1,10 +1,4 @@
 export type ProductCategory = "templates" | "prompt-packs" | "guides";
-  | "ebooks"
-  | "business"
-  | "templates"
-  | "ai-productivity"
-  | "design"
-  | "marketing";
 
 export interface Product {
   id: string;
@@ -25,4 +19,3 @@ export interface Product {
   createdAt: string;
   merchantId?: string;
 }
-
