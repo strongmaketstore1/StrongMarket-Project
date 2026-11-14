@@ -1,0 +1,156 @@
+import { auth } from "./firebase";
+
+export interface PaystackPaymentData {
+  email: string;
+  amount: number;
+  currency?: "NGN" | "USD";
+  reference?: string;
+  callback_url?: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface PaystackSuccessResponse {
+  reference: string;
+  message: string;
+  transactionId?: string;
+}
+
+interface PaystackInitializeResponse {
+  status: boolean;
+  message: string;
+  data?: {
+    authorization_url?: string;
+    access_code?: string;
+    reference?: string;
+  };
+}
+
+export async function startPaystackPayment(
+  data: PaystackPaymentData,
+  _publicKey: string,
+  onSuccess: (response: PaystackSuccessResponse) => void,
+  onCancel: (() => void) | undefined,
+  onError?: (error: Error) => void,
+) {
+  try {
+    // Validate the email address.
+    if (!data.email) {
+      throw new Error("Email address is required.");
+    }
+
+    // Validate the amount supplied by the checkout.
+    if (!data.amount || data.amount <= 0) {
+      throw new Error("A valid payment amount is required.");
+    }
+
+    // Require the customer to be signed in.
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+      throw new Error(
+        "Please sign in before making a payment.",
+      );
+    }
+
+    // Obtain a Firebase ID token for backend authentication.
+    const idToken = await currentUser.getIdToken();
+
+    // Ask the CHILVO backend to initialize payment.
+    const response = await fetch(
+      "https://strongmarket-payment-server.onrender.com/api/paystack/initialize",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          email: data.email,
+          amount: data.amount,
+          currency: data.currency,
+          reference: data.reference,
+          callback_url: data.callback_url,
+          metadata: data.metadata,
+        }),
+      },
+    );
+
+    // Read the response safely.
+    const responseText = await response.text();
+
+    if (!responseText.trim()) {
+      throw new Error(
+        `Paystack server returned an empty response (HTTP ${response.status}).`,
+      );
+    }
+
+    let result: PaystackInitializeResponse;
+
+    try {
+      result = JSON.parse(
+        responseText,
+      ) as PaystackInitializeResponse;
+    } catch {
+      throw new Error(
+        `Paystack server returned an invalid response (HTTP ${response.status}).`,
+      );
+    }
+
+    // Handle backend or Paystack errors.
+    if (!response.ok || !result.status) {
+      throw new Error(
+        result.message ||
+          "Unable to initialize Paystack payment.",
+      );
+    }
+
+    const authorizationUrl =
+      result.data?.authorization_url;
+
+    const reference =
+      result.data?.reference || data.reference;
+
+    if (!authorizationUrl) {
+      throw new Error(
+        "Paystack did not return a payment URL.",
+      );
+    }
+
+    if (!reference) {
+      throw new Error(
+        "Paystack did not return a transaction reference.",
+      );
+    }
+
+    // Save the reference for the order-success page.
+    sessionStorage.setItem(
+      "strongmarket-paystack-reference",
+      reference,
+    );
+
+    // Keep the existing callback behavior.
+    // Actual payment success must still be confirmed
+    // by the backend on the order-success page.
+    void onCancel;
+
+    onSuccess({
+      reference,
+      message: result.message,
+    });
+
+    // Redirect the customer to Paystack checkout.
+    window.location.href = authorizationUrl;
+  } catch (error) {
+    const paymentError =
+      error instanceof Error
+        ? error
+        : new Error(
+            "Unable to initialize payment.",
+          );
+
+    onError?.(paymentError);
+  }
+}

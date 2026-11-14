@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - codespace-super-space-cod-jr49rxw5pp6r3rg6
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -33,6 +34,14 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          VITE_PAYSTACK_PUBLIC_KEY: ${{ secrets.VITE_PAYSTACK_PUBLIC_KEY }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -52,5 +61,5 @@ jobs:
 
     steps:
       - name: Deploy to GitHub Pages
-        id: deployment
+        id: deployment        uses: actions/deploy-pages@v4
         uses: actions/deploy-pages@v4
