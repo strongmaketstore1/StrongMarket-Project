@@ -112,9 +112,9 @@ export default function ProductDetails() {
   }
 
   return (
-    <main className="product-details-page">
+    <main className="product-details-page" style={{ padding: "16px", maxWidth: "800px", margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
       <div className="product-details">
-        <div className="product-details-image" style={{ width: "100%", maxWidth: "600px", height: "320px", margin: "0 auto 20px", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#fff", borderRadius: "12px" }}>
+        <div className="product-details-image" style={{ width: "100%", maxWidth: "600px", height: "240px", margin: "0 auto 20px", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#fff", borderRadius: "12px" }}>
           {product.image ? (
             <img
               src={product.image}
@@ -193,9 +193,21 @@ export default function ProductDetails() {
             </div>
           )}
 
-          <div className="purchase-benefits" style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "24px" }}>
-            <div>
-              <strong>Instant access</strong>
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "28px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <strong style={{ display: "block" }}>Instant access</strong>
+              <span style={{ display: "block" }}>Download your purchase after payment.</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <strong style={{ display: "block" }}>Digital product</strong>
+              <span style={{ display: "block" }}>No physical shipping required.</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <strong style={{ display: "block" }}>Secure checkout</strong>
+              <span style={{ display: "block" }}>Your purchase is processed securely.</span>
+            </div>
+          </div>
+            <strong>Instant access</strong>
 
               <span>
                 Download your purchase after
