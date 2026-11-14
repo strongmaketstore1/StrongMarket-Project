@@ -34,15 +34,9 @@ const categories: {
   value: CategoryFilter;
 }[] = [
   { label: "All Products", value: "all" },
-  { label: "Ebooks", value: "ebooks" },
-  { label: "Business", value: "business" },
   { label: "Templates", value: "templates" },
-  {
-    label: "AI & Productivity",
-    value: "ai-productivity",
-  },
-  { label: "Design", value: "design" },
-  { label: "Marketing", value: "marketing" },
+  { label: "AI Prompt Packs", value: "prompt-packs" },
+  { label: "Guides", value: "guides" },
 ];
 
 const sortOptions: {
