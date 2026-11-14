@@ -90,9 +90,8 @@ function Home() {
           </h1>
 
           <p className="hero-text" style={{ fontSize: "14px", lineHeight: "1.6", color: "#555", margin: "0 0 18px" }}>
-            Explore premium ebooks, templates, business
-            resources, creative tools, and digital solutions
-            designed for modern life and business.
+            Explore premium templates, AI prompt packs, and
+            guides designed for modern life and business.
           </p>
 
           <div className="hero-actions" style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
@@ -134,34 +133,10 @@ function Home() {
         <div className="category-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", width: "100%", boxSizing: "border-box" }}>
           <Link
             className="category-card"
-            to="/shop?category=ebooks"
-            style={{ padding: "16px 12px", borderRadius: "12px", display: "block", boxSizing: "border-box" }}
-          >
-            <span>01</span>
-            <h3 style={{ fontSize: "15px", margin: "10px 0 6px", lineHeight: "1.3" }}>Ebooks & Guides</h3>
-            <p style={{ fontSize: "12px", lineHeight: "1.5", margin: 0 }}>
-              Practical knowledge for personal and professional growth.
-            </p>
-          </Link>
-
-          <Link
-            className="category-card"
-            to="/shop?category=business"
-            style={{ padding: "16px 12px", borderRadius: "12px", display: "block", boxSizing: "border-box" }}
-          >
-            <span>02</span>
-            <h3 style={{ fontSize: "15px", margin: "10px 0 6px", lineHeight: "1.3" }}>Business</h3>
-            <p style={{ fontSize: "12px", lineHeight: "1.5", margin: 0 }}>
-              Resources designed to help businesses move faster.
-            </p>
-          </Link>
-
-          <Link
-            className="category-card"
             to="/shop?category=templates"
             style={{ padding: "16px 12px", borderRadius: "12px", display: "block", boxSizing: "border-box" }}
           >
-            <span>03</span>
+            <span>01</span>
             <h3 style={{ fontSize: "15px", margin: "10px 0 6px", lineHeight: "1.3" }}>Templates</h3>
             <p style={{ fontSize: "12px", lineHeight: "1.5", margin: 0 }}>
               Ready-to-use templates for work, content, and projects.
@@ -170,13 +145,25 @@ function Home() {
 
           <Link
             className="category-card"
-            to="/shop?category=ai-productivity"
+            to="/shop?category=prompt-packs"
             style={{ padding: "16px 12px", borderRadius: "12px", display: "block", boxSizing: "border-box" }}
           >
-            <span>04</span>
-            <h3 style={{ fontSize: "15px", margin: "10px 0 6px", lineHeight: "1.3" }}>AI & Productivity</h3>
+            <span>02</span>
+            <h3 style={{ fontSize: "15px", margin: "10px 0 6px", lineHeight: "1.3" }}>AI Prompt Packs</h3>
             <p style={{ fontSize: "12px", lineHeight: "1.5", margin: 0 }}>
-              Digital tools and resources for smarter workflows.
+              Ready-to-use prompts for smarter, faster workflows.
+            </p>
+          </Link>
+
+          <Link
+            className="category-card"
+            to="/shop?category=guides"
+            style={{ padding: "16px 12px", borderRadius: "12px", display: "block", boxSizing: "border-box" }}
+          >
+            <span>03</span>
+            <h3 style={{ fontSize: "15px", margin: "10px 0 6px", lineHeight: "1.3" }}>Guides</h3>
+            <p style={{ fontSize: "12px", lineHeight: "1.5", margin: 0 }}>
+              Practical knowledge for personal and professional growth.
             </p>
           </Link>
         </div>
