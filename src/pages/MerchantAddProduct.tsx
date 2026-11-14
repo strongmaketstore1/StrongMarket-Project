@@ -203,7 +203,7 @@ setCloudinaryFileRef(result.fileReference);
       setDescription("");
       setShortDescription("");
       setPrice("");
-      setCategory("ebooks");
+      setCategory("templates");
       setImage("");
       setFileName("");
       setCloudinaryFileRef("");
