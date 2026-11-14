@@ -758,22 +758,3 @@ z-index: 100;
     z-index: 1000;
   }
 }
-
-/* FIX - force menu to push content down */
-.navbar {
-  height: auto !important;
-  max-height: none !important;
-  overflow: visible !important;
-  flex-wrap: wrap !important;
-}
-
-#chilvo-mobile-navigation {
-  position: static !important;
-  top: auto !important;
-  left: auto !important;
-  right: auto !important;
-  width: 100% !important;
-  flex-basis: 100% !important;
-  order: 3 !important;
-  box-shadow: none !important;
-}
