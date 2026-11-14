@@ -285,14 +285,17 @@ function AppContent() {
     }
   }
 
-  const navLinkStyle: React.CSSProperties = {
-    display: "block",
-    padding: "12px 4px",
-    fontSize: "15px",
+    const navLinkStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    padding: "16px 12px",
+    fontSize: "18px",
     color: "#111",
+    fontWeight: 700,
     textDecoration: "none",
     borderBottom: "1px solid #f0f0f0",
     width: "100%",
+    minHeight: "54px",
     boxSizing: "border-box",
   };
 
