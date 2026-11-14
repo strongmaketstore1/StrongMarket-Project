@@ -14,15 +14,9 @@ const categories: {
   label: string;
   value: ProductCategory;
 }[] = [
-  { label: "Ebooks", value: "ebooks" },
-  { label: "Business", value: "business" },
   { label: "Templates", value: "templates" },
-  {
-    label: "AI & Productivity",
-    value: "ai-productivity",
-  },
-  { label: "Design", value: "design" },
-  { label: "Marketing", value: "marketing" },
+  { label: "AI Prompt Packs", value: "prompt-packs" },
+  { label: "Guides", value: "guides" },
 ];
 
 export default function MerchantEditProduct() {
@@ -31,11 +25,10 @@ export default function MerchantEditProduct() {
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [shortDescription, setShortDescription] =
-    useState("");
+  const [shortDescription, setShortDescription] = useState("");
   const [price, setPrice] = useState("");
   const [category, setCategory] =
-    useState<ProductCategory>("ebooks");
+    useState<ProductCategory>("templates");
   const [image, setImage] = useState("");
   const [fileName, setFileName] = useState("");
 
@@ -60,12 +53,7 @@ export default function MerchantEditProduct() {
       }
 
       try {
-        const productRef = doc(
-          db,
-          "products",
-          productId,
-        );
-
+        const productRef = doc(db, "products", productId);
         const snapshot = await getDoc(productRef);
 
         if (!snapshot.exists()) {
@@ -77,22 +65,16 @@ export default function MerchantEditProduct() {
         const data = snapshot.data();
 
         if (data.merchantId !== user.uid) {
-          setMessage(
-            "You are not allowed to edit this product.",
-          );
+          setMessage("You are not allowed to edit this product.");
           setLoading(false);
           return;
         }
 
         setName(data.name || "");
         setDescription(data.description || "");
-        setShortDescription(
-          data.shortDescription || "",
-        );
+        setShortDescription(data.shortDescription || "");
         setPrice(String(data.price ?? ""));
-        setCategory(
-          data.category || "ebooks",
-        );
+        setCategory(data.category || "templates");
         setImage(data.image || "");
         setFileName(data.fileName || "");
       } catch (error) {
@@ -125,12 +107,7 @@ export default function MerchantEditProduct() {
     setMessage("");
 
     try {
-      const productRef = doc(
-        db,
-        "products",
-        productId,
-      );
-
+      const productRef = doc(db, "products", productId);
       const snapshot = await getDoc(productRef);
 
       if (!snapshot.exists()) {
@@ -141,17 +118,14 @@ export default function MerchantEditProduct() {
       const data = snapshot.data();
 
       if (data.merchantId !== user.uid) {
-        setMessage(
-          "You are not allowed to edit this product.",
-        );
+        setMessage("You are not allowed to edit this product.");
         return;
       }
 
       await updateDoc(productRef, {
         name: name.trim(),
         description: description.trim(),
-        shortDescription:
-          shortDescription.trim(),
+        shortDescription: shortDescription.trim(),
         price: Number(price),
         currency: "NGN",
         category,
@@ -166,9 +140,7 @@ export default function MerchantEditProduct() {
       }, 800);
     } catch (error) {
       console.error(error);
-      setMessage(
-        "Unable to update product. Please try again.",
-      );
+      setMessage("Unable to update product. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -198,91 +170,61 @@ export default function MerchantEditProduct() {
 
       <form onSubmit={handleSubmit}>
         <div>
-          <label htmlFor="name">
-            Product Name
-          </label>
-
+          <label htmlFor="name">Product Name</label>
           <input
             id="name"
             type="text"
             value={name}
-            onChange={(event) =>
-              setName(event.target.value)
-            }
+            onChange={(event) => setName(event.target.value)}
             required
           />
         </div>
 
         <div>
-          <label htmlFor="shortDescription">
-            Short Description
-          </label>
-
+          <label htmlFor="shortDescription">Short Description</label>
           <input
             id="shortDescription"
             type="text"
             value={shortDescription}
-            onChange={(event) =>
-              setShortDescription(
-                event.target.value,
-              )
-            }
+            onChange={(event) => setShortDescription(event.target.value)}
             required
           />
         </div>
 
         <div>
-          <label htmlFor="description">
-            Description
-          </label>
-
+          <label htmlFor="description">Description</label>
           <textarea
             id="description"
             value={description}
-            onChange={(event) =>
-              setDescription(event.target.value)
-            }
+            onChange={(event) => setDescription(event.target.value)}
             required
           />
         </div>
 
         <div>
-          <label htmlFor="price">
-            Price (NGN)
-          </label>
-
+          <label htmlFor="price">Price (NGN)</label>
           <input
             id="price"
             type="number"
             min="0"
             step="0.01"
             value={price}
-            onChange={(event) =>
-              setPrice(event.target.value)
-            }
+            onChange={(event) => setPrice(event.target.value)}
             required
           />
         </div>
 
         <div>
-          <label htmlFor="category">
-            Category
-          </label>
-
+          <label htmlFor="category">Category</label>
           <select
             id="category"
             value={category}
             onChange={(event) =>
-              setCategory(
-                event.target.value as ProductCategory,
-              )
+              setCategory(event.target.value as ProductCategory)
             }
           >
             {categories.map((item) => (
-              <option
-                key={item.value}
-                value={item.value}
-              >
+              <option key={item.value} value={item.value}>
                 {item.label}
               </option>
             ))}
@@ -290,52 +232,32 @@ export default function MerchantEditProduct() {
         </div>
 
         <div>
-  <label htmlFor="image">
-    Product Image
-  </label>
-
-  <input
-    id="image"
-    type="text"
-    value={image}
-    onChange={(event) =>
-      setImage(event.target.value)
-    }
-  />
-
-  {image && (
-    <div>
-      <img
-        src={image}
-        alt={name}
-        width="200"
-      />
-    </div>
-  )}
-</div>
+          <label htmlFor="image">Product Image</label>
+          <input
+            id="image"
+            type="text"
+            value={image}
+            onChange={(event) => setImage(event.target.value)}
+          />
+          {image && (
+            <div>
+              <img src={image} alt={name} width="200" />
+            </div>
+          )}
+        </div>
 
         <div>
-          <label htmlFor="fileName">
-            Digital File Name
-          </label>
-
+          <label htmlFor="fileName">Digital File Name</label>
           <input
             id="fileName"
             type="text"
             value={fileName}
-            onChange={(event) =>
-              setFileName(event.target.value)
-            }
+            onChange={(event) => setFileName(event.target.value)}
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={saving}
-        >
-          {saving
-            ? "Saving..."
-            : "Save Changes"}
+        <button type="submit" disabled={saving}>
+          {saving ? "Saving..." : "Save Changes"}
         </button>
       </form>
 
