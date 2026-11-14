@@ -299,7 +299,7 @@ function AppContent() {
   return (
     <BrowserRouter basename="/StrongMarket-Project">
       <div className="app" style={{ width: "100%", overflowX: "hidden" }}>
-        <header className="navbar" style={{ position: "sticky", top: 0, zIndex: 100, background: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "10px 12px", width: "100%", boxSizing: "border-box", borderBottom: "1px solid #eee", flexWrap: "wrap" }}>
+        <header className="navbar" style={{ position: "relative", top: 0, zIndex: 100, background: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "10px 12px", width: "100%", boxSizing: "border-box", borderBottom: "1px solid #eee", flexWrap: "wrap" }}>
   <Link
     className="logo"
     to="/"
@@ -320,15 +320,10 @@ function AppContent() {
     display: "flex",
     flexDirection: "column",
     gap: "0px",
-    position: "absolute",
-    top: "100%",
-    left: 0,
-    right: 0,
+    order: 3,
     background: "#fff",
-    padding: "8px 16px 16px",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
-    borderBottom: "1px solid #eee",
-    zIndex: 99,
+    padding: "8px 4px 8px",
+    borderTop: "1px solid #eee",
     width: "100%",
     boxSizing: "border-box",
   } : { display: "none" }}
