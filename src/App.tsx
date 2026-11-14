@@ -77,68 +77,69 @@ function Home() {
   }, []);
 
   return (
-    <main>
-      <section className="hero" id="home">
-        <div className="hero-content">
-          <p className="eyebrow">
+    <main style={{ width: "100%", boxSizing: "border-box", overflowX: "hidden" }}>
+      <section className="hero" id="home" style={{ padding: "28px 16px 24px", display: "flex", flexDirection: "column", gap: "24px", width: "100%", boxSizing: "border-box" }}>
+        <div className="hero-content" style={{ width: "100%", boxSizing: "border-box" }}>
+          <p className="eyebrow" style={{ margin: "0 0 10px", fontSize: "11px", letterSpacing: "1px" }}>
             DIGITAL PRODUCTS. INSTANT ACCESS.
           </p>
 
-          <h1>
+          <h1 style={{ fontSize: "32px", lineHeight: "1.15", margin: "0 0 12px", wordBreak: "break-word", overflowWrap: "break-word" }}>
             Discover digital products
-            <span> built to move you forward.</span>
+            <span style={{ display: "block", color: "#1d4ed8" }}> built to move you forward.</span>
           </h1>
 
-          <p className="hero-text">
+          <p className="hero-text" style={{ fontSize: "14px", lineHeight: "1.6", color: "#555", margin: "0 0 18px" }}>
             Explore premium ebooks, templates, business
             resources, creative tools, and digital solutions
             designed for modern life and business.
           </p>
 
-          <div className="hero-actions">
-            <Link className="primary-btn" to="/shop">
+          <div className="hero-actions" style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+            <Link className="primary-btn" to="/shop" style={{ padding: "12px 18px", fontSize: "14px", borderRadius: "8px" }}>
               Explore Products
             </Link>
 
-            <Link className="secondary-btn" to="/shop">
+            <Link className="secondary-btn" to="/shop" style={{ padding: "12px 18px", fontSize: "14px", borderRadius: "8px" }}>
               Browse Categories
             </Link>
           </div>
         </div>
 
-        <div className="hero-card">
+        <div className="hero-card" style={{ width: "100%", boxSizing: "border-box", padding: "28px 20px", borderRadius: "16px", background: "#0f172a", color: "#fff", position: "relative", overflow: "hidden" }}>
           <div className="card-glow"></div>
 
-          <p>FEATURED</p>
+          <p style={{ fontSize: "11px", letterSpacing: "1px", margin: "0 0 8px", color: "#93c5fd" }}>FEATURED</p>
 
-          <h2>Premium Digital Collection</h2>
+          <h2 style={{ fontSize: "24px", lineHeight: "1.2", margin: "0 0 8px" }}>Premium Digital Collection</h2>
 
-          <span>
+          <span style={{ fontSize: "13px", color: "#cbd5e1" }}>
             Curated resources. Instant delivery.
           </span>
         </div>
       </section>
 
-      <section className="categories" id="categories">
-        <div className="section-heading">
-          <p className="eyebrow">EXPLORE</p>
+      <section className="categories" id="categories" style={{ padding: "24px 16px 32px", width: "100%", boxSizing: "border-box" }}>
+        <div className="section-heading" style={{ marginBottom: "18px" }}>
+          <p className="eyebrow" style={{ margin: "0 0 6px" }}>EXPLORE</p>
 
-          <h2>Shop by category</h2>
+          <h2 style={{ fontSize: "24px", margin: "0 0 6px", lineHeight: "1.2" }}>Shop by category</h2>
 
-          <p>
+          <p style={{ fontSize: "13px", color: "#666", margin: 0, lineHeight: "1.5" }}>
             Find the digital resources you need without
             the clutter.
           </p>
         </div>
 
-        <div className="category-grid">
+        <div className="category-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", width: "100%", boxSizing: "border-box" }}>
           <Link
             className="category-card"
             to="/shop?category=ebooks"
+            style={{ padding: "16px 12px", borderRadius: "12px", display: "block", boxSizing: "border-box" }}
           >
             <span>01</span>
-            <h3>Ebooks & Guides</h3>
-            <p>
+            <h3 style={{ fontSize: "15px", margin: "10px 0 6px", lineHeight: "1.3" }}>Ebooks & Guides</h3>
+            <p style={{ fontSize: "12px", lineHeight: "1.5", margin: 0 }}>
               Practical knowledge for personal and professional growth.
             </p>
           </Link>
@@ -146,10 +147,11 @@ function Home() {
           <Link
             className="category-card"
             to="/shop?category=business"
+            style={{ padding: "16px 12px", borderRadius: "12px", display: "block", boxSizing: "border-box" }}
           >
             <span>02</span>
-            <h3>Business</h3>
-            <p>
+            <h3 style={{ fontSize: "15px", margin: "10px 0 6px", lineHeight: "1.3" }}>Business</h3>
+            <p style={{ fontSize: "12px", lineHeight: "1.5", margin: 0 }}>
               Resources designed to help businesses move faster.
             </p>
           </Link>
@@ -157,10 +159,11 @@ function Home() {
           <Link
             className="category-card"
             to="/shop?category=templates"
+            style={{ padding: "16px 12px", borderRadius: "12px", display: "block", boxSizing: "border-box" }}
           >
             <span>03</span>
-            <h3>Templates</h3>
-            <p>
+            <h3 style={{ fontSize: "15px", margin: "10px 0 6px", lineHeight: "1.3" }}>Templates</h3>
+            <p style={{ fontSize: "12px", lineHeight: "1.5", margin: 0 }}>
               Ready-to-use templates for work, content, and projects.
             </p>
           </Link>
@@ -168,16 +171,17 @@ function Home() {
           <Link
             className="category-card"
             to="/shop?category=ai-productivity"
+            style={{ padding: "16px 12px", borderRadius: "12px", display: "block", boxSizing: "border-box" }}
           >
             <span>04</span>
-            <h3>AI & Productivity</h3>
-            <p>
+            <h3 style={{ fontSize: "15px", margin: "10px 0 6px", lineHeight: "1.3" }}>AI & Productivity</h3>
+            <p style={{ fontSize: "12px", lineHeight: "1.5", margin: 0 }}>
               Digital tools and resources for smarter workflows.
             </p>
           </Link>
         </div>
 
-        <div className="product-grid">
+        <div className="product-grid" style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "20px" }}>
           {featuredProducts.map((product) => (
             <ProductCard
               key={product.id}
@@ -281,44 +285,73 @@ function AppContent() {
     }
   }
 
+  const navLinkStyle: React.CSSProperties = {
+    display: "block",
+    padding: "12px 4px",
+    fontSize: "15px",
+    color: "#111",
+    textDecoration: "none",
+    borderBottom: "1px solid #f0f0f0",
+    width: "100%",
+    boxSizing: "border-box",
+  };
+
   return (
     <BrowserRouter basename="/StrongMarket-Project">
-      <div className="app">
-        <header className="navbar">
+      <div className="app" style={{ width: "100%", overflowX: "hidden" }}>
+        <header className="navbar" style={{ position: "sticky", top: 0, zIndex: 100, background: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "10px 12px", width: "100%", boxSizing: "border-box", borderBottom: "1px solid #eee", flexWrap: "wrap" }}>
   <Link
     className="logo"
     to="/"
     onClick={() => setMobileMenuOpen(false)}
+    style={{ flexShrink: 0 }}
   >
     <img
       src="/StrongMarket-Project/chilvo-logo-1.png"
       alt="CHILVO"
+      style={{ height: "32px", width: "auto", display: "block" }}
     />
   </Link>
 
     <nav
   id="chilvo-mobile-navigation"
   className={mobileMenuOpen ? "mobile-nav-open" : ""}
+  style={mobileMenuOpen ? {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0px",
+    position: "absolute",
+    top: "100%",
+    left: 0,
+    right: 0,
+    background: "#fff",
+    padding: "8px 16px 16px",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
+    borderBottom: "1px solid #eee",
+    zIndex: 99,
+    width: "100%",
+    boxSizing: "border-box",
+  } : { display: "none" }}
 >
-    <Link to="/" onClick={() => setMobileMenuOpen(false)}>
+    <Link to="/" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
       Home
     </Link>
 
-    <Link to="/shop" onClick={() => setMobileMenuOpen(false)}>
+    <Link to="/shop" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
       Shop
     </Link>
 
-    <Link to="/shop" onClick={() => setMobileMenuOpen(false)}>
+    <Link to="/shop" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
       Categories
     </Link>
 
-    <Link to="/merchant/apply" onClick={() => setMobileMenuOpen(false)}>
+    <Link to="/merchant/apply" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
       Become a Merchant
     </Link>
 
     {user ? (
       <>
-        <Link to="/account" onClick={() => setMobileMenuOpen(false)}>
+        <Link to="/account" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
           My Account
         </Link>
 
@@ -326,6 +359,7 @@ function AppContent() {
           <Link
             to="/merchant/dashboard"
             onClick={() => setMobileMenuOpen(false)}
+            style={navLinkStyle}
           >
             Merchant Dashboard
           </Link>
@@ -335,6 +369,7 @@ function AppContent() {
           <Link
             to="/admin/merchant-applications"
             onClick={() => setMobileMenuOpen(false)}
+            style={navLinkStyle}
           >
             Admin
           </Link>
@@ -343,35 +378,35 @@ function AppContent() {
         <button type="button" onClick={() => {
           setMobileMenuOpen(false);
           void handleLogout();
-        }}>
+        }} style={{ ...navLinkStyle, background: "none", border: "none", borderBottom: "1px solid #f0f0f0", textAlign: "left", cursor: "pointer" }}>
           Logout
         </button>
 
         <button type="button" onClick={() => {
           setMobileMenuOpen(false);
           void handleDeleteAccount();
-        }}>
+        }} style={{ ...navLinkStyle, background: "none", border: "none", borderBottom: "none", textAlign: "left", cursor: "pointer", color: "#d00" }}>
           Delete Account
         </button>
       </>
     ) : (
       <>
-        <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+        <Link to="/login" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
           Login
         </Link>
 
-        <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
+        <Link to="/register" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
           Register
         </Link>
       </>
     )}
 
-    <Link to="/" onClick={() => setMobileMenuOpen(false)}>
+    <Link to="/" onClick={() => setMobileMenuOpen(false)} style={{ ...navLinkStyle, borderBottom: "none" }}>
       About
     </Link>
   </nav>
 
-  <div className="nav-actions">
+  <div className="nav-actions" style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
     <Link
       className="search-btn"
       to="/shop"
@@ -391,6 +426,7 @@ function AppContent() {
       aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
       aria-expanded={mobileMenuOpen}
       onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+      style={{ fontSize: "20px", padding: "6px 10px", background: "none", border: "none", cursor: "pointer" }}
     >
       {mobileMenuOpen ? "✕" : "☰"}
     </button>
@@ -494,7 +530,7 @@ function AppContent() {
           />
         </Routes>
 
-        <footer>
+        <footer style={{ padding: "24px 16px", boxSizing: "border-box" }}>
   <div>
     <Link
       className="logo"
@@ -503,6 +539,7 @@ function AppContent() {
       <img
         src="/StrongMarket-Project/chilvo-logo-1.png"
         alt="CHILVO"
+        style={{ height: "32px", width: "auto" }}
       />
     </Link>
 
