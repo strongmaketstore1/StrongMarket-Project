@@ -288,14 +288,15 @@ function AppContent() {
     const navLinkStyle: React.CSSProperties = {
     display: "flex",
     alignItems: "center",
-    padding: "16px 12px",
-    fontSize: "18px",
+    padding: "22px 12px",
+    fontSize: "26px",
+    lineHeight: "1.4",
     color: "#111",
-    fontWeight: 700,
+    fontWeight: 800,
     textDecoration: "none",
     borderBottom: "1px solid #f0f0f0",
     width: "100%",
-    minHeight: "54px",
+    minHeight: "72px",
     boxSizing: "border-box",
   };
 
