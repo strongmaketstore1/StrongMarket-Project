@@ -1,4 +1,4 @@
-export type ProductCategory =
+export type ProductCategory = "templates" | "prompt-packs" | "guides";
   | "ebooks"
   | "business"
   | "templates"
