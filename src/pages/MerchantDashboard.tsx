@@ -218,4 +218,4 @@ export default function MerchantDashboard() {
       </section>
     </main>
   );
-            }
+}
