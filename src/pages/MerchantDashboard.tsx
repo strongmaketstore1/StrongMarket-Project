@@ -209,7 +209,7 @@ export default function MerchantDashboard() {
           </div>
           <div>
             <div style={{ color: "#666", fontSize: "13px" }}>Earnings</div>
-            <div style={{ fontSize: "22px", fontWeight: 800 }}>₦{stats.earnings.toLocaleString()}</div>
+            <div style={{ fontSize: "22px", fontWeight: 800 }}>${stats.earnings.toLocaleString()}</div>
           </div>
         </div>
         <p style={{ color: "#666", fontSize: "14px", marginBottom: 0 }}>
