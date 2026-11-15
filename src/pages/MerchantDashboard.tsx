@@ -73,7 +73,7 @@ export default function MerchantDashboard() {
     return () => unsubscribe();
   }, []);
 
-  const pageStyle = {
+  const pageStyle: React.CSSProperties = {
     maxWidth: "1100px",
     margin: "0 auto",
     padding: "20px 14px 40px",
@@ -81,7 +81,7 @@ export default function MerchantDashboard() {
     minHeight: "70vh",
   };
 
-  const cardBase = {
+  const cardBase: React.CSSProperties = {
     borderRadius: "14px",
     padding: "18px 12px",
     textDecoration: "none",
