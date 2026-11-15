@@ -290,7 +290,7 @@ function AppContent() {
   return (
     <BrowserRouter basename="/StrongMarket-Project">
       <div className="app" style={{ width: "100%", overflowX: "hidden" }}>
-        <header className="navbar" style={{ position: "relative", background: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "10px 12px", width: "100%", boxSizing: "border-box", borderBottom: "1px solid #eee" }}>
+        <header className="navbar" style={{ position: "sticky", top: 0, zIndex: 10000, background: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "10px 12px", width: "100%", boxSizing: "border-box", borderBottom: "1px solid #eee" }}>
           <Link
             className="logo"
             to="/"
@@ -334,7 +334,7 @@ function AppContent() {
         {mobileMenuOpen && (
           <nav
             id="chilvo-mobile-navigation"
-            style={{ display: "flex", flexDirection: "column", background: "#fff", padding: "8px 16px 16px", borderBottom: "1px solid #eee", width: "100%", boxSizing: "border-box" }}
+            style={{ display: "flex", flexDirection: "column", background: "#fff", padding: "8px 16px 80px", borderBottom: "1px solid #eee", width: "100%", boxSizing: "border-box", position: "fixed", top: "53px", left: 0, right: 0, bottom: 0, height: "calc(100vh - 53px)", minHeight: "calc(100vh - 53px)", overflowY: "auto", zIndex: 9999 }}
           >
             <Link to="/" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
               Home
@@ -516,7 +516,6 @@ function AppContent() {
               <img
                 src="/StrongMarket-Project/chilvo-logo-1.png"
                 alt="CHILVO"
-                style={{ height: "32px", width: "auto" }}
               />
             </Link>
 
