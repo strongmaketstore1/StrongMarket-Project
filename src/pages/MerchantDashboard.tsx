@@ -216,6 +216,6 @@ export default function MerchantDashboard() {
           Tap any card above to manage your store.
         </p>
       </section>
-    </main>
+    </main>    
   );
 }
