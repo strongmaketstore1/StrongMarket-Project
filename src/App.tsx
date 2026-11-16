@@ -68,7 +68,7 @@ function Home() {
       (error) => {
         console.error(
           "Unable to load featured products:",
-          error,
+          error
         );
       },
     );
@@ -277,18 +277,18 @@ function AppContent() {
     }
   }
 
-    const navLinkStyle: React.CSSProperties = {
+  const navLinkStyle: React.CSSProperties = {
     display: "flex",
     alignItems: "center",
     padding: "22px 12px",
-    fontSize: "26px",
+    fontSize: "28px",
     lineHeight: "1.4",
     color: "#111",
     fontWeight: 800,
     textDecoration: "none",
     borderBottom: "1px solid #f0f0f0",
     width: "100%",
-    minHeight: "72px",
+    minHeight: "76px",
     boxSizing: "border-box",
   };
 
@@ -416,108 +416,30 @@ function AppContent() {
         )}
 
         <Routes>
-          <Route
-            path="/"
-            element={<Home />}
-          />
-
-          <Route
-            path="/shop"
-            element={<Shop />}
-          />
-
-          <Route
-            path="/product/:productId"
-            element={<ProductDetails />}
-          />
-
-          <Route
-            path="/cart"
-            element={<Cart />}
-          />
-
-          <Route
-            path="/checkout"
-            element={<Checkout />}
-          />
-
-          <Route
-            path="/order-success"
-            element={<OrderSuccess />}
-          />
-
-          <Route
-            path="/account"
-            element={<Account />}
-          />
-
-          <Route
-            path="/merchant/:merchantId"
-            element={<MerchantStore />}
-          />
-
-          <Route
-            path="/login"
-            element={<Login />}
-          />
-
-          <Route
-            path="/register"
-            element={<Register />}
-          />
-
-          <Route
-            path="/merchant/apply"
-            element={<MerchantApply />}
-          />
-
-          <Route
-            path="/merchant/dashboard"
-            element={<MerchantDashboard />}
-          />
-
-          <Route
-            path="/merchant/products/new"
-            element={<MerchantAddProduct />}
-          />
-
-          <Route
-            path="/merchant/products"
-            element={<MerchantProducts />}
-          />
-
-          <Route
-            path="/merchant/products/:productId/edit"
-            element={<MerchantEditProduct />}
-          />
-
-          <Route
-            path="/merchant/orders"
-            element={<MerchantOrders />}
-          />
-
-          <Route
-            path="/merchant/sales"
-            element={<MerchantSales />}
-          />
-
-          <Route
-            path="/merchant/earnings"
-            element={<MerchantEarnings />}
-          />
-
-          <Route
-            path="/admin/merchant-applications"
-            element={<AdminMerchantApplications />}
-          />
+          <Route path="/" element={<Home />} />
+          <Route path="/shop" element={<Shop />} />
+          <Route path="/product/:productId" element={<ProductDetails />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/order-success" element={<OrderSuccess />} />
+          <Route path="/account" element={<Account />} />
+          <Route path="/merchant/:merchantId" element={<MerchantStore />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/merchant/apply" element={<MerchantApply />} />
+          <Route path="/merchant/dashboard" element={<MerchantDashboard />} />
+          <Route path="/merchant/products/new" element={<MerchantAddProduct />} />
+          <Route path="/merchant/products" element={<MerchantProducts />} />
+          <Route path="/merchant/products/:productId/edit" element={<MerchantEditProduct />} />
+          <Route path="/merchant/orders" element={<MerchantOrders />} />
+          <Route path="/merchant/sales" element={<MerchantSales />} />
+          <Route path="/merchant/earnings" element={<MerchantEarnings />} />
+          <Route path="/admin/merchant-applications" element={<AdminMerchantApplications />} />
         </Routes>
 
         <footer style={{ padding: "24px 16px", boxSizing: "border-box" }}>
           <div>
-            <Link
-              className="logo"
-              to="/"
-            >
+            <Link className="logo" to="/">
               <img
                 src="/StrongMarket-Project/chilvo-logo-1.png"
                 alt="CHILVO"
