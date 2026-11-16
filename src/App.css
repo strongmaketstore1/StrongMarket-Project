@@ -771,3 +771,11 @@ z-index: 100;
     min-height: 72px !important;
   }
 }
+
+/* FORCE BIG MENU - catch EVERY tag inside menu */
+header.navbar #chilvo-mobile-navigation *,
+#chilvo-mobile-navigation * {
+  font-size: 26px !important;
+  line-height: 1.4 !important;
+  font-weight: 800 !important;
+}
