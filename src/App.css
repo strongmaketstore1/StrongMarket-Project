@@ -759,13 +759,19 @@ z-index: 100;
   }
 }
 
-/* FORCE BIG MENU LINKS - must be last in file */
-#chilvo-mobile-navigation a,
-#chilvo-mobile-navigation button {
-  font-size: 26px !important;
-  line-height: 1.4 !important;
-  font-weight: 800 !important;
-  padding-top: 22px !important;
-  padding-bottom: 22px !important;
-  min-height: 72px !important;
-    }
+/* FORCE BIG MENU LINKS - catch-all */
+@media (max-width: 1024px) {
+  header.navbar nav a,
+  header.navbar nav button,
+  header nav a,
+  header nav button,
+  nav a,
+  nav button {
+    font-size: 26px !important;
+    line-height: 1.4 !important;
+    font-weight: 800 !important;
+    padding-top: 22px !important;
+    padding-bottom: 22px !important;
+    min-height: 72px !important;
+  }
+}
