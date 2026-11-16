@@ -758,3 +758,14 @@ z-index: 100;
     z-index: 1000;
   }
 }
+
+/* FORCE BIG MENU LINKS - must be last in file */
+#chilvo-mobile-navigation a,
+#chilvo-mobile-navigation button {
+  font-size: 26px !important;
+  line-height: 1.4 !important;
+  font-weight: 800 !important;
+  padding-top: 22px !important;
+  padding-bottom: 22px !important;
+  min-height: 72px !important;
+    }
