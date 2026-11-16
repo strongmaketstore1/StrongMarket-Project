@@ -759,14 +759,10 @@ z-index: 100;
   }
 }
 
-/* FORCE BIG MENU LINKS - catch-all */
+/* FORCE BIG MENU LINKS - global */
 @media (max-width: 1024px) {
-  header.navbar nav a,
-  header.navbar nav button,
-  header nav a,
-  header nav button,
-  nav a,
-  nav button {
+  body a,
+  body button {
     font-size: 26px !important;
     line-height: 1.4 !important;
     font-weight: 800 !important;
@@ -775,5 +771,3 @@ z-index: 100;
     min-height: 72px !important;
   }
 }
-
-body { border: 10px solid red !important; }
