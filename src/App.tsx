@@ -200,6 +200,11 @@ function AppContent() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
+    document.body.style.overflow = mobileMenuOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileMenuOpen]);
+
+  useEffect(() => {
     const unsubscribe = onAuthStateChanged(
       auth,
       async (currentUser) => {
@@ -289,8 +294,8 @@ function AppContent() {
 
   return (
     <BrowserRouter basename="/StrongMarket-Project">
-      <div className="app" style={{ width: "100%", overflowX: "hidden" }}>
-        <header className="navbar" style={{ position: "sticky", top: 0, zIndex: 10000, background: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "10px 12px", width: "100%", boxSizing: "border-box", borderBottom: "1px solid #eee" }}>
+      <div className="app" style={{ width: "100%", overflowX: "hidden", paddingTop: "53px" }}>
+        <header className="navbar" style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 10000, background: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "10px 12px", width: "100%", boxSizing: "border-box", borderBottom: "1px solid #eee" }}>
           <Link
             className="logo"
             to="/"
@@ -516,6 +521,7 @@ function AppContent() {
               <img
                 src="/StrongMarket-Project/chilvo-logo-1.png"
                 alt="CHILVO"
+                style={{ height: "32px", width: "auto" }}
               />
             </Link>
 
