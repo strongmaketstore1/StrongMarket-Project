@@ -342,7 +342,7 @@ function AppContent() {
             style={{ display: "flex", flexDirection: "column", background: "#fff", padding: "8px 16px 80px", borderBottom: "1px solid #eee", width: "100%", boxSizing: "border-box", position: "fixed", top: "53px", left: 0, right: 0, bottom: 0, height: "calc(100vh - 53px)", minHeight: "calc(100vh - 53px)", overflowY: "auto", zIndex: 9999 }}
           >
             <Link to="/" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
-              Home
+              Home V24
             </Link>
 
             <Link to="/shop" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
