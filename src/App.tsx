@@ -375,3 +375,99 @@ function AppContent() {
 
                 {isAdmin && (
                   <Link
+                    to="/admin/merchant-applications"
+                    onClick={() => setMobileMenuOpen(false)}
+                    style={navLinkStyle}
+                  >
+                    Admin
+                  </Link>
+                )}
+
+                <button type="button" onClick={() => {
+                  setMobileMenuOpen(false);
+                  void handleLogout();
+                }} style={{ ...navLinkStyle, background: "none", border: "none", borderBottom: "1px solid #f0f0f0", textAlign: "left", cursor: "pointer" }}>
+                  Logout
+                </button>
+
+                <button type="button" onClick={() => {
+                  setMobileMenuOpen(false);
+                  void handleDeleteAccount();
+                }} style={{ ...navLinkStyle, background: "none", border: "none", borderBottom: "none", textAlign: "left", cursor: "pointer", color: "#d00" }}>
+                  Delete Account
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
+                  Login
+                </Link>
+
+                <Link to="/register" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
+                  Register
+                </Link>
+              </>
+            )}
+
+            <Link to="/" onClick={() => setMobileMenuOpen(false)} style={{ ...navLinkStyle, borderBottom: "none" }}>
+              About
+            </Link>
+          </nav>
+        )}
+
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/shop" element={<Shop />} />
+          <Route path="/product/:productId" element={<ProductDetails />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/order-success" element={<OrderSuccess />} />
+          <Route path="/account" element={<Account />} />
+          <Route path="/merchant/:merchantId" element={<MerchantStore />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/merchant/apply" element={<MerchantApply />} />
+          <Route path="/merchant/dashboard" element={<MerchantDashboard />} />
+          <Route path="/merchant/products/new" element={<MerchantAddProduct />} />
+          <Route path="/merchant/products" element={<MerchantProducts />} />
+          <Route path="/merchant/products/:productId/edit" element={<MerchantEditProduct />} />
+          <Route path="/merchant/orders" element={<MerchantOrders />} />
+          <Route path="/merchant/sales" element={<MerchantSales />} />
+          <Route path="/merchant/earnings" element={<MerchantEarnings />} />
+          <Route path="/admin/merchant-applications" element={<AdminMerchantApplications />} />
+        </Routes>
+
+        <footer style={{ padding: "24px 16px", boxSizing: "border-box" }}>
+          <div>
+            <Link className="logo" to="/">
+              <img
+                src="/StrongMarket-Project/chilvo-logo-1.png"
+                alt="CHILVO"
+                style={{ height: "32px", width: "auto" }}
+              />
+            </Link>
+
+            <p>
+              Premium digital products. Simple.
+              Accessible. Instant.
+            </p>
+          </div>
+
+          <p>
+            © 2026 CHILVO. All rights reserved.
+          </p>
+        </footer>
+      </div>
+    </BrowserRouter>
+  );
+}
+
+function App() {
+  return (
+    <CartProvider>
+      <AppContent />
+    </CartProvider>
+  );
+}
+
+export default App;
