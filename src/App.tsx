@@ -138,4 +138,336 @@ function Home() {
           >
             <span>01</span>
             <h3 style={{ fontSize: "15px", margin: "10px 0 6px", lineHeight: "1.3" }}>Templates</h3>
-            
+            <p style={{ fontSize: "12px", lineHeight: "1.5", margin: 0 }}>
+              Ready-to-use templates for work, content, and projects.
+            </p>
+          </Link>
+
+          <Link
+            className="category-card"
+            to="/shop?category=prompt-packs"
+            style={{ padding: "16px 12px", borderRadius: "12px", display: "block", boxSizing: "border-box" }}
+          >
+            <span>02</span>
+            <h3 style={{ fontSize: "15px", margin: "10px 0 6px", lineHeight: "1.3" }}>AI Prompt Packs</h3>
+            <p style={{ fontSize: "12px", lineHeight: "1.5", margin: 0 }}>
+              Ready-to-use prompts for smarter, faster workflows.
+            </p>
+          </Link>
+
+          <Link
+            className="category-card"
+            to="/shop?category=guides"
+            style={{ padding: "16px 12px", borderRadius: "12px", display: "block", boxSizing: "border-box" }}
+          >
+            <span>03</span>
+            <h3 style={{ fontSize: "15px", margin: "10px 0 6px", lineHeight: "1.3" }}>Guides</h3>
+            <p style={{ fontSize: "12px", lineHeight: "1.5", margin: 0 }}>
+              Practical knowledge for personal and professional growth.
+            </p>
+          </Link>
+        </div>
+
+        <div className="product-grid" style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "20px" }}>
+          {featuredProducts.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+            />
+          ))}
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function CartButton() {
+  const { itemCount } = useCart();
+
+  return (
+    <Link className="cart-btn" to="/cart">
+      Cart ({itemCount})
+    </Link>
+  );
+}
+
+function AppContent() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState(auth.currentUser);
+  const [merchantStatus, setMerchantStatus] =
+    useState<string>("none");
+
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    document.body.style.overflow = mobileMenuOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileMenuOpen]);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      async (currentUser) => {
+        setUser(currentUser);
+
+        setIsAdmin(
+          currentUser?.uid ===
+            "K2XHC9W2xxPcdEkjrtPdBAUjAjy1",
+        );
+
+        if (!currentUser) {
+          setMerchantStatus("none");
+          setIsAdmin(false);
+          return;
+        }
+
+        try {
+          const userSnapshot = await getDoc(
+            doc(db, "users", currentUser.uid)
+          );
+
+          if (userSnapshot.exists()) {
+            setMerchantStatus(
+              userSnapshot.data().merchantStatus ?? "none"
+            );
+          } else {
+            setMerchantStatus("none");
+          }
+        } catch (error) {
+          console.error(
+            "Unable to load merchant status:",
+            error
+          );
+          setMerchantStatus("none");
+        }
+      }
+    );
+
+    return unsubscribe;
+  }, []);
+
+  async function handleLogout() {
+    try {
+      await logoutUser();
+    } catch (error) {
+      console.error(error);
+      alert("Unable to log out.");
+    }
+  }
+
+  async function handleDeleteAccount() {
+    const confirmed = window.confirm(
+      "Are you sure you want to permanently delete your account? This cannot be undone.",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await deleteAccount();
+
+      alert("Your account has been deleted.");
+    } catch (error) {
+      console.error(error);
+
+      alert(
+        "Unable to delete your account. You may need to sign in again before deleting your account.",
+      );
+    }
+  }
+
+  const navLinkStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    padding: "22px 12px",
+    fontSize: "28px",
+    lineHeight: "1.4",
+    color: "#111",
+    fontWeight: 800,
+    textDecoration: "none",
+    borderBottom: "1px solid #f0f0f0",
+    width: "100%",
+    minHeight: "76px",
+    boxSizing: "border-box",
+  };
+
+  return (
+    <BrowserRouter basename="/StrongMarket-Project">
+      <div className="app" style={{ width: "100%", overflowX: "hidden", paddingTop: "82px" }}>
+        <header className="navbar" style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 10000, background: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "10px 12px", width: "100%", boxSizing: "border-box", borderBottom: "1px solid #eee" }}>
+          <Link
+            className="logo"
+            to="/"
+            onClick={() => setMobileMenuOpen(false)}
+            style={{ flexShrink: 0 }}
+          >
+            <img
+              src="/StrongMarket-Project/chilvo-logo-1.png"
+              alt="CHILVO"
+              style={{ height: "32px", width: "auto", display: "block" }}
+            />
+          </Link>
+
+          <div className="nav-actions" style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+            <Link
+              className="search-btn"
+              to="/shop"
+              aria-label="Search products"
+            >
+              <span className="search-icon" aria-hidden="true">
+                ⌕
+              </span>
+              <span className="search-label">Search</span>
+            </Link>
+
+            <CartButton />
+
+            <button
+              type="button"
+              className="mobile-menu-btn"
+              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileMenuOpen}
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              style={{ fontSize: "20px", padding: "6px 10px", background: "none", border: "none", cursor: "pointer" }}
+            >
+              {mobileMenuOpen ? "✕" : "☰"}
+            </button>
+          </div>
+        </header>
+
+        {mobileMenuOpen && (
+          <nav
+            id="chilvo-mobile-navigation"
+            style={{ display: "flex", flexDirection: "column", background: "#fff", padding: "8px 16px 80px", borderBottom: "1px solid #eee", width: "100%", boxSizing: "border-box", position: "fixed", top: "82px", left: 0, right: 0, bottom: 0, height: "calc(100vh - 82px)", minHeight: "calc(100vh - 82px)", overflowY: "auto", zIndex: 9999 }}
+          >
+            <Link to="/" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
+              Home
+            </Link>
+
+            <Link to="/shop" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
+              Shop
+            </Link>
+
+            <Link to="/shop" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
+              Categories
+            </Link>
+
+            <Link to="/merchant/apply" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
+              Become a Merchant
+            </Link>
+
+            {user ? (
+              <>
+                <Link to="/account" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
+                  My Account
+                </Link>
+
+                {merchantStatus === "approved" && (
+                  <Link
+                    to="/merchant/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    style={navLinkStyle}
+                  >
+                    Merchant Dashboard
+                  </Link>
+                )}
+
+                {isAdmin && (
+                  <Link
+                    to="/admin/merchant-applications"
+                    onClick={() => setMobileMenuOpen(false)}
+                    style={navLinkStyle}
+                  >
+                    Admin
+                  </Link>
+                )}
+
+                <button type="button" onClick={() => {
+                  setMobileMenuOpen(false);
+                  void handleLogout();
+                }} style={{ ...navLinkStyle, background: "none", border: "none", borderBottom: "1px solid #f0f0f0", textAlign: "left", cursor: "pointer" }}>
+                  Logout
+                </button>
+
+                <button type="button" onClick={() => {
+                  setMobileMenuOpen(false);
+                  void handleDeleteAccount();
+                }} style={{ ...navLinkStyle, background: "none", border: "none", borderBottom: "none", textAlign: "left", cursor: "pointer", color: "#d00" }}>
+                  Delete Account
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
+                  Login
+                </Link>
+
+                <Link to="/register" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
+                  Register
+                </Link>
+              </>
+            )}
+
+            <Link to="/" onClick={() => setMobileMenuOpen(false)} style={{ ...navLinkStyle, borderBottom: "none" }}>
+              About
+            </Link>
+          </nav>
+        )}
+
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/shop" element={<Shop />} />
+          <Route path="/product/:productId" element={<ProductDetails />} />
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/order-success" element={<OrderSuccess />} />
+          <Route path="/account" element={<Account />} />
+          <Route path="/merchant/:merchantId" element={<MerchantStore />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/merchant/apply" element={<MerchantApply />} />
+          <Route path="/merchant/dashboard" element={<MerchantDashboard />} />
+          <Route path="/merchant/products/new" element={<MerchantAddProduct />} />
+          <Route path="/merchant/products" element={<MerchantProducts />} />
+          <Route path="/merchant/products/:productId/edit" element={<MerchantEditProduct />} />
+          <Route path="/merchant/orders" element={<MerchantOrders />} />
+          <Route path="/merchant/sales" element={<MerchantSales />} />
+          <Route path="/merchant/earnings" element={<MerchantEarnings />} />
+          <Route path="/admin/merchant-applications" element={<AdminMerchantApplications />} />
+        </Routes>
+
+        <footer style={{ padding: "24px 16px", boxSizing: "border-box" }}>
+          <div>
+            <Link className="logo" to="/">
+              <img
+                src="/StrongMarket-Project/chilvo-logo-1.png"
+                alt="CHILVO"
+                style={{ height: "32px", width: "auto" }}
+              />
+            </Link>
+
+            <p>
+              Premium digital products. Simple.
+              Accessible. Instant.
+            </p>
+          </div>
+
+          <p>
+            © 2026 CHILVO. All rights reserved.
+          </p>
+        </footer>
+      </div>
+    </BrowserRouter>
+  );
+}
+
+function App() {
+  return (
+    <CartProvider>
+      <AppContent />
+    </CartProvider>
+  );
+}
+
+export default App;
