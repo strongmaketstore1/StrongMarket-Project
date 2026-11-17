@@ -8,6 +8,7 @@ import {
 } from "react";
 
 import type { Product } from "../types/product";
+import { useAuth } from "./AuthContext"; // <-- check this name in your project
 
 interface CartItem {
   product: Product;
@@ -28,33 +29,38 @@ const CartContext = createContext<CartContextValue | undefined>(
   undefined,
 );
 
-const CART_STORAGE_KEY = "strongmarketstore-cart";
+function getCartKey(userId?: string | null) {
+  return userId
+    ? `strongmarketstore-cart-${userId}`
+    : "strongmarketstore-cart-guest";
+}
 
 export function CartProvider({
   children,
 }: {
   children: ReactNode;
 }) {
-  const [items, setItems] = useState<CartItem[]>(() => {
-  try {
-    const savedCart = localStorage.getItem(
-      CART_STORAGE_KEY,
-    );
+  const { user } = useAuth();
+  const userId = user?.uid ?? null;
+  const cartKey = getCartKey(userId);
 
-    return savedCart
-      ? (JSON.parse(savedCart) as CartItem[])
-      : [];
-  } catch {
-    return [];
-  }
-});
+  const [items, setItems] = useState<CartItem[]>([]);
 
+  // Load the right cart when user changes (login / logout / new account)
   useEffect(() => {
-    localStorage.setItem(
-      CART_STORAGE_KEY,
-      JSON.stringify(items),
-    );
-  }, [items]);
+    try {
+      const savedCart = localStorage.getItem(cartKey);
+      setItems(savedCart ? (JSON.parse(savedCart) as CartItem[]) : []);
+    } catch {
+      setItems([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartKey]);
+
+  // Save to the current user's cart
+  useEffect(() => {
+    localStorage.setItem(cartKey, JSON.stringify(items));
+  }, [items, cartKey]);
 
   const addToCart = (product: Product) => {
     setItems((currentItems) => {
@@ -63,16 +69,16 @@ export function CartProvider({
       );
 
       if (existingItem) {
-  return currentItems.map((item) =>
-    item.product.id === product.id
-      ? {
-          ...item,
-          product,
-          quantity: item.quantity + 1,
-        }
-      : item,
-  );
-}
+        return currentItems.map((item) =>
+          item.product.id === product.id
+            ? {
+                ...item,
+                product,
+                quantity: item.quantity + 1,
+              }
+            : item,
+        );
+      }
 
       return [
         ...currentItems,
