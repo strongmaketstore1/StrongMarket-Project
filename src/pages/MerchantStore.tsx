@@ -98,7 +98,7 @@ setMerchant(
 
   if (loading) {
     return (
-      <main>
+      <main style={{ padding: "24px 16px" }}>
         <p>Loading merchant store...</p>
       </main>
     );
@@ -106,7 +106,7 @@ setMerchant(
 
   if (!merchant) {
     return (
-      <main className="product-not-found">
+      <main className="product-not-found" style={{ padding: "24px 16px" }}>
         <p className="eyebrow">
           MERCHANT STORE
         </p>
@@ -131,57 +131,53 @@ setMerchant(
   }
 
   return (
-    <main className="merchant-store-page">
-      <section className="merchant-store-header">
-  <p className="eyebrow">
-    CHILVO STORE
-  </p>
+    <main style={{ width: "100%", boxSizing: "border-box", overflowX: "hidden", padding: "0 0 32px" }}>
+      {/* HEADER - Fixed: avatar now has fixed box, object-fit cover */}
+      <section style={{ padding: "24px 16px", boxSizing: "border-box" }}>
+        <p className="eyebrow" style={{ margin: "0 0 16px" }}>
+          CHILVO STORE
+        </p>
 
-  <div className="merchant-store-profile">
-    <div className="merchant-store-avatar">
-  {merchant.photoURL ? (
-    <img
-      src={merchant.photoURL}
-      alt={merchant.name || "Merchant"}
-    />
-  ) : (
-    merchant.name
-      ?.charAt(0)
-      .toUpperCase() || "C"
-  )}
-</div>
+        <div style={{ display: "flex", gap: "14px", alignItems: "flex-start" }}>
+          <div style={{ width: "84px", height: "84px", flexShrink: 0, borderRadius: "50%", overflow: "hidden", background: "#eef2ff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "32px", fontWeight: 800, color: "#1d4ed8" }}>
+            {merchant.photoURL ? (
+              <img
+                src={merchant.photoURL}
+                alt={merchant.name || "Merchant"}
+                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              />
+            ) : (
+              merchant.name?.charAt(0).toUpperCase() || "C"
+            )}
+          </div>
 
-    <div>
-      <h1>
-        {merchant.name ||
-          "CHILVO Merchant"}
-      </h1>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h1 style={{ fontSize: "28px", lineHeight: "1.15", margin: "0 0 6px", wordBreak: "break-word" }}>
+              {merchant.name || "CHILVO Merchant"}
+            </h1>
 
-      <p>
-        Digital products on CHILVO
-      </p>
+            <p style={{ fontSize: "14px", color: "#555", margin: "0 0 4px" }}>
+              Digital products on CHILVO
+            </p>
 
-      <p>
-        {products.length}{" "}
-        {products.length === 1
-          ? "product"
-          : "products"}{" "}
-        available
-      </p>
-    </div>
-  </div>
-</section>
+            <p style={{ fontSize: "14px", color: "#111", fontWeight: 600, margin: 0 }}>
+              {products.length}{" "}
+              {products.length === 1 ? "product" : "products"}{" "}
+              available
+            </p>
+          </div>
+        </div>
+      </section>
           
-      <section>
-        <div>
-          <p className="eyebrow">
+      <section style={{ padding: "0 16px", boxSizing: "border-box" }}>
+        <div style={{ marginBottom: "16px" }}>
+          <p className="eyebrow" style={{ margin: "0 0 6px" }}>
             STORE PRODUCTS
           </p>
 
-          <h2>
+          <h2 style={{ fontSize: "24px", lineHeight: "1.2", margin: 0 }}>
             Products from{" "}
-            {merchant.name ||
-              "this merchant"}
+            {merchant.name || "this merchant"}
           </h2>
         </div>
 
@@ -193,79 +189,72 @@ setMerchant(
             </p>
           </div>
         ) : (
-          <div className="product-grid">
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px", width: "100%" }}>
             {products.map((product) => (
               <article
-                className="product-card"
                 key={product.id}
+                style={{ width: "100%", boxSizing: "border-box", background: "#fff", border: "1px solid #e5e7eb", borderRadius: "16px", overflow: "hidden" }}
               >
+                {/* IMAGE BOX - Fixed: fixed height, object-fit cover, no overflow */}
                 <Link
                   to={`/product/${product.id}`}
+                  style={{ display: "block", width: "100%", height: "220px", overflow: "hidden", background: "#f3f4f6" }}
                 >
                   {product.image ? (
                     <img
                       src={product.image}
                       alt={product.name}
+                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                     />
                   ) : (
-                    <div>
-                      {product.category
-                        .replace(
-                          "-",
-                          " ",
-                        )
-                        .toUpperCase()}
+                    <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#666", padding: "16px", boxSizing: "border-box", textAlign: "center" }}>
+                      {product.category.replace("-", " ").toUpperCase()}
                     </div>
                   )}
                 </Link>
 
-                <div>
-                  <p className="eyebrow">
-                    {product.category
-                      .replace(
-                        "-",
-                        " ",
-                      )
-                      .toUpperCase()}
+                <div style={{ padding: "16px", boxSizing: "border-box" }}>
+                  <p className="eyebrow" style={{ margin: "0 0 6px" }}>
+                    {product.category.replace("-", " ").toUpperCase()}
                   </p>
 
-                  <h3>
+                  <h3 style={{ fontSize: "20px", lineHeight: "1.3", margin: "0 0 8px" }}>
                     <Link
                       to={`/product/${product.id}`}
+                      style={{ color: "#111", textDecoration: "none" }}
                     >
                       {product.name}
                     </Link>
                   </h3>
 
-                  <p>
+                  <p style={{ fontSize: "14px", lineHeight: "1.5", color: "#555", margin: "0 0 10px" }}>
                     {product.shortDescription}
                   </p>
 
-                  <strong>
-                    {product.currency ===
-                    "NGN"
-                      ? "₦"
-                      : product.currency}
-                    {product.price.toLocaleString(
-                      "en-NG",
-                    )}
+                  <strong style={{ display: "block", fontSize: "18px", marginBottom: "14px" }}>
+                    {product.currency === "NGN" ? "₦" : product.currency}
+                    {product.price.toLocaleString("en-NG")}
                   </strong>
-                 <div>
-                   <Link
-                     className="secondary-btn"
-                     to={`/product/${product.id}`}
-                   >
-                     View Product
-                   </Link>
 
-                   <button
-                     className="primary-btn"
-                     type="button"
-                     onClick={() => addToCart(product)}
-                   >
-                     Add to Cart
-                 </button>
-                </div>  
+                  {/* BUTTONS - Fixed: stacked, full width, no overlap */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px", width: "100%" }}>
+                    <Link
+                      className="secondary-btn"
+                      to={`/product/${product.id}`}
+                      style={{ display: "block", textAlign: "center", padding: "12px", fontSize: "15px", borderRadius: "10px", boxSizing: "border-box" }}
+                    >
+                      View Product
+                    </Link>
+
+                    <button
+                      className="primary-btn"
+                      type="button"
+                      onClick={() => addToCart(product)}
+                      style={{ width: "100%", padding: "12px", fontSize: "15px", borderRadius: "10px", border: "none", cursor: "pointer", boxSizing: "border-box" }}
+                    >
+                      Add to Cart
+                    </button>
+                  </div>  
                 </div>
               </article>
             ))}
