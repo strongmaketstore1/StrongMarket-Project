@@ -339,4 +339,39 @@ function AppContent() {
         {mobileMenuOpen && (
           <nav
             id="chilvo-mobile-navigation"
-            style={{ display: "flex", flexDirection: "column", background: "#fff", padding: "8px 16px 80px", borderBottom: "1px solid #eee", width: "100%", boxSizing: "border-box", position: "fixed", top: "82px", left: 0, right: 0, bottom: 0, height: "calc(100vh - 82px)", minHeight: "calc(100vh - 82px)", overflowY:
+            style={{ display: "flex", flexDirection: "column", background: "#fff", padding: "8px 16px 80px", borderBottom: "1px solid #eee", width: "100%", boxSizing: "border-box", position: "fixed", top: "82px", left: 0, right: 0, bottom: 0, height: "calc(100vh - 82px)", minHeight: "calc(100vh - 82px)", overflowY: "auto", zIndex: 9999 }}
+          >
+            <Link to="/" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
+              Home V24
+            </Link>
+
+            <Link to="/shop" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
+              Shop
+            </Link>
+
+            <Link to="/shop" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
+              Categories
+            </Link>
+
+            <Link to="/merchant/apply" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
+              Become a Merchant
+            </Link>
+
+            {user ? (
+              <>
+                <Link to="/account" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
+                  My Account
+                </Link>
+
+                {merchantStatus === "approved" && (
+                  <Link
+                    to="/merchant/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    style={navLinkStyle}
+                  >
+                    Merchant Dashboard
+                  </Link>
+                )}
+
+                {isAdmin && (
+                  <Link
