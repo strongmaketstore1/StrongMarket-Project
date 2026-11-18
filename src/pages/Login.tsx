@@ -87,27 +87,21 @@ export default function Login() {
     }
   }
 
-async function handleResendVerification() {
+  async function handleResendVerification() {
     setError("");
     setMessage("");
 
     const trimmedEmail = email.trim();
 
     if (!trimmedEmail || !password) {
-      setError(
-        "Enter your email address and password first.",
-      );
+      setError("Enter your email address and password first.");
       return;
     }
 
     setResetLoading(true);
 
     try {
-      await resendVerificationEmail(
-        trimmedEmail,
-        password,
-      );
-
+      await resendVerificationEmail(trimmedEmail, password);
       setMessage(
         "Verification email sent. Check your inbox and spam or junk folder.",
       );
@@ -121,7 +115,7 @@ async function handleResendVerification() {
       setResetLoading(false);
     }
   }
-  
+
   return (
     <main>
       <section>
@@ -142,7 +136,7 @@ async function handleResendVerification() {
           <label htmlFor="login-password">
             Password
           </label>
-          <div style={{ position: "relative", width: "100%" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%" }}>
             <input
               id="login-password"
               type={showPassword ? "text" : "password"}
@@ -150,27 +144,25 @@ async function handleResendVerification() {
               onChange={(event) => setPassword(event.target.value)}
               required
               autoComplete="current-password"
-              style={{ width: "100%", paddingRight: "40px", boxSizing: "border-box" }}
+              style={{ flex: 1, minWidth: 0, boxSizing: "border-box" }}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               aria-label={showPassword ? "Hide password" : "Show password"}
               style={{
-                position: "absolute",
-                right: "12px",
-                left: "auto",
-                top: "50%",
-                transform: "translateY(-50%)",
+                width: "32px",
+                minWidth: "32px",
+                height: "32px",
+                padding: "0",
+                margin: "0",
                 background: "none",
                 border: "none",
                 cursor: "pointer",
-                padding: "0",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                width: "22px",
-                height: "22px",
+                flexShrink: 0,
               }}
             >
               {showPassword ? (
@@ -188,29 +180,29 @@ async function handleResendVerification() {
             </button>
           </div>
 
-     <p>
-  <button
-    type="button"
-    onClick={handleForgotPassword}
-    disabled={resetLoading}  
-  >
-    {resetLoading ? "Sending..." : "Forgot password?"}
-  </button>
-</p>
           <p>
-  <button
-    type="button"
-    onClick={handleResendVerification}
-    disabled={resetLoading}
-  >
-    {resetLoading
-      ? "Sending..."
-      : "Resend verification email"}
-  </button>
-</p>
-          
-          {error && <p role="alert">{error}</p>}
+            <button
+              type="button"
+              onClick={handleForgotPassword}
+              disabled={resetLoading}
+            >
+              {resetLoading ? "Sending..." : "Forgot password?"}
+            </button>
+          </p>
 
+          <p>
+            <button
+              type="button"
+              onClick={handleResendVerification}
+              disabled={resetLoading}
+            >
+              {resetLoading
+                ? "Sending..."
+                : "Resend verification email"}
+            </button>
+          </p>
+
+          {error && <p role="alert">{error}</p>}
           {message && <p role="status">{message}</p>}
 
           <button type="submit" disabled={loading}>
@@ -219,7 +211,7 @@ async function handleResendVerification() {
         </form>
 
         <p>
-          Don't have an account? <Link to="/register">Create one</Link>
+          Don&apos;t have an account? <Link to="/register">Create one</Link>
         </p>
       </section>
     </main>
