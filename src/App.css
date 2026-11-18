@@ -779,3 +779,15 @@ header.navbar #chilvo-mobile-navigation *,
   line-height: 1.4 !important;
   font-weight: 800 !important;
 }
+
+.password-eye-btn {
+  width: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+  height: 32px !important;
+  flex: none !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
