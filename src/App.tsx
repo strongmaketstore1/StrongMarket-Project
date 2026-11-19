@@ -47,7 +47,7 @@ import {
   useCart,
 } from "./context/CartContext";
 
-function Home() {
+function Home({ isDark }: { isDark: boolean }) {
   const [featuredProducts, setFeaturedProducts] =
     useState<Product[]>([]);
 
@@ -78,20 +78,23 @@ function Home() {
     return () => unsubscribe();
   }, []);
 
+  const textColor = isDark ? "#fff" : "#111";
+  const subText = isDark ? "#cbd5e1" : "#555";
+
   return (
-    <main style={{ width: "100%", boxSizing: "border-box", overflowX: "hidden" }}>
+    <main style={{ width: "100%", boxSizing: "border-box", overflowX: "hidden", background: isDark ? "#0f172a" : "#fff", color: textColor }}>
       <section className="hero" id="home" style={{ padding: "28px 16px 24px", display: "flex", flexDirection: "column", gap: "24px", width: "100%", boxSizing: "border-box" }}>
         <div className="hero-content" style={{ width: "100%", boxSizing: "border-box" }}>
           <p className="eyebrow" style={{ margin: "0 0 10px", fontSize: "11px", letterSpacing: "1px" }}>
             DIGITAL PRODUCTS. INSTANT ACCESS.
           </p>
 
-          <h1 style={{ fontSize: "32px", lineHeight: "1.15", margin: "0 0 12px", wordBreak: "break-word", overflowWrap: "break-word" }}>
+          <h1 style={{ fontSize: "32px", lineHeight: "1.15", margin: "0 0 12px", wordBreak: "break-word", overflowWrap: "break-word", color: textColor }}>
             Discover digital products
             <span style={{ display: "block", color: "#1d4ed8" }}> built to move you forward.</span>
           </h1>
 
-          <p className="hero-text" style={{ fontSize: "14px", lineHeight: "1.6", color: "#555", margin: "0 0 18px" }}>
+          <p className="hero-text" style={{ fontSize: "14px", lineHeight: "1.6", color: subText, margin: "0 0 18px" }}>
             Explore premium templates, AI prompt packs, and
             guides designed for modern life and business.
           </p>
@@ -101,13 +104,13 @@ function Home() {
               Explore Products
             </Link>
 
-            <Link className="secondary-btn" to="/shop" style={{ padding: "12px 18px", fontSize: "14px", borderRadius: "8px" }}>
+            <Link className="secondary-btn" to="/shop" style={{ padding: "12px 18px", fontSize: "14px", borderRadius: "8px", background: isDark ? "#1e293b" : "#fff", color: textColor, border: "1px solid #ddd" }}>
               Browse Categories
             </Link>
           </div>
         </div>
 
-        <div className="hero-card" style={{ width: "100%", boxSizing: "border-box", padding: "28px 20px", borderRadius: "16px", background: "#0f172a", color: "#fff", position: "relative", overflow: "hidden" }}>
+        <div className="hero-card" style={{ width: "100%", boxSizing: "border-box", padding: "28px 20px", borderRadius: "16px", background: isDark ? "#1e293b" : "#0f172a", color: "#fff", position: "relative", overflow: "hidden" }}>
           <div className="card-glow"></div>
 
           <p style={{ fontSize: "11px", letterSpacing: "1px", margin: "0 0 8px", color: "#93c5fd" }}>FEATURED</p>
@@ -124,9 +127,9 @@ function Home() {
         <div className="section-heading" style={{ marginBottom: "18px" }}>
           <p className="eyebrow" style={{ margin: "0 0 6px" }}>EXPLORE</p>
 
-          <h2 style={{ fontSize: "24px", margin: "0 0 6px", lineHeight: "1.2" }}>Shop by category</h2>
+          <h2 style={{ fontSize: "24px", margin: "0 0 6px", lineHeight: "1.2", color: textColor }}>Shop by category</h2>
 
-          <p style={{ fontSize: "13px", color: "#666", margin: 0, lineHeight: "1.5" }}>
+          <p style={{ fontSize: "13px", color: subText, margin: 0, lineHeight: "1.5" }}>
             Find the digital resources you need without
             the clutter.
           </p>
@@ -136,11 +139,11 @@ function Home() {
           <Link
             className="category-card"
             to="/shop?category=templates"
-            style={{ padding: "16px 12px", borderRadius: "12px", display: "block", boxSizing: "border-box" }}
+            style={{ padding: "16px 12px", borderRadius: "12px", display: "block", boxSizing: "border-box", background: isDark ? "#1e293b" : "#fff", color: textColor }}
           >
             <span>01</span>
-            <h3 style={{ fontSize: "15px", margin: "10px 0 6px", lineHeight: "1.3" }}>Templates</h3>
-            <p style={{ fontSize: "12px", lineHeight: "1.5", margin: 0 }}>
+            <h3 style={{ fontSize: "15px", margin: "10px 0 6px", lineHeight: "1.3", color: textColor }}>Templates</h3>
+            <p style={{ fontSize: "12px", lineHeight: "1.5", margin: 0, color: subText }}>
               Ready-to-use templates for work, content, and projects.
             </p>
           </Link>
@@ -148,11 +151,11 @@ function Home() {
           <Link
             className="category-card"
             to="/shop?category=prompt-packs"
-            style={{ padding: "16px 12px", borderRadius: "12px", display: "block", boxSizing: "border-box" }}
+            style={{ padding: "16px 12px", borderRadius: "12px", display: "block", boxSizing: "border-box", background: isDark ? "#1e293b" : "#fff", color: textColor }}
           >
             <span>02</span>
-            <h3 style={{ fontSize: "15px", margin: "10px 0 6px", lineHeight: "1.3" }}>AI Prompt Packs</h3>
-            <p style={{ fontSize: "12px", lineHeight: "1.5", margin: 0 }}>
+            <h3 style={{ fontSize: "15px", margin: "10px 0 6px", lineHeight: "1.3", color: textColor }}>AI Prompt Packs</h3>
+            <p style={{ fontSize: "12px", lineHeight: "1.5", margin: 0, color: subText }}>
               Ready-to-use prompts for smarter, faster workflows.
             </p>
           </Link>
@@ -160,11 +163,11 @@ function Home() {
           <Link
             className="category-card"
             to="/shop?category=guides"
-            style={{ padding: "16px 12px", borderRadius: "12px", display: "block", boxSizing: "border-box" }}
+            style={{ padding: "16px 12px", borderRadius: "12px", display: "block", boxSizing: "border-box", background: isDark ? "#1e293b" : "#fff", color: textColor }}
           >
             <span>03</span>
-            <h3 style={{ fontSize: "15px", margin: "10px 0 6px", lineHeight: "1.3" }}>Guides</h3>
-            <p style={{ fontSize: "12px", lineHeight: "1.5", margin: 0 }}>
+            <h3 style={{ fontSize: "15px", margin: "10px 0 6px", lineHeight: "1.3", color: textColor }}>Guides</h3>
+            <p style={{ fontSize: "12px", lineHeight: "1.5", margin: 0, color: subText }}>
               Practical knowledge for personal and professional growth.
             </p>
           </Link>
@@ -198,8 +201,25 @@ function AppContent() {
   const [user, setUser] = useState(auth.currentUser);
   const [merchantStatus, setMerchantStatus] =
     useState<string>("none");
-
   const [isAdmin, setIsAdmin] = useState(false);
+
+  // DARK / LIGHT MODE
+  const [isDark, setIsDark] = useState(() => {
+    try {
+      return localStorage.getItem("chilvo-theme") === "dark";
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("chilvo-theme", isDark ? "dark" : "light");
+    } catch {}
+    document.body.style.background = isDark ? "#0f172a" : "#fff";
+    document.body.style.color = isDark ? "#fff" : "#111";
+    document.body.classList.toggle("dark-mode", isDark);
+  }, [isDark]);
 
   useEffect(() => {
     document.body.style.overflow = mobileMenuOpen ? "hidden" : "";
@@ -279,16 +299,21 @@ function AppContent() {
     }
   }
 
+  const bg = isDark ? "#0f172a" : "#fff";
+  const text = isDark ? "#fff" : "#111";
+  const border = isDark ? "#1e293b" : "#eee";
+  const menuBg = isDark ? "#0f172a" : "#fff";
+
   const navLinkStyle: React.CSSProperties = {
     display: "flex",
     alignItems: "center",
     padding: "22px 12px",
     fontSize: "28px",
     lineHeight: "1.4",
-    color: "#111",
+    color: text,
     fontWeight: 800,
     textDecoration: "none",
-    borderBottom: "1px solid #f0f0f0",
+    borderBottom: isDark ? "1px solid #1e293b" : "1px solid #f0f0f0",
     width: "100%",
     minHeight: "76px",
     boxSizing: "border-box",
@@ -296,8 +321,8 @@ function AppContent() {
 
   return (
     <BrowserRouter basename="/StrongMarket-Project">
-      <div className="app" style={{ width: "100%", overflowX: "hidden", paddingTop: "82px" }}>
-        <header className="navbar" style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 10000, background: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "10px 12px", width: "100%", boxSizing: "border-box", borderBottom: "1px solid #eee" }}>
+      <div className="app" style={{ width: "100%", overflowX: "hidden", paddingTop: "82px", background: bg, color: text, minHeight: "100vh" }}>
+        <header className="navbar" style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 10000, background: bg, display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "10px 12px", width: "100%", boxSizing: "border-box", borderBottom: `1px solid ${border}` }}>
           <Link
             className="logo"
             to="/"
@@ -312,6 +337,16 @@ function AppContent() {
           </Link>
 
           <div className="nav-actions" style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+            <button
+              type="button"
+              onClick={() => setIsDark(!isDark)}
+              aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              title={isDark ? "Light mode" : "Dark mode"}
+              style={{ fontSize: "20px", padding: "6px 10px", background: isDark ? "#1e293b" : "#f1f5f9", border: "none", borderRadius: "999px", cursor: "pointer", lineHeight: 1 }}
+            >
+              {isDark ? "☀️" : "🌙"}
+            </button>
+
             <Link
               className="search-btn"
               to="/shop"
@@ -331,7 +366,7 @@ function AppContent() {
               aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileMenuOpen}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              style={{ fontSize: "20px", padding: "6px 10px", background: "none", border: "none", cursor: "pointer" }}
+              style={{ fontSize: "20px", padding: "6px 10px", background: "none", border: "none", cursor: "pointer", color: text }}
             >
               {mobileMenuOpen ? "✕" : "☰"}
             </button>
@@ -341,7 +376,7 @@ function AppContent() {
         {mobileMenuOpen && (
           <nav
             id="chilvo-mobile-navigation"
-            style={{ display: "flex", flexDirection: "column", background: "#fff", padding: "8px 16px 80px", borderBottom: "1px solid #eee", width: "100%", boxSizing: "border-box", position: "fixed", top: "82px", left: 0, right: 0, bottom: 0, height: "calc(100vh - 82px)", minHeight: "calc(100vh - 82px)", overflowY: "auto", zIndex: 9999 }}
+            style={{ display: "flex", flexDirection: "column", background: menuBg, padding: "8px 16px 80px", borderBottom: `1px solid ${border}`, width: "100%", boxSizing: "border-box", position: "fixed", top: "82px", left: 0, right: 0, bottom: 0, height: "calc(100vh - 82px)", minHeight: "calc(100vh - 82px)", overflowY: "auto", zIndex: 9999 }}
           >
             <Link to="/" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
               Home
@@ -426,11 +461,19 @@ function AppContent() {
             <Link to="/privacy-policy" onClick={() => setMobileMenuOpen(false)} style={{ ...navLinkStyle, borderBottom: "none" }}>
               Privacy Policy
             </Link>
+
+            <button
+              type="button"
+              onClick={() => setIsDark(!isDark)}
+              style={{ ...navLinkStyle, background: "none", border: "none", borderBottom: "none", textAlign: "left", cursor: "pointer" }}
+            >
+              {isDark ? "☀️  Light Mode" : "🌙  Dark Mode"}
+            </button>
           </nav>
         )}
 
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Home isDark={isDark} />} />
           <Route path="/shop" element={<Shop />} />
           <Route path="/product/:productId" element={<ProductDetails />} />
           <Route path="/cart" element={<Cart />} />
@@ -453,7 +496,7 @@ function AppContent() {
           <Route path="/admin/merchant-applications" element={<AdminMerchantApplications />} />
         </Routes>
 
-        <footer style={{ padding: "24px 16px", boxSizing: "border-box" }}>
+        <footer style={{ padding: "24px 16px", boxSizing: "border-box", background: bg, color: text }}>
           <div>
             <Link className="logo" to="/">
               <img
@@ -463,13 +506,13 @@ function AppContent() {
               />
             </Link>
 
-            <p>
+            <p style={{ color: isDark ? "#cbd5e1" : "#555" }}>
               Premium digital products. Simple.
               Accessible. Instant.
             </p>
           </div>
 
-          <p>
+          <p style={{ color: isDark ? "#94a3b8" : "#666" }}>
             © 2026 CHILVO. All rights reserved.
           </p>
         </footer>
