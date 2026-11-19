@@ -78,11 +78,11 @@ function Home({ isDark }: { isDark: boolean }) {
     return () => unsubscribe();
   }, []);
 
-  const textColor = isDark ? "#fff" : "#111";
-  const subText = isDark ? "#cbd5e1" : "#555";
+  const textColor = isDark ? "#ffffff" : "#111111";
+  const subText = isDark ? "#e2e8f0" : "#555555";
 
   return (
-    <main style={{ width: "100%", boxSizing: "border-box", overflowX: "hidden", background: isDark ? "#0f172a" : "#fff", color: textColor }}>
+    <main style={{ width: "100%", boxSizing: "border-box", overflowX: "hidden", background: isDark ? "#0f172a" : "#ffffff", color: textColor }}>
       <section className="hero" id="home" style={{ padding: "28px 16px 24px", display: "flex", flexDirection: "column", gap: "24px", width: "100%", boxSizing: "border-box" }}>
         <div className="hero-content" style={{ width: "100%", boxSizing: "border-box" }}>
           <p className="eyebrow" style={{ margin: "0 0 10px", fontSize: "11px", letterSpacing: "1px" }}>
@@ -104,18 +104,18 @@ function Home({ isDark }: { isDark: boolean }) {
               Explore Products
             </Link>
 
-            <Link className="secondary-btn" to="/shop" style={{ padding: "12px 18px", fontSize: "14px", borderRadius: "8px", background: isDark ? "#1e293b" : "#fff", color: textColor, border: "1px solid #ddd" }}>
+            <Link className="secondary-btn" to="/shop" style={{ padding: "12px 18px", fontSize: "14px", borderRadius: "8px", background: isDark ? "#1e293b" : "#ffffff", color: textColor, border: "1px solid #ddd" }}>
               Browse Categories
             </Link>
           </div>
         </div>
 
-        <div className="hero-card" style={{ width: "100%", boxSizing: "border-box", padding: "28px 20px", borderRadius: "16px", background: isDark ? "#1e293b" : "#0f172a", color: "#fff", position: "relative", overflow: "hidden" }}>
+        <div className="hero-card" style={{ width: "100%", boxSizing: "border-box", padding: "28px 20px", borderRadius: "16px", background: isDark ? "#1e293b" : "#0f172a", color: "#ffffff", position: "relative", overflow: "hidden" }}>
           <div className="card-glow"></div>
 
           <p style={{ fontSize: "11px", letterSpacing: "1px", margin: "0 0 8px", color: "#93c5fd" }}>FEATURED</p>
 
-          <h2 style={{ fontSize: "24px", lineHeight: "1.2", margin: "0 0 8px" }}>Premium Digital Collection</h2>
+          <h2 style={{ fontSize: "24px", lineHeight: "1.2", margin: "0 0 8px", color: "#ffffff" }}>Premium Digital Collection</h2>
 
           <span style={{ fontSize: "13px", color: "#cbd5e1" }}>
             Curated resources. Instant delivery.
@@ -139,7 +139,7 @@ function Home({ isDark }: { isDark: boolean }) {
           <Link
             className="category-card"
             to="/shop?category=templates"
-            style={{ padding: "16px 12px", borderRadius: "12px", display: "block", boxSizing: "border-box", background: isDark ? "#1e293b" : "#fff", color: textColor }}
+            style={{ padding: "16px 12px", borderRadius: "12px", display: "block", boxSizing: "border-box", background: isDark ? "#1e293b" : "#ffffff", color: textColor }}
           >
             <span>01</span>
             <h3 style={{ fontSize: "15px", margin: "10px 0 6px", lineHeight: "1.3", color: textColor }}>Templates</h3>
@@ -151,7 +151,7 @@ function Home({ isDark }: { isDark: boolean }) {
           <Link
             className="category-card"
             to="/shop?category=prompt-packs"
-            style={{ padding: "16px 12px", borderRadius: "12px", display: "block", boxSizing: "border-box", background: isDark ? "#1e293b" : "#fff", color: textColor }}
+            style={{ padding: "16px 12px", borderRadius: "12px", display: "block", boxSizing: "border-box", background: isDark ? "#1e293b" : "#ffffff", color: textColor }}
           >
             <span>02</span>
             <h3 style={{ fontSize: "15px", margin: "10px 0 6px", lineHeight: "1.3", color: textColor }}>AI Prompt Packs</h3>
@@ -163,7 +163,7 @@ function Home({ isDark }: { isDark: boolean }) {
           <Link
             className="category-card"
             to="/shop?category=guides"
-            style={{ padding: "16px 12px", borderRadius: "12px", display: "block", boxSizing: "border-box", background: isDark ? "#1e293b" : "#fff", color: textColor }}
+            style={{ padding: "16px 12px", borderRadius: "12px", display: "block", boxSizing: "border-box", background: isDark ? "#1e293b" : "#ffffff", color: textColor }}
           >
             <span>03</span>
             <h3 style={{ fontSize: "15px", margin: "10px 0 6px", lineHeight: "1.3", color: textColor }}>Guides</h3>
@@ -203,7 +203,7 @@ function AppContent() {
     useState<string>("none");
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // DARK / LIGHT MODE
+  // DARK / LIGHT MODE - ONLY IN MENU
   const [isDark, setIsDark] = useState(() => {
     try {
       return localStorage.getItem("chilvo-theme") === "dark";
@@ -216,8 +216,8 @@ function AppContent() {
     try {
       localStorage.setItem("chilvo-theme", isDark ? "dark" : "light");
     } catch {}
-    document.body.style.background = isDark ? "#0f172a" : "#fff";
-    document.body.style.color = isDark ? "#fff" : "#111";
+    document.body.style.background = isDark ? "#0f172a" : "#ffffff";
+    document.body.style.color = isDark ? "#ffffff" : "#111111";
     document.body.classList.toggle("dark-mode", isDark);
   }, [isDark]);
 
@@ -299,10 +299,10 @@ function AppContent() {
     }
   }
 
-  const bg = isDark ? "#0f172a" : "#fff";
-  const text = isDark ? "#fff" : "#111";
-  const border = isDark ? "#1e293b" : "#eee";
-  const menuBg = isDark ? "#0f172a" : "#fff";
+  const bg = isDark ? "#0f172a" : "#ffffff";
+  const text = isDark ? "#ffffff" : "#111111";
+  const border = isDark ? "#1e293b" : "#eeeeee";
+  const menuBg = isDark ? "#0f172a" : "#ffffff";
 
   const navLinkStyle: React.CSSProperties = {
     display: "flex",
@@ -317,6 +317,7 @@ function AppContent() {
     width: "100%",
     minHeight: "76px",
     boxSizing: "border-box",
+    background: "transparent",
   };
 
   return (
@@ -337,20 +338,11 @@ function AppContent() {
           </Link>
 
           <div className="nav-actions" style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
-            <button
-              type="button"
-              onClick={() => setIsDark(!isDark)}
-              aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-              title={isDark ? "Light mode" : "Dark mode"}
-              style={{ fontSize: "20px", padding: "6px 10px", background: isDark ? "#1e293b" : "#f1f5f9", border: "none", borderRadius: "999px", cursor: "pointer", lineHeight: 1 }}
-            >
-              {isDark ? "☀️" : "🌙"}
-            </button>
-
             <Link
               className="search-btn"
               to="/shop"
               aria-label="Search products"
+              style={{ color: text }}
             >
               <span className="search-icon" aria-hidden="true">
                 ⌕
@@ -397,7 +389,7 @@ function AppContent() {
             )}
 
             {merchantStatus === "pending" && (
-              <div style={{ ...navLinkStyle, color: "#1d4ed8", cursor: "default" }}>
+              <div style={{ ...navLinkStyle, color: "#60a5fa", cursor: "default" }}>
                 Merchant Application Pending...
               </div>
             )}
@@ -438,7 +430,7 @@ function AppContent() {
                 <button type="button" onClick={() => {
                   setMobileMenuOpen(false);
                   void handleDeleteAccount();
-                }} style={{ ...navLinkStyle, background: "none", border: "none", borderBottom: "none", textAlign: "left", cursor: "pointer", color: "#d00" }}>
+                }} style={{ ...navLinkStyle, background: "none", border: "none", borderBottom: "none", textAlign: "left", cursor: "pointer", color: "#f87171" }}>
                   Delete Account
                 </button>
               </>
@@ -462,10 +454,11 @@ function AppContent() {
               Privacy Policy
             </Link>
 
+            {/* DARK MODE - ONLY HERE IN MENU */}
             <button
               type="button"
               onClick={() => setIsDark(!isDark)}
-              style={{ ...navLinkStyle, background: "none", border: "none", borderBottom: "none", textAlign: "left", cursor: "pointer" }}
+              style={{ ...navLinkStyle, background: isDark ? "#1e293b" : "#f1f5f9", border: "none", borderBottom: "none", textAlign: "left", cursor: "pointer", borderRadius: "12px", marginTop: "16px" }}
             >
               {isDark ? "☀️  Light Mode" : "🌙  Dark Mode"}
             </button>
@@ -506,13 +499,13 @@ function AppContent() {
               />
             </Link>
 
-            <p style={{ color: isDark ? "#cbd5e1" : "#555" }}>
+            <p style={{ color: isDark ? "#e2e8f0" : "#555555" }}>
               Premium digital products. Simple.
               Accessible. Instant.
             </p>
           </div>
 
-          <p style={{ color: isDark ? "#94a3b8" : "#666" }}>
+          <p style={{ color: isDark ? "#94a3b8" : "#666666" }}>
             © 2026 CHILVO. All rights reserved.
           </p>
         </footer>
