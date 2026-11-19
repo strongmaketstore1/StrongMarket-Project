@@ -22,7 +22,7 @@ const categories: {
   { label: "Guides", value: "guides" },
 ];
 
-// FIX: Allowed file types per category
+// Allowed file types per category
 const ALLOWED_BY_CATEGORY: Record<ProductCategory, string[]> = {
   templates: ["pdf", "docx", "xlsx", "pptx", "zip"],
   "prompt-packs": ["pdf", "txt", "md", "docx", "json", "csv", "zip"],
@@ -76,14 +76,14 @@ export default function MerchantAddProduct() {
       return;
     }
 
-    // FIX 1: Check size first
+    // Check size first
     if (file.size > MAX_FILE_SIZE) {
       setMessage("File is too large. Max size is 20MB.");
       event.target.value = "";
       return;
     }
 
-    // FIX 2: Check extension matches category
+    // Check extension matches category
     const ext = getExtension(file.name);
     const allowed = ALLOWED_BY_CATEGORY[category];
     if (!allowed.includes(ext)) {
@@ -184,7 +184,7 @@ export default function MerchantAddProduct() {
         return;
       }
 
-      // FIX 3: Double-check at save time - merchant could change category after upload
+      // Double-check at save time - merchant could change category after upload
       const finalExt = getExtension(fileName);
       const allowed = ALLOWED_BY_CATEGORY[category];
       if (!allowed.includes(finalExt)) {
@@ -221,9 +221,10 @@ export default function MerchantAddProduct() {
         reviewCount: 0,
         createdAt: new Date().toISOString(),
         merchantId: user.uid,
+        status: "pending",
       });
 
-      setMessage("Product added successfully.");
+      setMessage("Product submitted for review. It will appear in Shop after Admin approves it.");
 
       setName("");
       setDescription("");
