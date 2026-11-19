@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   collection,
   documentId,
@@ -49,12 +50,23 @@ const sortOptions: {
   { label: "Name: A–Z", value: "name" },
 ];
 
+function getCreatedAtString(p: Product): string {
+  const v: any = (p as any).createdAt;
+  if (!v) return "";
+  if (typeof v === "string") return v;
+  if (typeof v.toDate === "function") return v.toDate().toISOString();
+  if (v.seconds) return new Date(v.seconds * 1000).toISOString();
+  return String(v);
+}
+
 export default function Shop() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [searchProducts, setSearchProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] =
     useState<CategoryFilter>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [pageIndex, setPageIndex] = useState(0);
   const [cursors, setCursors] = useState<
@@ -66,6 +78,48 @@ export default function Shop() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
+  // Dark mode - sync with App.tsx body class
+  const [isDark, setIsDark] = useState(() => {
+    try {
+      return localStorage.getItem("chilvo-theme") === "dark";
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    const check = () => {
+      try {
+        setIsDark(localStorage.getItem("chilvo-theme") === "dark");
+      } catch {}
+    };
+    window.addEventListener("storage", check);
+    const obs = new MutationObserver(check);
+    obs.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    return () => {
+      window.removeEventListener("storage", check);
+      obs.disconnect();
+    };
+  }, []);
+
+  // FIX 1: Read ?category= from URL (from Home page)
+  useEffect(() => {
+    const cat = searchParams.get("category");
+    if (cat === "templates" || cat === "prompt-packs" || cat === "guides") {
+      setSelectedCategory(cat);
+    } else if (cat === "all") {
+      setSelectedCategory("all");
+    }
+    const q = searchParams.get("search");
+    if (q) setSearchTerm(q);
+  }, [searchParams]);
+
+  // FIX 2: Debounce search - wait 300ms after typing
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchTerm), 300);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -74,7 +128,7 @@ export default function Shop() {
       setLoadError("");
 
       try {
-        if (searchTerm.trim()) {
+        if (debouncedSearch.trim()) {
           const snapshot = await getDocs(
             collection(db, "products"),
           );
@@ -171,13 +225,12 @@ export default function Shop() {
     };
   }, [
     selectedCategory,
-    searchTerm,
+    debouncedSearch,
     sortBy,
     pageIndex,
-    cursors,
   ]);
 
-  const search = searchTerm.trim().toLowerCase();
+  const search = debouncedSearch.trim().toLowerCase();
 
   const filteredProducts = search
     ? searchProducts
@@ -207,6 +260,12 @@ export default function Shop() {
     setSelectedCategory(category);
     setPageIndex(0);
     setCursors([]);
+    if (category === "all") {
+      searchParams.delete("category");
+    } else {
+      searchParams.set("category", category);
+    }
+    setSearchParams(searchParams, { replace: true });
   }
 
   function changeSearch(value: string) {
@@ -223,7 +282,7 @@ export default function Shop() {
   }
 
   function goToNextPage() {
-    if (!lastVisible || !hasNextPage || searchTerm.trim()) {
+    if (!lastVisible || !hasNextPage || debouncedSearch.trim()) {
       return;
     }
 
@@ -235,18 +294,23 @@ export default function Shop() {
   }
 
   function goToPreviousPage() {
-    if (pageIndex === 0 || searchTerm.trim()) return;
+    if (pageIndex === 0 || debouncedSearch.trim()) return;
     setPageIndex((previous) => previous - 1);
   }
 
+  const bg = isDark ? "#0f172a" : "#ffffff";
+  const text = isDark ? "#ffffff" : "#111111";
+  const subText = isDark ? "#cbd5e1" : "#666666";
+  const cardBg = isDark ? "#1e293b" : "#ffffff";
+
   return (
-    <main className="shop-page">
-      <section className="shop-hero">
+    <main className="shop-page" style={{ background: bg, color: text, minHeight: "100vh" }}>
+      <section className="shop-hero" style={{ background: bg, color: text }}>
         <p className="eyebrow">CHILVO</p>
 
-        <h1>Explore our digital marketplace.</h1>
+        <h1 style={{ color: text }}>Explore our digital marketplace.</h1>
 
-        <p>
+        <p style={{ color: subText }}>
           Discover useful digital products created to
           help you learn, create, work, and grow.
         </p>
@@ -254,10 +318,10 @@ export default function Shop() {
 
       <section className="shop-content">
         <div className="shop-search" style={{ width: "100%", maxWidth: "700px", margin: "0 auto 20px" }}>
-  <input
-    type="search"
-    placeholder="Search digital products..."
-    style={{ width: "100%", padding: "14px 16px", fontSize: "16px", borderRadius: "12px" }}
+          <input
+            type="search"
+            placeholder="Search digital products..."
+            style={{ width: "100%", padding: "14px 16px", fontSize: "16px", borderRadius: "12px", border: isDark ? "1px solid #334155" : "1px solid #ddd", background: cardBg, color: text, boxSizing: "border-box" }}
             value={searchTerm}
             onChange={(event) =>
               changeSearch(event.target.value)
@@ -277,6 +341,7 @@ export default function Shop() {
                   : ""
               }
               onClick={() => changeCategory(category.value)}
+              style={selectedCategory === category.value ? {} : { background: cardBg, color: text }}
             >
               {category.label}
             </button>
@@ -284,7 +349,7 @@ export default function Shop() {
         </div>
 
         <div className="shop-sort">
-          <label htmlFor="product-sort">
+          <label htmlFor="product-sort" style={{ color: text }}>
             Sort products
           </label>
 
@@ -294,6 +359,7 @@ export default function Shop() {
             onChange={(event) =>
               changeSort(event.target.value as SortOption)
             }
+            style={{ background: cardBg, color: text, border: isDark ? "1px solid #334155" : "1px solid #ddd" }}
           >
             {sortOptions.map((option) => (
               <option
@@ -308,9 +374,9 @@ export default function Shop() {
 
         <div className="shop-results">
           <div className="results-heading">
-            <h2>{selectedCategoryLabel}</h2>
+            <h2 style={{ color: text }}>{selectedCategoryLabel}</h2>
 
-            <span>
+            <span style={{ color: subText }}>
               {loading
                 ? "Loading products..."
                 : searchTerm.trim()
@@ -319,10 +385,10 @@ export default function Shop() {
             </span>
           </div>
 
-          {loadError && <p role="alert">{loadError}</p>}
+          {loadError && <p role="alert" style={{ color: "#f87171" }}>{loadError}</p>}
 
           {!loadError && !loading && filteredProducts.length === 0 && (
-            <p>No products found.</p>
+            <p style={{ color: subText }}>No products found.</p>
           )}
 
           <div className="product-grid">
@@ -336,22 +402,24 @@ export default function Shop() {
 
           {!loading &&
             !loadError &&
-            !searchTerm.trim() && (
+            !debouncedSearch.trim() && (
               <div className="shop-pagination">
                 <button
                   type="button"
                   onClick={goToPreviousPage}
                   disabled={pageIndex === 0}
+                  style={{ background: cardBg, color: text }}
                 >
                   Previous
                 </button>
 
-                <span>Page {pageIndex + 1}</span>
+                <span style={{ color: text }}>Page {pageIndex + 1}</span>
 
                 <button
                   type="button"
                   onClick={goToNextPage}
                   disabled={!hasNextPage}
+                  style={{ background: cardBg, color: text }}
                 >
                   Next
                 </button>
@@ -380,6 +448,6 @@ function compareProducts(
 
     case "newest":
     default:
-      return b.createdAt.localeCompare(a.createdAt);
+      return getCreatedAtString(b).localeCompare(getCreatedAtString(a));
   }
 }
