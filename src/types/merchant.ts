@@ -3,12 +3,12 @@ export type MerchantApplicationStatus =
   | "approved"
   | "rejected";
 
-export interface MerchantApplication {
+export type MerchantApplication = {
   id: string;
   userId: string;
   businessName: string;
   businessDescription: string;
-  status: MerchantApplicationStatus;
+  email: string;
+  status: string;
   createdAt: string;
-  reviewedAt?: string;
-}
+};
