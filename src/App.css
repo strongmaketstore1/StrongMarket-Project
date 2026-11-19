@@ -791,3 +791,80 @@ header.navbar #chilvo-mobile-navigation *,
   border: none !important;
   box-shadow: none !important;
 }
+
+/* ===== CHILVO DARK MODE - GLOBAL ===== */
+body.dark-mode {
+  background: #0f172a !important;
+  color: #f1f5f9 !important;
+}
+
+body.dark-mode .app,
+body.dark-mode main,
+body.dark-mode section,
+body.dark-mode div {
+  background-color: #0f172a;
+  border-color: #1e293b;
+}
+
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode p,
+body.dark-mode span,
+body.dark-mode label,
+body.dark-mode a {
+  color: #f1f5f9;
+}
+
+body.dark-mode p,
+body.dark-mode span {
+  color: #cbd5e1;
+}
+
+body.dark-mode a {
+  color: #93c5fd;
+}
+
+body.dark-mode input,
+body.dark-mode textarea,
+body.dark-mode select {
+  background: #1e293b !important;
+  color: #fff !important;
+  border: 1px solid #334155 !important;
+}
+
+body.dark-mode input::placeholder,
+body.dark-mode textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+body.dark-mode button {
+  color: #f1f5f9;
+}
+
+body.dark-mode .product-card,
+body.dark-mode .category-card,
+body.dark-mode .card,
+body.dark-mode .product-grid > div,
+body.dark-mode .category-grid > a {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+  border: 1px solid #334155 !important;
+}
+
+body.dark-mode .primary-btn {
+  background: #1d4ed8 !important;
+  color: #fff !important;
+}
+
+body.dark-mode .secondary-btn {
+  background: #1e293b !important;
+  color: #fff !important;
+  border: 1px solid #334155 !important;
+}
+
+body.dark-mode footer {
+  background: #0f172a !important;
+  color: #94a3b8 !important;
+}
