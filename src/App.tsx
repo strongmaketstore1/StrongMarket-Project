@@ -355,9 +355,17 @@ function AppContent() {
               Categories
             </Link>
 
-            <Link to="/merchant/apply" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
-              Become a Merchant
-            </Link>
+            {merchantStatus !== "approved" && merchantStatus !== "pending" && (
+              <Link to="/merchant/apply" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
+                Become a Merchant
+              </Link>
+            )}
+
+            {merchantStatus === "pending" && (
+              <div style={{ ...navLinkStyle, color: "#1d4ed8", cursor: "default" }}>
+                Merchant Application Pending...
+              </div>
+            )}
 
             {user ? (
               <>
