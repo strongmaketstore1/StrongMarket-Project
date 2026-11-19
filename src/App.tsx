@@ -30,6 +30,8 @@ import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import OrderSuccess from "./pages/OrderSuccess";
 import Account from "./pages/Account";
+import About from "./pages/About";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import MerchantStore from "./pages/MerchantStore";
 
 import MerchantDashboard from "./pages/MerchantDashboard";
@@ -409,8 +411,12 @@ function AppContent() {
               </>
             )}
 
-            <Link to="/" onClick={() => setMobileMenuOpen(false)} style={{ ...navLinkStyle, borderBottom: "none" }}>
+            <Link to="/about" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
               About
+            </Link>
+
+            <Link to="/privacy-policy" onClick={() => setMobileMenuOpen(false)} style={{ ...navLinkStyle, borderBottom: "none" }}>
+              Privacy Policy
             </Link>
           </nav>
         )}
@@ -423,6 +429,8 @@ function AppContent() {
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/order-success" element={<OrderSuccess />} />
           <Route path="/account" element={<Account />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/merchant/:merchantId" element={<MerchantStore />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
