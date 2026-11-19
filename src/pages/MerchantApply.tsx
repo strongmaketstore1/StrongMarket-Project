@@ -18,9 +18,9 @@ export default function MerchantApply() {
     setLoading(true);
 
     try {
-      const userId = auth.currentUser?.uid;
+      const user = auth.currentUser;
 
-      if (!userId) {
+      if (!user) {
         setMessage(
           "You must be logged in to apply as a merchant.",
         );
@@ -28,14 +28,24 @@ export default function MerchantApply() {
         return;
       }
 
+      // NEW: Get email from logged-in account - this is where approval email will go
+      const email = user.email || "";
+
+      if (!email) {
+        setMessage("Your account has no email. Please update your account email first.");
+        setLoading(false);
+        return;
+      }
+
       await submitMerchantApplication(
-        userId,
+        user.uid,
         businessName,
         businessDescription,
+        email, // NEW - 4th param
       );
 
       setMessage(
-        "Application submitted successfully. Your application is now pending review.",
+        "Application submitted successfully. You will get an email when Admin approves you. Your application is now pending review.",
       );
 
       setBusinessName("");
@@ -91,6 +101,12 @@ export default function MerchantApply() {
             rows={5}
             style={{ width: "100%", boxSizing: "border-box", padding: "14px", fontSize: "16px", borderRadius: "10px", border: "1px solid #d1d5db", outline: "none", resize: "vertical" }}
           />
+        </div>
+
+        <div style={{ width: "100%", background: "#f9fafb", padding: "12px", borderRadius: "10px", border: "1px solid #e5e7eb" }}>
+          <p style={{ fontSize: "14px", margin: 0, color: "#555" }}>
+            Approval email will be sent to: <strong>{auth.currentUser?.email || "Your account email"}</strong>
+          </p>
         </div>
 
         <button
