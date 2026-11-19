@@ -22,6 +22,27 @@ const categories: {
   { label: "Guides", value: "guides" },
 ];
 
+// FIX: Allowed file types per category
+const ALLOWED_BY_CATEGORY: Record<ProductCategory, string[]> = {
+  templates: ["pdf", "docx", "xlsx", "pptx", "zip"],
+  "prompt-packs": ["pdf", "txt", "md", "docx", "json", "csv", "zip"],
+  guides: ["pdf", "epub", "docx", "txt"],
+};
+
+const ACCEPT_BY_CATEGORY: Record<ProductCategory, string> = {
+  templates: ".pdf,.docx,.xlsx,.pptx,.zip",
+  "prompt-packs": ".pdf,.txt,.md,.docx,.json,.csv,.zip",
+  guides: ".pdf,.epub,.docx,.txt",
+};
+
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+
+function getExtension(fileName: string): string {
+  const parts = fileName.toLowerCase().split(".");
+  return parts.length > 1 ? parts[parts.length - 1] : "";
+}
+
 export default function MerchantAddProduct() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -37,9 +58,39 @@ export default function MerchantAddProduct() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // When category changes, clear old file - it may be wrong type for new category
+  function changeCategory(value: ProductCategory) {
+    setCategory(value);
+    if (cloudinaryFileRef || fileName) {
+      setCloudinaryFileRef("");
+      setFileName("");
+      setMessage(`Category changed to ${value}. Please upload a new file for this category.`);
+    } else {
+      setMessage("");
+    }
+  }
+
   async function uploadProductFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) {
+      return;
+    }
+
+    // FIX 1: Check size first
+    if (file.size > MAX_FILE_SIZE) {
+      setMessage("File is too large. Max size is 20MB.");
+      event.target.value = "";
+      return;
+    }
+
+    // FIX 2: Check extension matches category
+    const ext = getExtension(file.name);
+    const allowed = ALLOWED_BY_CATEGORY[category];
+    if (!allowed.includes(ext)) {
+      setMessage(
+        `Wrong file type for ${category}. Allowed: ${allowed.map((e) => "." + e).join(", ")} - You uploaded .${ext || "unknown"}`
+      );
+      event.target.value = "";
       return;
     }
 
@@ -118,6 +169,11 @@ export default function MerchantAddProduct() {
         return;
       }
 
+      if (!name.trim()) {
+        setMessage("Please enter a product name.");
+        return;
+      }
+
       if (!image.trim()) {
         setMessage("Please upload a product image first.");
         return;
@@ -125,6 +181,16 @@ export default function MerchantAddProduct() {
 
       if (!cloudinaryFileRef.trim() || !fileName.trim()) {
         setMessage("Please upload the digital product file first.");
+        return;
+      }
+
+      // FIX 3: Double-check at save time - merchant could change category after upload
+      const finalExt = getExtension(fileName);
+      const allowed = ALLOWED_BY_CATEGORY[category];
+      if (!allowed.includes(finalExt)) {
+        setMessage(
+          `This file (.${finalExt}) is not allowed for ${category}. Allowed: ${allowed.map((e) => "." + e).join(", ")}. Please upload a new file.`
+        );
         return;
       }
 
@@ -178,6 +244,8 @@ export default function MerchantAddProduct() {
       setLoading(false);
     }
   }
+
+  const allowedForThisCategory = ALLOWED_BY_CATEGORY[category];
 
   return (
     <main>
@@ -236,7 +304,7 @@ export default function MerchantAddProduct() {
             id="category"
             value={category}
             onChange={(event) =>
-              setCategory(event.target.value as ProductCategory)
+              changeCategory(event.target.value as ProductCategory)
             }
           >
             {categories.map((item) => (
@@ -245,6 +313,9 @@ export default function MerchantAddProduct() {
               </option>
             ))}
           </select>
+          <p style={{ fontSize: "13px", color: "#666", margin: "6px 0 0" }}>
+            Allowed for {category}: {allowedForThisCategory.map((e) => "." + e).join(", ")} - Max 20MB
+          </p>
         </div>
 
         <div>
@@ -256,6 +327,12 @@ export default function MerchantAddProduct() {
             onChange={async (event) => {
               const file = event.target.files?.[0];
               if (!file) {
+                return;
+              }
+
+              if (file.size > MAX_IMAGE_SIZE) {
+                setMessage("Image is too large. Max size is 5MB.");
+                event.target.value = "";
                 return;
               }
 
@@ -315,6 +392,7 @@ export default function MerchantAddProduct() {
             value={fileName}
             onChange={(event) => setFileName(event.target.value)}
             placeholder="my-product.pdf"
+            readOnly
           />
         </div>
 
@@ -323,9 +401,10 @@ export default function MerchantAddProduct() {
           <input
             id="productFile"
             type="file"
-            accept=".pdf,.zip,.doc,.docx"
+            accept={ACCEPT_BY_CATEGORY[category]}
             onChange={uploadProductFile}
           />
+          {fileName && <p style={{ fontSize: "13px", color: "#1a7f37" }}>Uploaded: {fileName}</p>}
         </div>
 
         <button
