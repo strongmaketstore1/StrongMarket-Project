@@ -28,7 +28,7 @@ export default function MerchantApply() {
         return;
       }
 
-      // NEW: Get email from logged-in account - this is where approval email will go
+      // Get email from logged-in account - this is where approval email will go
       const email = user.email || "";
 
       if (!email) {
@@ -41,8 +41,35 @@ export default function MerchantApply() {
         user.uid,
         businessName,
         businessDescription,
-        email, // NEW - 4th param
+        email,
       );
+
+      // NEW: Send emails via Google Script
+      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzlyhJhOVn8cj5bN1q_H9sd8Z4EMbQvJrxPpjNcUmoK8ZmENta6vrpRIKgWge1lOMwz/exec";
+
+      // 1. Email to the merchant - "We received your application"
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to_email: email,
+          subject: "Your CHILVO Merchant Application Received",
+          message: "Hello,\n\nWe received your merchant application.\n\nBusiness Name: " + businessName + "\nBusiness Description: " + businessDescription + "\n\nYour application is now pending review. You will get another email when Admin approves you.\n\nThank you,\nCHILVO Team"
+        })
+      }).catch((err) => console.error("Merchant email failed:", err));
+
+      // 2. Email to you (admin) - "Someone applied"
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to_email: "chilvodigital@gmail.com",
+          subject: "New Merchant Application - " + businessName,
+          message: "New merchant application:\n\nBusiness: " + businessName + "\nDescription: " + businessDescription + "\nMerchant Email: " + email + "\nUser ID: " + user.uid
+        })
+      }).catch((err) => console.error("Admin email failed:", err));
 
       setMessage(
         "Application submitted successfully. You will get an email when Admin approves you. Your application is now pending review.",
