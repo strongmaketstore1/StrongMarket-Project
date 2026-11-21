@@ -19,7 +19,11 @@ import type { Product } from "../types/product";
 const API_URL =
   "https://strongmarket-payment-server.onrender.com";
 
-type MerchantApplicationWithId = MerchantApplication;
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzlyhJhOVn8cj5bN1q_H9sd8Z4EMbQvJrxPpjNcUmoK8ZmENta6vrpRIKgWge1lOMwz/exec";
+
+type MerchantApplicationWithId = MerchantApplication & {
+  email?: string;
+};
 
 type ReviewProduct = Product & {
   status?: string;
@@ -33,7 +37,7 @@ type ReviewProduct = Product & {
 type Tab = "merchants" | "products";
 
 export default function AdminMerchantApplications() {
-  const [tab, setTab] = useState<Tab>("products"); // Start on products - that's what you need now
+  const [tab, setTab] = useState<Tab>("products");
   const [applications, setApplications] =
     useState<MerchantApplicationWithId[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,6 +90,24 @@ export default function AdminMerchantApplications() {
       if (!response.ok || !data.success) {
         throw new Error(data.message || "Unable to approve merchant application.");
       }
+
+      // NEW: Send approval email to merchant
+      const merchantEmail = (application as any).email || (application as any).merchantEmail || "";
+      if (merchantEmail) {
+        fetch(SCRIPT_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            to_email: merchantEmail,
+            subject: "Your CHILVO Merchant Application is Approved ✅",
+            message: "Congratulations!\n\nYour merchant application has been approved.\n\nBusiness Name: " + application.businessName + "\n\nYou can now log in and start adding your products to sell on CHILVO.\n\nWelcome aboard!\nCHILVO Team"
+          })
+        }).catch((err) => console.error("Approval email failed:", err));
+      } else {
+        console.warn("No merchant email found for application:", application.id);
+      }
+
       setApplications((current) => current.filter((item) => item.id !== application.id));
     } catch (err) {
       console.error("Approve application error:", err);
@@ -302,7 +324,7 @@ export default function AdminMerchantApplications() {
         </div>
       )}
 
-      {/* ===== MERCHANTS TAB (your original code) ===== */}
+      {/* ===== MERCHANTS TAB ===== */}
       {tab === "merchants" && (
         <div>
           <h2>Merchant Applications</h2>
@@ -314,6 +336,7 @@ export default function AdminMerchantApplications() {
                 <h3>{application.businessName}</h3>
                 <p>{application.businessDescription}</p>
                 <p><strong>Status:</strong> {application.status}</p>
+                <p><strong>Email:</strong> {(application as any).email || "No email saved"}</p>
                 <button type="button" onClick={() => approveApplication(application)}>
                   Approve
                 </button>
