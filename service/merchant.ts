@@ -11,7 +11,7 @@ export async function submitMerchantApplication(
   userId: string,
   businessName: string,
   businessDescription: string,
-  email: string, // NEW - 4th param, from auth.currentUser.email
+  email: string,
 ) {
   const application: Omit<
     MerchantApplication,
@@ -20,7 +20,7 @@ export async function submitMerchantApplication(
     userId,
     businessName,
     businessDescription,
-    email: email.trim(), // NEW - saved so backend can send approval email
+    email: email.trim(),
     status: "pending",
     createdAt: new Date().toISOString(),
   };
