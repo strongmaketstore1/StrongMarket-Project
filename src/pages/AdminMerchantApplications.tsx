@@ -19,7 +19,7 @@ import type { Product } from "../types/product";
 const API_URL =
   "https://strongmarket-payment-server.onrender.com";
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzlyhJhOVn8cj5bN1q_H9sd8Z4EMbQvJrxPpjNcUmoK8ZmENta6vrpRIKgWge1lOMwz/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx3xgaJXtngCaMLOjnaTgH1Q0Rh2ZIOZyvQE1Mm9Z9UeeIw3AhU6wZrY6-QEIKjaPvn/exec";
 
 type MerchantApplicationWithId = MerchantApplication & {
   email?: string;
