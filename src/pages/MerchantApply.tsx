@@ -43,7 +43,8 @@ export default function MerchantApply() {
         email,
       );
 
-      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx3xgaJXtngCaMLOjnaTgH1Q0Rh2ZIOZyvQE1Mm9Z9UeeIw3AhU6wZrY6-QEIKjaPvn/exec";
+      // NEW HTML LINK
+      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyB_iXCPy-EwrVV_hzXQZ8eGnsu0Bkg99hxR_vgVaMQgDKTbr2RrrQ1W7ofITbfHnna/exec";
       const ADMIN_PANEL_LINK = "https://strongmaketstore1.github.io/StrongMarket-Project/?v=15";
 
       // 1. Email to the merchant
