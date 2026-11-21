@@ -16,13 +16,11 @@ import { auth, db } from "../firebase";
 import type { MerchantApplication } from "../types/merchant";
 import type { Product } from "../types/product";
 
-const API_URL =
-  "https://strongmarket-payment-server.onrender.com";
-
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyB_iXCPy-EwrVV_hzXQZ8eGnsu0Bkg99hxR_vgVaMQgDKTbr2RrrQ1W7ofITbfHnna/exec";
 
 type MerchantApplicationWithId = MerchantApplication & {
   email?: string;
+  _collection?: string;
 };
 
 type ReviewProduct = Product & {
@@ -37,11 +35,12 @@ type ReviewProduct = Product & {
 type Tab = "merchants" | "products";
 
 export default function AdminMerchantApplications() {
-  const [tab, setTab] = useState<Tab>("products");
+  const [tab, setTab] = useState<Tab>("merchants");
   const [applications, setApplications] =
     useState<MerchantApplicationWithId[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [merchantMsg, setMerchantMsg] = useState("");
 
   // --- PRODUCT REVIEW STATE ---
   const [pendingProducts, setPendingProducts] = useState<ReviewProduct[]>([]);
@@ -50,22 +49,26 @@ export default function AdminMerchantApplications() {
   const [productMsg, setProductMsg] = useState("");
   const [productsLoading, setProductsLoading] = useState(false);
 
-  async function loadApplications(currentUser: User) {
+  async function loadApplications() {
     try {
-      const idToken = await currentUser.getIdToken();
-      const response = await fetch(
-        `${API_URL}/api/admin/merchant-applications`,
-        {
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-          },
-        },
-      );
-      const data = await response.json();
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || "Unable to load merchant applications.");
+      setError("");
+      // Read BOTH collections - correct one + old one with space bug
+      // So old applications like Benco / Zagga are not lost
+      const collectionsToCheck = ["merchantApplications", "merchantApplic ations"];
+      let all: MerchantApplicationWithId[] = [];
+
+      for (const collName of collectionsToCheck) {
+        try {
+          const q = query(collection(db, collName), where("status", "==", "pending"));
+          const snap = await getDocs(q);
+          const list = snap.docs.map((d) => ({ id: d.id, ...d.data(), _collection: collName }) as MerchantApplicationWithId);
+          all = [...all, ...list];
+        } catch (e) {
+          console.log("No docs in", collName, e);
+        }
       }
-      setApplications(data.applications || []);
+
+      setApplications(all);
     } catch (err) {
       console.error("Merchant applications error:", err);
       setError(err instanceof Error ? err.message : "Unable to load merchant applications.");
@@ -75,23 +78,32 @@ export default function AdminMerchantApplications() {
   }
 
   async function approveApplication(application: MerchantApplicationWithId) {
+    setMerchantMsg("");
     try {
-      const currentUser = auth.currentUser;
-      if (!currentUser) throw new Error("You must be logged in.");
-      const idToken = await currentUser.getIdToken();
-      const response = await fetch(
-        `${API_URL}/api/admin/merchant-applications/${application.id}/approve`,
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${idToken}` },
-        },
-      );
-      const data = await response.json();
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || "Unable to approve merchant application.");
+      const collName = application._collection || "merchantApplications";
+
+      // 1. Mark application as approved in Firestore
+      await updateDoc(doc(db, collName, application.id), {
+        status: "approved",
+        reviewedAt: new Date().toISOString(),
+      });
+
+      // 2. Give the user merchant access - THIS is what unlocks Add Product
+      if (application.userId) {
+        try {
+          await updateDoc(doc(db, "users", application.userId), {
+            role: "merchant",
+            isMerchant: true,
+            merchantApproved: true,
+            businessName: application.businessName,
+          });
+        } catch (userErr) {
+          console.warn("Could not update users doc, user doc may not exist yet:", userErr);
+          // Don't fail approval if user doc missing - application is already approved
+        }
       }
 
-      // NEW: Send approval email to merchant
+      // 3. Send approval email to merchant
       const merchantEmail = (application as any).email || (application as any).merchantEmail || "";
       if (merchantEmail) {
         fetch(SCRIPT_URL, {
@@ -101,17 +113,33 @@ export default function AdminMerchantApplications() {
           body: JSON.stringify({
             to_email: merchantEmail,
             subject: "Your CHILVO Merchant Application is Approved ✅",
-            message: "Congratulations!\n\nYour merchant application has been approved.\n\nBusiness Name: " + application.businessName + "\n\nYou can now log in and start adding your products to sell on CHILVO.\n\nWelcome aboard!\nCHILVO Team"
+            message: "Congratulations!\n\nYour merchant application has been approved.\n\nBusiness Name: " + application.businessName + "\n\nYou can now log in and start adding your products to sell on CHILVO.\n\nWelcome aboard!\nCHILVO Team",
+            htmlBody: "<div style='font-family:Arial;padding:20px'><h2>✅ Your Merchant Application is Approved!</h2><p>Congratulations!</p><p><b>Business Name:</b> " + application.businessName + "</p><p>You can now log in and start adding your products to sell on CHILVO.</p><p>Welcome aboard!<br>CHILVO Team</p></div>"
           })
         }).catch((err) => console.error("Approval email failed:", err));
-      } else {
-        console.warn("No merchant email found for application:", application.id);
       }
 
+      setMerchantMsg(`✅ Approved: ${application.businessName} - They can now add products.`);
       setApplications((current) => current.filter((item) => item.id !== application.id));
     } catch (err) {
       console.error("Approve application error:", err);
-      setError(err instanceof Error ? err.message : "Unable to approve merchant application.");
+      setMerchantMsg(err instanceof Error ? err.message : "Unable to approve merchant application.");
+    }
+  }
+
+  async function rejectMerchantApplication(application: MerchantApplicationWithId) {
+    setMerchantMsg("");
+    try {
+      const collName = application._collection || "merchantApplications";
+      await updateDoc(doc(db, collName, application.id), {
+        status: "rejected",
+        reviewedAt: new Date().toISOString(),
+      });
+      setMerchantMsg(`❌ Rejected: ${application.businessName}`);
+      setApplications((current) => current.filter((item) => item.id !== application.id));
+    } catch (err) {
+      console.error("Reject error:", err);
+      setMerchantMsg(err instanceof Error ? err.message : "Unable to reject merchant application.");
     }
   }
 
@@ -178,7 +206,7 @@ export default function AdminMerchantApplications() {
         setLoading(false);
         return;
       }
-      loadApplications(currentUser);
+      loadApplications();
       loadPendingProducts();
     });
     return () => unsubscribe();
@@ -197,32 +225,13 @@ export default function AdminMerchantApplications() {
     );
   }
 
-  if (error) {
-    return (
-      <main>
-        <h1>Admin Panel</h1>
-        <p>{error}</p>
-      </main>
-    );
-  }
-
   return (
     <main style={{ padding: "20px", maxWidth: "1100px", margin: "0 auto" }}>
       <h1>Admin Panel</h1>
+      {error && <p style={{ background: "#fde8e8", padding: "10px", borderRadius: "8px" }}>{error}</p>}
 
       {/* TABS */}
       <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
-        <button
-          onClick={() => setTab("products")}
-          style={{
-            flex: 1, padding: "14px", borderRadius: "10px", border: "none", cursor: "pointer",
-            background: tab === "products" ? "#111" : "#eee",
-            color: tab === "products" ? "#fff" : "#111",
-            fontWeight: "bold",
-          }}
-        >
-          Review Products ({pendingProducts.length} pending)
-        </button>
         <button
           onClick={() => setTab("merchants")}
           style={{
@@ -234,7 +243,48 @@ export default function AdminMerchantApplications() {
         >
           Merchant Applications ({applications.length})
         </button>
+        <button
+          onClick={() => setTab("products")}
+          style={{
+            flex: 1, padding: "14px", borderRadius: "10px", border: "none", cursor: "pointer",
+            background: tab === "products" ? "#111" : "#eee",
+            color: tab === "products" ? "#fff" : "#111",
+            fontWeight: "bold",
+          }}
+        >
+          Review Products ({pendingProducts.length} pending)
+        </button>
       </div>
+
+      {/* ===== MERCHANTS TAB - THIS IS THE GATE BEFORE ADD PRODUCT ===== */}
+      {tab === "merchants" && (
+        <div>
+          <h2>Merchant Applications</h2>
+          <p>Read the Business Name and Description. No file here - file review is for Products only. If business looks real, Approve. Approve gives them access to Add Product.</p>
+          {merchantMsg && <p style={{ background: "#eef", padding: "10px", borderRadius: "8px" }}>{merchantMsg}</p>}
+          {applications.length === 0 ? (
+            <p>No pending merchant applications.</p>
+          ) : (
+            applications.map((application) => (
+              <article key={application.id} style={{ border: "1px solid #ddd", padding: "14px", borderRadius: "10px", marginBottom: "10px", background: "#fff" }}>
+                <h3 style={{ margin: "0 0 6px" }}>{application.businessName}</h3>
+                <p style={{ margin: "0 0 6px" }}>{application.businessDescription}</p>
+                <p><strong>Status:</strong> {application.status}</p>
+                <p><strong>Email:</strong> {(application as any).email || "No email saved"}</p>
+                <p><strong>User ID:</strong> {application.userId}</p>
+                <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+                  <button type="button" onClick={() => approveApplication(application)} style={{ flex: 1, background: "#1a7f37", color: "#fff", padding: "14px", borderRadius: "10px", border: "none", fontWeight: "bold", cursor: "pointer" }}>
+                    ✅ Approve - Give Add Product Access
+                  </button>
+                  <button type="button" onClick={() => rejectMerchantApplication(application)} style={{ flex: 1, background: "#d1242f", color: "#fff", padding: "14px", borderRadius: "10px", border: "none", fontWeight: "bold", cursor: "pointer" }}>
+                    ❌ Reject
+                  </button>
+                </div>
+              </article>
+            ))
+          )}
+        </div>
+      )}
 
       {/* ===== PRODUCTS TAB ===== */}
       {tab === "products" && (
@@ -321,28 +371,6 @@ export default function AdminMerchantApplications() {
               </div>
             )}
           </div>
-        </div>
-      )}
-
-      {/* ===== MERCHANTS TAB ===== */}
-      {tab === "merchants" && (
-        <div>
-          <h2>Merchant Applications</h2>
-          {applications.length === 0 ? (
-            <p>No pending merchant applications.</p>
-          ) : (
-            applications.map((application) => (
-              <article key={application.id} style={{ border: "1px solid #ddd", padding: "14px", borderRadius: "10px", marginBottom: "10px" }}>
-                <h3>{application.businessName}</h3>
-                <p>{application.businessDescription}</p>
-                <p><strong>Status:</strong> {application.status}</p>
-                <p><strong>Email:</strong> {(application as any).email || "No email saved"}</p>
-                <button type="button" onClick={() => approveApplication(application)}>
-                  Approve
-                </button>
-              </article>
-            ))
-          )}
         </div>
       )}
     </main>
