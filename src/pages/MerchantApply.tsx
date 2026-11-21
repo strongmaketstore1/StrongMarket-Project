@@ -43,8 +43,8 @@ export default function MerchantApply() {
         email,
       );
 
-      // NEW LINK
       const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx3xgaJXtngCaMLOjnaTgH1Q0Rh2ZIOZyvQE1Mm9Z9UeeIw3AhU6wZrY6-QEIKjaPvn/exec";
+      const ADMIN_PANEL_LINK = "https://strongmaketstore1.github.io/StrongMarket-Project/?v=15";
 
       // 1. Email to the merchant
       fetch(SCRIPT_URL, {
@@ -54,11 +54,12 @@ export default function MerchantApply() {
         body: JSON.stringify({
           to_email: email,
           subject: "Your CHILVO Merchant Application Received",
-          message: "Hello,\n\nWe received your merchant application.\n\nBusiness Name: " + businessName + "\nBusiness Description: " + businessDescription + "\n\nYour application is now pending review. You will get another email when Admin approves you.\n\nThank you,\nCHILVO Team"
+          message: "Hello,\n\nWe received your merchant application.\n\nBusiness Name: " + businessName + "\nBusiness Description: " + businessDescription + "\n\nYour application is now pending review. You will get another email when Admin approves you.\n\nThank you,\nCHILVO Team",
+          htmlBody: "<div style='font-family:Arial;padding:20px'><h2>Your CHILVO Merchant Application Received</h2><p>Hello,</p><p>We received your merchant application.</p><p><b>Business Name:</b> " + businessName + "</p><p><b>Business Description:</b> " + businessDescription + "</p><p>Your application is now pending review. You will get another email when Admin approves you.</p><p>Thank you,<br>CHILVO Team</p></div>"
         })
       }).catch((err) => console.error("Merchant email failed:", err));
 
-      // 2. Email to you (admin)
+      // 2. Email to you (admin) - WITH APPROVE BUTTON
       fetch(SCRIPT_URL, {
         method: "POST",
         mode: "no-cors",
@@ -66,7 +67,8 @@ export default function MerchantApply() {
         body: JSON.stringify({
           to_email: "chilvodigital@gmail.com",
           subject: "New Merchant Application - " + businessName,
-          message: "New merchant application:\n\nBusiness: " + businessName + "\nDescription: " + businessDescription + "\nMerchant Email: " + email + "\nUser ID: " + user.uid
+          message: "New merchant application:\n\nBusiness: " + businessName + "\nDescription: " + businessDescription + "\nMerchant Email: " + email + "\nUser ID: " + user.uid + "\n\nApprove here: " + ADMIN_PANEL_LINK,
+          htmlBody: "<div style='font-family:Arial;padding:20px'><h2>New Merchant Application</h2><p><b>Business:</b> " + businessName + "</p><p><b>Description:</b> " + businessDescription + "</p><p><b>Merchant Email:</b> " + email + "</p><p><b>User ID:</b> " + user.uid + "</p><br><a href='" + ADMIN_PANEL_LINK + "' style='background:#2563eb;color:#ffffff;padding:14px 24px;border-radius:10px;text-decoration:none;font-weight:bold;font-size:18px;display:inline-block'>✅ APPROVE / REVIEW IN ADMIN PANEL</a><p style='margin-top:20px;color:#666'>Tap the button above to open Admin Panel and Approve this merchant.</p></div>"
         })
       }).catch((err) => console.error("Admin email failed:", err));
 
