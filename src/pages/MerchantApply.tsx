@@ -28,7 +28,6 @@ export default function MerchantApply() {
         return;
       }
 
-      // Get email from logged-in account - this is where approval email will go
       const email = user.email || "";
 
       if (!email) {
@@ -44,10 +43,10 @@ export default function MerchantApply() {
         email,
       );
 
-      // NEW: Send emails via Google Script
-      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzlyhJhOVn8cj5bN1q_H9sd8Z4EMbQvJrxPpjNcUmoK8ZmENta6vrpRIKgWge1lOMwz/exec";
+      // NEW LINK
+      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx3xgaJXtngCaMLOjnaTgH1Q0Rh2ZIOZyvQE1Mm9Z9UeeIw3AhU6wZrY6-QEIKjaPvn/exec";
 
-      // 1. Email to the merchant - "We received your application"
+      // 1. Email to the merchant
       fetch(SCRIPT_URL, {
         method: "POST",
         mode: "no-cors",
@@ -59,7 +58,7 @@ export default function MerchantApply() {
         })
       }).catch((err) => console.error("Merchant email failed:", err));
 
-      // 2. Email to you (admin) - "Someone applied"
+      // 2. Email to you (admin)
       fetch(SCRIPT_URL, {
         method: "POST",
         mode: "no-cors",
@@ -100,7 +99,6 @@ export default function MerchantApply() {
           <label htmlFor="businessName" style={{ display: "block", fontSize: "16px", fontWeight: "700", marginBottom: "8px" }}>
             Business Name
           </label>
-
           <input
             id="businessName"
             type="text"
@@ -117,7 +115,6 @@ export default function MerchantApply() {
           <label htmlFor="businessDescription" style={{ display: "block", fontSize: "16px", fontWeight: "700", marginBottom: "8px" }}>
             Business Description
           </label>
-
           <textarea
             id="businessDescription"
             value={businessDescription}
