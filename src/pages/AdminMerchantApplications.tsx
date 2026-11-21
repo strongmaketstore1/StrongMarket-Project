@@ -15,7 +15,7 @@ import { auth, db } from "../firebase";
 import type { MerchantApplication } from "../types/merchant";
 import type { Product } from "../types/product";
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyB_iXCPy-EwrVV_hzXQZ8eGnsu0Bkg99hxR_vgVaMQgDKTbr2RrrQ1W7ofITbfHnna/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwJ9ao3k6Q_7-UiEO2NIfWrsQ96vP1yuOttIDXJEnA5YAHaafTmKAAmnteQqmTOICg/exec";
 
 type MerchantApplicationWithId = MerchantApplication & {
   email?: string;
@@ -108,7 +108,7 @@ export default function AdminMerchantApplications() {
         fetch(SCRIPT_URL, {
           method: "POST",
           mode: "no-cors",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "text/plain" },
           body: JSON.stringify({
             to_email: merchantEmail,
             subject: "Your CHILVO Merchant Application is Approved ✅",
