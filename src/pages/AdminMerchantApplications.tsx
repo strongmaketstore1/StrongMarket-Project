@@ -8,6 +8,7 @@ import {
   getDocs,
   query,
   updateDoc,
+  setDoc,
   where,
 } from "firebase/firestore";
 
@@ -88,18 +89,17 @@ export default function AdminMerchantApplications() {
       });
 
       // 2. Give the user merchant access - THIS is what unlocks Add Product
+      // ✅ FIXED: setDoc + merge:true creates the users doc if it doesn't exist
+      // updateDoc would fail silently if doc missing
       if (application.userId) {
-        try {
-          await updateDoc(doc(db, "users", application.userId), {
-            role: "merchant",
-            isMerchant: true,
-            merchantApproved: true,
-            businessName: application.businessName,
-          });
-        } catch (userErr) {
-          console.warn("Could not update users doc, user doc may not exist yet:", userErr);
-          // Don't fail approval if user doc missing - application is already approved
-        }
+        await setDoc(doc(db, "users", application.userId), {
+          role: "merchant",
+          isMerchant: true,
+          merchantApproved: true,
+          merchantStatus: "approved",
+          businessName: application.businessName,
+          email: (application as any).email || (application as any).merchantEmail || "",
+        }, { merge: true });
       }
 
       // 3. Send approval email to merchant
