@@ -226,10 +226,19 @@ function AppContent() {
     return () => { document.body.style.overflow = ""; };
   }, [mobileMenuOpen]);
 
+  // ✅ FIXED: Live listener + accepts merchantStatus OR role OR isMerchant
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(
+    let unsubUser: (() => void) | undefined;
+
+    const unsubscribeAuth = onAuthStateChanged(
       auth,
-      async (currentUser) => {
+      (currentUser) => {
+        // Clean up previous user listener when user changes
+        if (unsubUser) {
+          unsubUser();
+          unsubUser = undefined;
+        }
+
         setUser(currentUser);
 
         setIsAdmin(
@@ -243,29 +252,44 @@ function AppContent() {
           return;
         }
 
-        try {
-          const userSnapshot = await getDoc(
-            doc(db, "users", currentUser.uid)
-          );
-
-          if (userSnapshot.exists()) {
-            setMerchantStatus(
-              userSnapshot.data().merchantStatus ?? "none"
+        unsubUser = onSnapshot(
+          doc(db, "users", currentUser.uid),
+          (userSnapshot) => {
+            if (userSnapshot.exists()) {
+              const data = userSnapshot.data();
+              if (
+                data.merchantStatus === "approved" ||
+                data.role === "merchant" ||
+                data.isMerchant === true
+              ) {
+                setMerchantStatus("approved");
+              } else if (
+                data.merchantStatus === "pending" ||
+                data.role === "pending"
+              ) {
+                setMerchantStatus("pending");
+              } else {
+                setMerchantStatus("none");
+              }
+            } else {
+              setMerchantStatus("none");
+            }
+          },
+          (error) => {
+            console.error(
+              "Unable to load merchant status:",
+              error
             );
-          } else {
             setMerchantStatus("none");
           }
-        } catch (error) {
-          console.error(
-            "Unable to load merchant status:",
-            error
-          );
-          setMerchantStatus("none");
-        }
+        );
       }
     );
 
-    return unsubscribe;
+    return () => {
+      unsubscribeAuth();
+      if (unsubUser) unsubUser();
+    };
   }, []);
 
   async function handleLogout() {
