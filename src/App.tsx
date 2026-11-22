@@ -14,7 +14,6 @@ import { logoutUser, deleteAccount } from "./auth";
 import {
   collection,
   doc,
-  getDoc,
   onSnapshot,
 } from "firebase/firestore";
 import type { Product } from "./types/product";
