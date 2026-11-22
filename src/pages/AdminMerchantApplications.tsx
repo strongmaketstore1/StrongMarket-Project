@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  onAuthStateChanged,
-} from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import {
   collection,
   doc,
@@ -34,15 +32,34 @@ type ReviewProduct = Product & {
 
 type Tab = "merchants" | "products";
 
+// --- FIX: Helpers for Preview / Download ---
+// Cloudinary DOCX cannot be opened directly in browser.
+// Preview must go through Google Docs Viewer.
+// Download must force attachment, otherwise Chrome opens blank tab.
+function getPreviewUrl(fileUrl: string) {
+  return `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`;
+}
+
+function getDownloadUrl(fileUrl: string, fileName?: string) {
+  // Insert fl_attachment into Cloudinary URL to force real download
+  // https://res.cloudinary.com/.../upload/v123/file.docx
+  // -> https://res.cloudinary.com/.../upload/fl_attachment:file.docx/v123/file.docx
+  try {
+    if (fileUrl.includes("/upload/") && fileUrl.includes("res.cloudinary.com")) {
+      const safeName = (fileName || "download").replace(/[^a-zA-Z0-9._-]/g, "_");
+      return fileUrl.replace("/upload/", `/upload/fl_attachment:${safeName}/`);
+    }
+  } catch {}
+  return fileUrl;
+}
+
 export default function AdminMerchantApplications() {
   const [tab, setTab] = useState<Tab>("merchants");
-  const [applications, setApplications] =
-    useState<MerchantApplicationWithId[]>([]);
+  const [applications, setApplications] = useState<MerchantApplicationWithId[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [merchantMsg, setMerchantMsg] = useState("");
 
-  // --- PRODUCT REVIEW STATE ---
   const [pendingProducts, setPendingProducts] = useState<ReviewProduct[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<ReviewProduct | null>(null);
   const [rejectReason, setRejectReason] = useState("");
@@ -52,11 +69,8 @@ export default function AdminMerchantApplications() {
   async function loadApplications() {
     try {
       setError("");
-      // Read BOTH collections - correct one + old one with space bug
-      // So old applications like Benco / Zagga are not lost
       const collectionsToCheck = ["merchantApplications", "merchantApplic ations"];
       let all: MerchantApplicationWithId[] = [];
-
       for (const collName of collectionsToCheck) {
         try {
           const q = query(collection(db, collName), where("status", "==", "pending"));
@@ -67,7 +81,6 @@ export default function AdminMerchantApplications() {
           console.log("No docs in", collName, e);
         }
       }
-
       setApplications(all);
     } catch (err) {
       console.error("Merchant applications error:", err);
@@ -81,16 +94,10 @@ export default function AdminMerchantApplications() {
     setMerchantMsg("");
     try {
       const collName = application._collection || "merchantApplications";
-
-      // 1. Mark application as approved in Firestore
       await updateDoc(doc(db, collName, application.id), {
         status: "approved",
         reviewedAt: new Date().toISOString(),
       });
-
-      // 2. Give the user merchant access - THIS is what unlocks Add Product
-      // ✅ FIXED: setDoc + merge:true creates the users doc if it doesn't exist
-      // updateDoc would fail silently if doc missing
       if (application.userId) {
         await setDoc(doc(db, "users", application.userId), {
           role: "merchant",
@@ -101,8 +108,6 @@ export default function AdminMerchantApplications() {
           email: (application as any).email || (application as any).merchantEmail || "",
         }, { merge: true });
       }
-
-      // 3. Send approval email to merchant
       const merchantEmail = (application as any).email || (application as any).merchantEmail || "";
       if (merchantEmail) {
         fetch(SCRIPT_URL, {
@@ -117,7 +122,6 @@ export default function AdminMerchantApplications() {
           })
         }).catch((err) => console.error("Approval email failed:", err));
       }
-
       setMerchantMsg(`✅ Approved: ${application.businessName} - They can now add products.`);
       setApplications((current) => current.filter((item) => item.id !== application.id));
     } catch (err) {
@@ -142,7 +146,6 @@ export default function AdminMerchantApplications() {
     }
   }
 
-  // --- PRODUCT REVIEW LOGIC ---
   async function loadPendingProducts() {
     setProductsLoading(true);
     setProductMsg("");
@@ -229,33 +232,21 @@ export default function AdminMerchantApplications() {
       <h1>Admin Panel</h1>
       {error && <p style={{ background: "#fde8e8", padding: "10px", borderRadius: "8px" }}>{error}</p>}
 
-      {/* TABS */}
       <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
         <button
           onClick={() => setTab("merchants")}
-          style={{
-            flex: 1, padding: "14px", borderRadius: "10px", border: "none", cursor: "pointer",
-            background: tab === "merchants" ? "#111" : "#eee",
-            color: tab === "merchants" ? "#fff" : "#111",
-            fontWeight: "bold",
-          }}
+          style={{ flex: 1, padding: "14px", borderRadius: "10px", border: "none", cursor: "pointer", background: tab === "merchants" ? "#111" : "#eee", color: tab === "merchants" ? "#fff" : "#111", fontWeight: "bold" }}
         >
           Merchant Applications ({applications.length})
         </button>
         <button
           onClick={() => setTab("products")}
-          style={{
-            flex: 1, padding: "14px", borderRadius: "10px", border: "none", cursor: "pointer",
-            background: tab === "products" ? "#111" : "#eee",
-            color: tab === "products" ? "#fff" : "#111",
-            fontWeight: "bold",
-          }}
+          style={{ flex: 1, padding: "14px", borderRadius: "10px", border: "none", cursor: "pointer", background: tab === "products" ? "#111" : "#eee", color: tab === "products" ? "#fff" : "#111", fontWeight: "bold" }}
         >
           Review Products ({pendingProducts.length} pending)
         </button>
       </div>
 
-      {/* ===== MERCHANTS TAB - THIS IS THE GATE BEFORE ADD PRODUCT ===== */}
       {tab === "merchants" && (
         <div>
           <h2>Merchant Applications</h2>
@@ -285,31 +276,21 @@ export default function AdminMerchantApplications() {
         </div>
       )}
 
-      {/* ===== PRODUCTS TAB ===== */}
       {tab === "products" && (
         <div>
           <h2>Review Products</h2>
           <p>Open the file and read it before you approve. If it's a bank statement, personal doc, or doesn't match the category - REJECT it.</p>
           {productMsg && <p style={{ background: "#eef", padding: "10px", borderRadius: "8px" }}>{productMsg}</p>}
           {productsLoading && <p>Loading pending products...</p>}
-
-          {!productsLoading && pendingProducts.length === 0 && (
-            <p>No pending products. All reviewed ✅</p>
-          )}
+          {!productsLoading && pendingProducts.length === 0 && <p>No pending products. All reviewed ✅</p>}
 
           <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", alignItems: "flex-start" }}>
-            {/* List */}
             <div style={{ flex: 1, minWidth: "280px" }}>
               {pendingProducts.map((p) => (
                 <button
                   key={p.id}
                   onClick={() => { setSelectedProduct(p); setRejectReason(""); setProductMsg(""); }}
-                  style={{
-                    display: "block", width: "100%", textAlign: "left", padding: "12px",
-                    marginBottom: "8px", borderRadius: "10px", cursor: "pointer",
-                    border: selectedProduct?.id === p.id ? "2px solid #111" : "1px solid #ddd",
-                    background: selectedProduct?.id === p.id ? "#f0f0f0" : "#fff",
-                  }}
+                  style={{ display: "block", width: "100%", textAlign: "left", padding: "12px", marginBottom: "8px", borderRadius: "10px", cursor: "pointer", border: selectedProduct?.id === p.id ? "2px solid #111" : "1px solid #ddd", background: selectedProduct?.id === p.id ? "#f0f0f0" : "#fff" }}
                 >
                   <strong>{p.name}</strong><br />
                   <span>{p.category} • ${p.price} • {getExt(p.fileName || "")}</span><br />
@@ -318,7 +299,6 @@ export default function AdminMerchantApplications() {
               ))}
             </div>
 
-            {/* Detail */}
             {selectedProduct && (
               <div style={{ flex: 2, minWidth: "320px", border: "1px solid #ddd", borderRadius: "12px", padding: "16px", background: "#fff" }}>
                 <h3>{selectedProduct.name}</h3>
@@ -339,14 +319,28 @@ export default function AdminMerchantApplications() {
                   <p>File Link: {selectedProduct.cloudinaryFileRef ? "Available" : "MISSING"}</p>
                   {selectedProduct.cloudinaryFileRef && (
                     <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                      <a href={selectedProduct.cloudinaryFileRef} target="_blank" rel="noreferrer" style={{ background: "#111", color: "#fff", padding: "10px 16px", borderRadius: "8px", textDecoration: "none" }}>
+                      <a
+                        href={getPreviewUrl(selectedProduct.cloudinaryFileRef)}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ background: "#111", color: "#fff", padding: "10px 16px", borderRadius: "8px", textDecoration: "none" }}
+                      >
                         Open / Preview File 🔍
                       </a>
-                      <a href={selectedProduct.cloudinaryFileRef} download={selectedProduct.fileName} style={{ background: "#fff", color: "#111", padding: "10px 16px", borderRadius: "8px", border: "1px solid #111", textDecoration: "none" }}>
+                      <a
+                        href={getDownloadUrl(selectedProduct.cloudinaryFileRef, selectedProduct.fileName)}
+                        download={selectedProduct.fileName}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ background: "#fff", color: "#111", padding: "10px 16px", borderRadius: "8px", border: "1px solid #111", textDecoration: "none" }}
+                      >
                         Download File ⬇️
                       </a>
                     </div>
                   )}
+                  <p style={{ fontSize: "12px", color: "#666", marginTop: "8px" }}>
+                    Preview opens in Google Docs Viewer - it can read DOCX / PDF / XLSX. If Preview still shows blank, use Download.
+                  </p>
                 </div>
 
                 <div>
