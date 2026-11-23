@@ -15,6 +15,7 @@ import type { MerchantApplication } from "../types/merchant";
 import type { Product } from "../types/product";
 
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwJ9ao3k6Q_7-UiEO2NIfWrsQ96vP1yuOttIDXJEnA5YAHaafTmKAAmnteQqmTOICg/exec";
+const BACKEND = "https://strongmarket-payment-server.onrender.com";
 
 type MerchantApplicationWithId = MerchantApplication & {
   email?: string;
@@ -32,27 +33,6 @@ type ReviewProduct = Product & {
 
 type Tab = "merchants" | "products";
 
-// --- FIX: Helpers for Preview / Download ---
-// Cloudinary DOCX cannot be opened directly in browser.
-// Preview must go through Google Docs Viewer.
-// Download must force attachment, otherwise Chrome opens blank tab.
-function getPreviewUrl(fileUrl: string) {
-  return `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`;
-}
-
-function getDownloadUrl(fileUrl: string, fileName?: string) {
-  // Insert fl_attachment into Cloudinary URL to force real download
-  // https://res.cloudinary.com/.../upload/v123/file.docx
-  // -> https://res.cloudinary.com/.../upload/fl_attachment:file.docx/v123/file.docx
-  try {
-    if (fileUrl.includes("/upload/") && fileUrl.includes("res.cloudinary.com")) {
-      const safeName = (fileName || "download").replace(/[^a-zA-Z0-9._-]/g, "_");
-      return fileUrl.replace("/upload/", `/upload/fl_attachment:${safeName}/`);
-    }
-  } catch {}
-  return fileUrl;
-}
-
 export default function AdminMerchantApplications() {
   const [tab, setTab] = useState<Tab>("merchants");
   const [applications, setApplications] = useState<MerchantApplicationWithId[]>([]);
@@ -65,6 +45,7 @@ export default function AdminMerchantApplications() {
   const [rejectReason, setRejectReason] = useState("");
   const [productMsg, setProductMsg] = useState("");
   const [productsLoading, setProductsLoading] = useState(false);
+  const [fileBusy, setFileBusy] = useState(false);
 
   async function loadApplications() {
     try {
@@ -83,7 +64,6 @@ export default function AdminMerchantApplications() {
       }
       setApplications(all);
     } catch (err) {
-      console.error("Merchant applications error:", err);
       setError(err instanceof Error ? err.message : "Unable to load merchant applications.");
     } finally {
       setLoading(false);
@@ -125,7 +105,6 @@ export default function AdminMerchantApplications() {
       setMerchantMsg(`✅ Approved: ${application.businessName} - They can now add products.`);
       setApplications((current) => current.filter((item) => item.id !== application.id));
     } catch (err) {
-      console.error("Approve application error:", err);
       setMerchantMsg(err instanceof Error ? err.message : "Unable to approve merchant application.");
     }
   }
@@ -141,7 +120,6 @@ export default function AdminMerchantApplications() {
       setMerchantMsg(`❌ Rejected: ${application.businessName}`);
       setApplications((current) => current.filter((item) => item.id !== application.id));
     } catch (err) {
-      console.error("Reject error:", err);
       setMerchantMsg(err instanceof Error ? err.message : "Unable to reject merchant application.");
     }
   }
@@ -157,11 +135,63 @@ export default function AdminMerchantApplications() {
       if (list.length > 0) setSelectedProduct(list[0]);
       else setSelectedProduct(null);
     } catch (e: any) {
-      console.error("Load pending products error:", e);
-      setProductMsg(e.message || "Failed to load pending products. Check Firestore rules - admin must be able to read products.");
+      setProductMsg(e.message || "Failed to load pending products.");
     } finally {
       setProductsLoading(false);
     }
+  }
+
+  // --- FIX: Get SIGNED url from backend, like OrderSuccess does ---
+  // Admin has no orderId, so we send orderId=admin-review
+  // Backend MUST allow admin (see Part 2 below)
+  async function getAdminDownloadUrl(productId: string): Promise<string | null> {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        setProductMsg("Please log in as admin.");
+        return null;
+      }
+      const idToken = await user.getIdToken();
+      const response = await fetch(
+        `${BACKEND}/api/products/${encodeURIComponent(productId)}/download?orderId=${encodeURIComponent("admin-review")}`,
+        { headers: { Authorization: `Bearer ${idToken}` } }
+      );
+      const result = await response.json();
+      if (!response.ok || result?.success !== true || typeof result?.downloadUrl !== "string") {
+        setProductMsg(result?.message || "Backend blocked admin download. Do Part 2 backend fix below.");
+        return null;
+      }
+      return result.downloadUrl as string;
+    } catch (e: any) {
+      setProductMsg(e.message || "Unable to get download link.");
+      return null;
+    }
+  }
+
+  async function downloadSelectedProduct() {
+    if (!selectedProduct) return;
+    setFileBusy(true);
+    const url = await getAdminDownloadUrl(selectedProduct.id);
+    setFileBusy(false);
+    if (!url) return;
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = selectedProduct.fileName || "";
+    a.target = "_blank";
+    a.rel = "noreferrer";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  async function previewSelectedProduct() {
+    if (!selectedProduct) return;
+    setFileBusy(true);
+    const url = await getAdminDownloadUrl(selectedProduct.id);
+    setFileBusy(false);
+    if (!url) return;
+    const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+    window.open(viewerUrl, "_blank", "noopener,noreferrer");
   }
 
   async function approveProduct() {
@@ -233,16 +263,10 @@ export default function AdminMerchantApplications() {
       {error && <p style={{ background: "#fde8e8", padding: "10px", borderRadius: "8px" }}>{error}</p>}
 
       <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
-        <button
-          onClick={() => setTab("merchants")}
-          style={{ flex: 1, padding: "14px", borderRadius: "10px", border: "none", cursor: "pointer", background: tab === "merchants" ? "#111" : "#eee", color: tab === "merchants" ? "#fff" : "#111", fontWeight: "bold" }}
-        >
+        <button onClick={() => setTab("merchants")} style={{ flex: 1, padding: "14px", borderRadius: "10px", border: "none", cursor: "pointer", background: tab === "merchants" ? "#111" : "#eee", color: tab === "merchants" ? "#fff" : "#111", fontWeight: "bold" }}>
           Merchant Applications ({applications.length})
         </button>
-        <button
-          onClick={() => setTab("products")}
-          style={{ flex: 1, padding: "14px", borderRadius: "10px", border: "none", cursor: "pointer", background: tab === "products" ? "#111" : "#eee", color: tab === "products" ? "#fff" : "#111", fontWeight: "bold" }}
-        >
+        <button onClick={() => setTab("products")} style={{ flex: 1, padding: "14px", borderRadius: "10px", border: "none", cursor: "pointer", background: tab === "products" ? "#111" : "#eee", color: tab === "products" ? "#fff" : "#111", fontWeight: "bold" }}>
           Review Products ({pendingProducts.length} pending)
         </button>
       </div>
@@ -287,11 +311,7 @@ export default function AdminMerchantApplications() {
           <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", alignItems: "flex-start" }}>
             <div style={{ flex: 1, minWidth: "280px" }}>
               {pendingProducts.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => { setSelectedProduct(p); setRejectReason(""); setProductMsg(""); }}
-                  style={{ display: "block", width: "100%", textAlign: "left", padding: "12px", marginBottom: "8px", borderRadius: "10px", cursor: "pointer", border: selectedProduct?.id === p.id ? "2px solid #111" : "1px solid #ddd", background: selectedProduct?.id === p.id ? "#f0f0f0" : "#fff" }}
-                >
+                <button key={p.id} onClick={() => { setSelectedProduct(p); setRejectReason(""); setProductMsg(""); }} style={{ display: "block", width: "100%", textAlign: "left", padding: "12px", marginBottom: "8px", borderRadius: "10px", cursor: "pointer", border: selectedProduct?.id === p.id ? "2px solid #111" : "1px solid #ddd", background: selectedProduct?.id === p.id ? "#f0f0f0" : "#fff" }}>
                   <strong>{p.name}</strong><br />
                   <span>{p.category} • ${p.price} • {getExt(p.fileName || "")}</span><br />
                   <span style={{ fontSize: "12px", color: "#666" }}>Merchant: {p.merchantId?.slice(0, 8)}...</span>
@@ -316,41 +336,21 @@ export default function AdminMerchantApplications() {
                   <p><strong>📁 File to Review:</strong></p>
                   <p>File Name: {selectedProduct.fileName}</p>
                   <p>File Type: {getExt(selectedProduct.fileName || "")}</p>
-                  <p>File Link: {selectedProduct.cloudinaryFileRef ? "Available" : "MISSING"}</p>
-                  {selectedProduct.cloudinaryFileRef && (
-                    <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                      <a
-                        href={getPreviewUrl(selectedProduct.cloudinaryFileRef)}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ background: "#111", color: "#fff", padding: "10px 16px", borderRadius: "8px", textDecoration: "none" }}
-                      >
-                        Open / Preview File 🔍
-                      </a>
-                      <a
-                        href={getDownloadUrl(selectedProduct.cloudinaryFileRef, selectedProduct.fileName)}
-                        download={selectedProduct.fileName}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ background: "#fff", color: "#111", padding: "10px 16px", borderRadius: "8px", border: "1px solid #111", textDecoration: "none" }}
-                      >
-                        Download File ⬇️
-                      </a>
-                    </div>
-                  )}
-                  <p style={{ fontSize: "12px", color: "#666", marginTop: "8px" }}>
-                    Preview opens in Google Docs Viewer - it can read DOCX / PDF / XLSX. If Preview still shows blank, use Download.
-                  </p>
+                  <p>File Ref: {selectedProduct.cloudinaryFileRef ? "Saved (private)" : "MISSING"}</p>
+                  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                    <button onClick={previewSelectedProduct} disabled={fileBusy} style={{ background: "#111", color: "#fff", padding: "10px 16px", borderRadius: "8px", border: "none", cursor: "pointer" }}>
+                      {fileBusy ? "Getting link..." : "Open / Preview File 🔍"}
+                    </button>
+                    <button onClick={downloadSelectedProduct} disabled={fileBusy} style={{ background: "#fff", color: "#111", padding: "10px 16px", borderRadius: "8px", border: "1px solid #111", cursor: "pointer" }}>
+                      {fileBusy ? "Getting link..." : "Download File ⬇️"}
+                    </button>
+                  </div>
+                  <p style={{ fontSize: "12px", color: "#666", marginTop: "8px" }}>Gets a signed link from the server first, then previews/downloads. Same as customers.</p>
                 </div>
 
                 <div>
                   <label><strong>Reject Reason:</strong></label>
-                  <textarea
-                    value={rejectReason}
-                    onChange={(e) => setRejectReason(e.target.value)}
-                    placeholder="e.g. This is a bank statement, not a Template. Please upload a real CV Template."
-                    style={{ width: "100%", minHeight: "70px", padding: "10px", borderRadius: "8px", marginTop: "6px", boxSizing: "border-box" }}
-                  />
+                  <textarea value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} placeholder="e.g. This is a bank statement, not a Template. Please upload a real CV Template." style={{ width: "100%", minHeight: "70px", padding: "10px", borderRadius: "8px", marginTop: "6px", boxSizing: "border-box" }} />
                 </div>
 
                 <div style={{ display: "flex", gap: "10px", marginTop: "14px" }}>
