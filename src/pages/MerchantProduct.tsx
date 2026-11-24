@@ -13,6 +13,7 @@ import { Link } from "react-router-dom";
 import { auth, db } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 
+// FIXED: Added status + rejectReason
 type Product = {
   id: string;
   name: string;
@@ -22,7 +23,43 @@ type Product = {
   category: string;
   image?: string;
   fileName?: string;
+  status?: string;
+  rejectReason?: string;
 };
+
+// FIXED: Badge helper
+function StatusBadge({ product }: { product: Product }) {
+  const status = product.status || "pending"; // Old products with no status = pending
+
+  if (status === "approved") {
+    return (
+      <p style={{ display: "inline-block", background: "#1a7f37", color: "#fff", padding: "6px 10px", borderRadius: "20px", fontSize: "13px", fontWeight: "bold", margin: "8px 0" }}>
+        ✅ Approved - Live in Shop
+      </p>
+    );
+  }
+  if (status === "rejected") {
+    return (
+      <div style={{ background: "#fdecea", border: "1px solid #f5b5b0", padding: "10px", borderRadius: "10px", margin: "8px 0" }}>
+        <p style={{ color: "#d1242f", fontWeight: "bold", margin: 0 }}>❌ Rejected - Not in Shop</p>
+        {product.rejectReason && (
+          <p style={{ color: "#666", fontSize: "13px", margin: "4px 0 0" }}>
+            Reason: {product.rejectReason}
+          </p>
+        )}
+        <p style={{ color: "#666", fontSize: "13px", margin: "4px 0 0" }}>
+          Fix it and tap Edit to resubmit.
+        </p>
+      </div>
+    );
+  }
+  // pending
+  return (
+    <p style={{ display: "inline-block", background: "#f59e0b", color: "#fff", padding: "6px 10px", borderRadius: "20px", fontSize: "13px", fontWeight: "bold", margin: "8px 0" }}>
+      ⏳ Pending Review - Not in Shop yet
+    </p>
+  );
+}
 
 export default function MerchantProducts() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -154,7 +191,7 @@ export default function MerchantProducts() {
       {products.length > 0 && (
         <section>
           {products.map((product) => (
-            <article key={product.id}>
+            <article key={product.id} style={{ border: "1px solid #eee", borderRadius: "12px", padding: "16px", marginBottom: "12px" }}>
               {product.image && (
                 <img
                   src={product.image}
@@ -164,6 +201,9 @@ export default function MerchantProducts() {
               )}
 
               <h2>{product.name}</h2>
+
+              {/* FIXED: Badge shows here now */}
+              <StatusBadge product={product} />
 
               <p>
                 {product.shortDescription}
