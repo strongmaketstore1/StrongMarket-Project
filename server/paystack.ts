@@ -125,7 +125,7 @@ async function recordMerchantEarnings(
       };
 
     current.grossCents += lineTotalCents;
-    current.productIds.add(line.productId);
+    current.productIds.add(lineProductId);
 
     if (!Number.isSafeInteger(current.grossCents)) {
       throw new Error(
@@ -1293,6 +1293,45 @@ app.get(
         await adminAuth.verifyIdToken(idToken);
 
       const { productId } = req.params;
+
+      // === ADMIN BYPASS - NEW ===
+      // Admin has no order, so skip all order checks
+      // and go straight to the product file.
+      if (ADMIN_UIDS.includes(decodedToken.uid)) {
+        const productSnapshotAdmin = await getProductByReference(productId);
+        if (!productSnapshotAdmin || !productSnapshotAdmin.exists) {
+          return res.status(404).json({ success: false, message: "Product not found." });
+        }
+        const productAdmin: any = productSnapshotAdmin.data();
+
+        let cloudinaryPublicIdAdmin = "";
+        let fileNameAdmin = typeof productAdmin?.fileName === "string" ? productAdmin.fileName : "";
+
+        if (typeof productAdmin?.cloudinaryFileRef === "string" && productAdmin.cloudinaryFileRef) {
+          const pf = await db.collection("privateProductFiles").doc(productAdmin.cloudinaryFileRef).get();
+          const pd: any = pf.data();
+          if (pf.exists && typeof pd?.cloudinaryPublicId === "string") {
+            cloudinaryPublicIdAdmin = pd.cloudinaryPublicId;
+            if (typeof pd?.fileName === "string") fileNameAdmin = pd.fileName;
+          }
+        } else if (typeof productAdmin?.cloudinaryPublicId === "string") {
+          cloudinaryPublicIdAdmin = productAdmin.cloudinaryPublicId;
+        }
+
+        if (!cloudinaryPublicIdAdmin) {
+          return res.status(404).json({ success: false, message: "This product does not have a downloadable file yet." });
+        }
+
+        const extAdmin = path.extname(fileNameAdmin).replace(".", "").toLowerCase() || "pdf";
+        const downloadUrlAdmin = cloudinary.utils.private_download_url(
+          cloudinaryPublicIdAdmin,
+          extAdmin,
+          { resource_type: "raw", type: "private", attachment: true, expires_at: Math.floor(Date.now() / 1000) + 300 }
+        );
+
+        return res.json({ success: true, downloadUrl: downloadUrlAdmin });
+      }
+      // === END ADMIN BYPASS ===
 
       const orderId =
         typeof req.query.orderId === "string"
