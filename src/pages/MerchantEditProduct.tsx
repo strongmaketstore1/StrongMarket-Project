@@ -31,6 +31,9 @@ export default function MerchantEditProduct() {
     useState<ProductCategory>("templates");
   const [image, setImage] = useState("");
   const [fileName, setFileName] = useState("");
+  // FIXED: Track status + reason to show banner
+  const [currentStatus, setCurrentStatus] = useState("");
+  const [currentRejectReason, setCurrentRejectReason] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -77,6 +80,9 @@ export default function MerchantEditProduct() {
         setCategory(data.category || "templates");
         setImage(data.image || "");
         setFileName(data.fileName || "");
+        // FIXED: Load status
+        setCurrentStatus(data.status || "pending");
+        setCurrentRejectReason(data.rejectReason || "");
       } catch (error) {
         console.error(error);
         setMessage("Unable to load product.");
@@ -122,6 +128,7 @@ export default function MerchantEditProduct() {
         return;
       }
 
+      // FIXED: This is the magic - resubmit for review
       await updateDoc(productRef, {
         name: name.trim(),
         description: description.trim(),
@@ -131,13 +138,16 @@ export default function MerchantEditProduct() {
         category,
         image: image.trim(),
         fileName: fileName.trim(),
+        status: "pending", // <-- Goes back to Admin queue
+        rejectReason: "", // <-- Clear old reason
+        updatedAt: new Date().toISOString(),
       });
 
-      setMessage("Product updated successfully.");
+      setMessage("✅ Product updated and resubmitted for review! It is now Pending again.");
 
       setTimeout(() => {
         navigate("/merchant/products");
-      }, 800);
+      }, 1000);
     } catch (error) {
       console.error(error);
       setMessage("Unable to update product. Please try again.");
@@ -167,6 +177,20 @@ export default function MerchantEditProduct() {
   return (
     <main>
       <h1>Edit Product</h1>
+
+      {/* FIXED: Show merchant why it was rejected */}
+      {currentStatus === "rejected" && (
+        <div style={{ background: "#fdecea", border: "1px solid #f5b5b0", padding: "14px", borderRadius: "10px", marginBottom: "16px" }}>
+          <b style={{ color: "#d1242f" }}>❌ This product was Rejected</b>
+          {currentRejectReason && <p style={{ margin: "6px 0 0", color: "#666" }}>Reason: {currentRejectReason}</p>}
+          <p style={{ margin: "6px 0 0", color: "#666", fontSize: "13px" }}>Fix it below and Save - it will go back to Pending for Admin to review again.</p>
+        </div>
+      )}
+      {currentStatus === "approved" && (
+        <div style={{ background: "#fff7e6", border: "1px solid #ffe0a3", padding: "14px", borderRadius: "10px", marginBottom: "16px" }}>
+          <b>⚠️ Note:</b> This product is currently Approved / Live. If you save changes, it will go back to Pending and be hidden from Shop until Admin approves it again.
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
         <div>
@@ -257,7 +281,7 @@ export default function MerchantEditProduct() {
         </div>
 
         <button type="submit" disabled={saving}>
-          {saving ? "Saving..." : "Save Changes"}
+          {saving ? "Saving..." : "Save Changes & Resubmit for Review"}
         </button>
       </form>
 
