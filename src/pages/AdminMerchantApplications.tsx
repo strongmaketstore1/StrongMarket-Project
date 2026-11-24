@@ -194,13 +194,28 @@ export default function AdminMerchantApplications() {
     window.open(viewerUrl, "_blank", "noopener,noreferrer");
   }
 
+  // FIXED: Approve via backend (bypasses Firestore Rules)
   async function approveProduct() {
     if (!selectedProduct) return;
     try {
-      await updateDoc(doc(db, "products", selectedProduct.id), {
-        status: "approved",
-        reviewedAt: new Date().toISOString(),
-      });
+      const user = auth.currentUser;
+      if (!user) {
+        setProductMsg("Please log in as admin.");
+        return;
+      }
+      const idToken = await user.getIdToken();
+      const response = await fetch(
+        `${BACKEND}/api/admin/products/${encodeURIComponent(selectedProduct.id)}/approve`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${idToken}`, "Content-Type": "application/json" },
+        }
+      );
+      const result = await response.json();
+      if (!response.ok || result?.success !== true) {
+        setProductMsg(result?.message || "Unable to approve product.");
+        return;
+      }
       setProductMsg(`✅ Approved: ${selectedProduct.name} - Now live in Shop`);
       setSelectedProduct(null);
       setRejectReason("");
@@ -210,6 +225,7 @@ export default function AdminMerchantApplications() {
     }
   }
 
+  // FIXED: Reject via backend (bypasses Firestore Rules)
   async function rejectProduct() {
     if (!selectedProduct) return;
     if (!rejectReason.trim()) {
@@ -217,11 +233,25 @@ export default function AdminMerchantApplications() {
       return;
     }
     try {
-      await updateDoc(doc(db, "products", selectedProduct.id), {
-        status: "rejected",
-        rejectReason: rejectReason.trim(),
-        reviewedAt: new Date().toISOString(),
-      });
+      const user = auth.currentUser;
+      if (!user) {
+        setProductMsg("Please log in as admin.");
+        return;
+      }
+      const idToken = await user.getIdToken();
+      const response = await fetch(
+        `${BACKEND}/api/admin/products/${encodeURIComponent(selectedProduct.id)}/reject`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${idToken}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ rejectReason: rejectReason.trim() }),
+        }
+      );
+      const result = await response.json();
+      if (!response.ok || result?.success !== true) {
+        setProductMsg(result?.message || "Unable to reject product.");
+        return;
+      }
       setProductMsg(`❌ Rejected: ${selectedProduct.name}`);
       setSelectedProduct(null);
       setRejectReason("");
