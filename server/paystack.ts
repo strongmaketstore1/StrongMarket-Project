@@ -125,7 +125,7 @@ async function recordMerchantEarnings(
       };
 
     current.grossCents += lineTotalCents;
-    current.productIds.add(lineProductId);
+    current.productIds.add(line.productId);
 
     if (!Number.isSafeInteger(current.grossCents)) {
       throw new Error(
@@ -704,6 +704,66 @@ app.post(
     }
   },
 );
+
+// === NEW: Admin approve product ===
+app.post("/api/admin/products/:productId/approve", async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      return res.status(401).json({ success: false, message: "Authentication required." });
+    }
+    const idToken = authHeader.substring(7);
+    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    if (!ADMIN_UIDS.includes(decodedToken.uid)) {
+      return res.status(403).json({ success: false, message: "Admin authorization required." });
+    }
+    const { productId } = req.params;
+    const productRef = db.collection("products").doc(productId);
+    const productSnap = await productRef.get();
+    if (!productSnap.exists) {
+      return res.status(404).json({ success: false, message: "Product not found." });
+    }
+    await productRef.update({
+      status: "approved",
+      reviewedAt: new Date().toISOString(),
+    });
+    return res.json({ success: true, message: "Product approved." });
+  } catch (e: any) {
+    console.error("Approve product error:", e);
+    return res.status(500).json({ success: false, message: e.message || "Unable to approve product." });
+  }
+});
+
+// === NEW: Admin reject product ===
+app.post("/api/admin/products/:productId/reject", async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      return res.status(401).json({ success: false, message: "Authentication required." });
+    }
+    const idToken = authHeader.substring(7);
+    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    if (!ADMIN_UIDS.includes(decodedToken.uid)) {
+      return res.status(403).json({ success: false, message: "Admin authorization required." });
+    }
+    const { productId } = req.params;
+    const { rejectReason } = req.body || {};
+    const productRef = db.collection("products").doc(productId);
+    const productSnap = await productRef.get();
+    if (!productSnap.exists) {
+      return res.status(404).json({ success: false, message: "Product not found." });
+    }
+    await productRef.update({
+      status: "rejected",
+      rejectReason: typeof rejectReason === "string" ? rejectReason : "",
+      reviewedAt: new Date().toISOString(),
+    });
+    return res.json({ success: true, message: "Product rejected." });
+  } catch (e: any) {
+    console.error("Reject product error:", e);
+    return res.status(500).json({ success: false, message: e.message || "Unable to reject product." });
+  }
+});
 
 // Initialize Paystack payment securely
 app.post(
