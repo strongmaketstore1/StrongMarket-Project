@@ -13,7 +13,6 @@ import { Link } from "react-router-dom";
 import { auth, db } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 
-// FIXED: Added status + rejectReason
 type Product = {
   id: string;
   name: string;
@@ -27,9 +26,8 @@ type Product = {
   rejectReason?: string;
 };
 
-// FIXED: Badge helper
 function StatusBadge({ product }: { product: Product }) {
-  const status = product.status || "pending"; // Old products with no status = pending
+  const status = product.status || "pending";
 
   if (status === "approved") {
     return (
@@ -53,7 +51,6 @@ function StatusBadge({ product }: { product: Product }) {
       </div>
     );
   }
-  // pending
   return (
     <p style={{ display: "inline-block", background: "#f59e0b", color: "#fff", padding: "6px 10px", borderRadius: "20px", fontSize: "13px", fontWeight: "bold", margin: "8px 0" }}>
       ⏳ Pending Review - Not in Shop yet
@@ -170,7 +167,7 @@ export default function MerchantProducts() {
   }
 
   return (
-    <main>
+    <main style={{ padding: "20px", maxWidth: "900px", margin: "0 auto" }}>
       <h1>My Products</h1>
 
       <p>
@@ -178,7 +175,7 @@ export default function MerchantProducts() {
         to CHILVO.
       </p>
 
-      <Link to="/merchant/products/new">
+      <Link to="/merchant/products/new" style={{ display: "inline-block", padding: "10px 16px", background: "#111", color: "#fff", borderRadius: "8px", textDecoration: "none", marginBottom: "16px" }}>
         📦 Add Product
       </Link>
 
@@ -197,12 +194,12 @@ export default function MerchantProducts() {
                   src={product.image}
                   alt={product.name}
                   width="200"
+                  style={{ borderRadius: "8px" }}
                 />
               )}
 
-              <h2>{product.name}</h2>
+              <h2 style={{ margin: "10px 0 0" }}>{product.name}</h2>
 
-              {/* FIXED: Badge shows here now */}
               <StatusBadge product={product} />
 
               <p>
@@ -234,20 +231,23 @@ export default function MerchantProducts() {
                 </p>
               )}
 
-              <Link
-                to={`/merchant/products/${product.id}/edit`}
-              >
-                ✏️ Edit
-              </Link>
+              {/* FIXED: Buttons side-by-side, no overlap */}
+              <div style={{ display: "flex", gap: "12px", alignItems: "center", marginTop: "12px", flexWrap: "wrap" }}>
+                <Link
+                  to={`/merchant/products/${product.id}/edit`}
+                  style={{ padding: "8px 14px", background: "#111", color: "#fff", borderRadius: "8px", textDecoration: "none" }}
+                >
+                  ✏️ Edit
+                </Link>
 
-              <button
-                type="button"
-                onClick={() =>
-                  handleDelete(product.id)
-                }
-              >
-                🗑️ Delete
-              </button>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(product.id)}
+                  style={{ padding: "8px 14px", background: "#fff", color: "#d1242f", border: "1px solid #d1242f", borderRadius: "8px", cursor: "pointer" }}
+                >
+                  🗑️ Delete
+                </button>
+              </div>
             </article>
           ))}
         </section>
