@@ -6,7 +6,10 @@ export interface OrderItem {
   quantity: number;
   price: number;
   merchantId?: string;
+  fileUrl?: string;
+  fileName?: string;
   cloudinaryPublicId?: string;
+  cloudinaryFileRef?: string;
 }
 
 export type OrderStatus =
@@ -37,18 +40,22 @@ export function createOrderItems(
   }[],
 ): OrderItem[] {
   return products.map((item) => ({
-  productId: item.product.id,
-  productName: item.product.name,
-  quantity: item.quantity,
-  price: item.product.price,
-  ...(item.product.cloudinaryPublicId
-    ? {
-        cloudinaryPublicId:
-          item.product.cloudinaryPublicId,
-      }
-    : {}),
-  ...(item.product.merchantId
-    ? { merchantId: item.product.merchantId }
-    : {}),
-}));
+    productId: item.product.id,
+    productName: item.product.name,
+    quantity: item.quantity,
+    price: item.product.price,
+    // ✅ FIXED - save the REAL file link in the order, so buyer can download without Backend
+    fileUrl: (item.product as any).fileUrl || "",
+    fileName: (item.product as any).fileName || "",
+    cloudinaryFileRef: (item.product as any).cloudinaryFileRef || "",
+    ...(item.product.cloudinaryPublicId
+      ? {
+          cloudinaryPublicId:
+            item.product.cloudinaryPublicId,
+        }
+      : {}),
+    ...(item.product.merchantId
+      ? { merchantId: item.product.merchantId }
+      : {}),
+  }));
 }
