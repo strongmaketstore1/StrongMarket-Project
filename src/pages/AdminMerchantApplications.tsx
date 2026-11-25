@@ -9,6 +9,10 @@ import type { Product } from "../types/product";
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwJ9ao3k6Q_7-UiEO2NIfWrsQ96vP1yuOttIDXJEnA5YAHaafTmKAAmnteQqmTOICg/exec";
 const BACKEND = "https://strongmarket-payment-server.onrender.com";
 
+// ✅ NEW ADMIN - chilvodigital@gmail.com
+const ADMIN_UID = "QUBuXshWukX4FpUyPnMpjF3GGji2";
+const ADMIN_EMAIL = "chilvodigital@gmail.com";
+
 type MerchantApplicationWithId = MerchantApplication & { email?: string; _collection?: string };
 type ReviewProduct = Product & { status?: string; merchantId?: string; merchantEmail?: string; fileName?: string; cloudinaryFileRef?: string; image?: string; rejectReason?: string };
 type Tab = "merchants" | "products";
@@ -38,17 +42,11 @@ export default function AdminMerchantApplications() {
   async function loadApplications() {
     try {
       setError("");
-      const collectionsToCheck = ["merchantApplications", "merchantApplic ations"];
-      let all: MerchantApplicationWithId[] = [];
-      for (const collName of collectionsToCheck) {
-        try {
-          const q = query(collection(db, collName), where("status", "==", "pending"));
-          const snap = await getDocs(q);
-          const list = snap.docs.map((d) => ({ id: d.id, ...d.data(), _collection: collName }) as MerchantApplicationWithId);
-          all = [...all, ...list];
-        } catch (e) { console.log("No docs in", collName, e); }
-      }
-      setApplications(all);
+      // ✅ FIXED: Only correct collection, no space typo
+      const q = query(collection(db, "merchantApplications"), where("status", "==", "pending"));
+      const snap = await getDocs(q);
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data(), _collection: "merchantApplications" }) as MerchantApplicationWithId);
+      setApplications(list);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load merchant applications.");
     } finally { setLoading(false); }
@@ -147,7 +145,6 @@ export default function AdminMerchantApplications() {
       const response = await fetch(`${BACKEND}/api/admin/products/${encodeURIComponent(selectedProduct.id)}/approve`, { method: "POST", headers: { Authorization: `Bearer ${idToken}`, "Content-Type": "application/json" } });
       const result = await response.json();
       if (!response.ok || result?.success !== true) { setProductMsg(result?.message || "Unable to approve product."); return; }
-      // PROFESSIONAL EMAIL - no bell
       const merchantEmail = await getMerchantEmailForProduct(selectedProduct);
       if (merchantEmail) {
         try { await emailMerchantApproved(merchantEmail, selectedProduct.name); } catch (e) { console.log("Approve email failed", e); }
@@ -179,6 +176,12 @@ export default function AdminMerchantApplications() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (!currentUser) { setError("You must be logged in."); setLoading(false); return; }
+      // ✅ NEW ADMIN CHECK - only chilvodigital can see Admin page
+      if (currentUser.uid !== ADMIN_UID && currentUser.email !== ADMIN_EMAIL) {
+        setError("Access denied. Admins only.");
+        setLoading(false);
+        return;
+      }
       loadApplications(); loadPendingProducts();
     });
     return () => unsubscribe();
