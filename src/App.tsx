@@ -3,6 +3,7 @@ import {
   Link,
   Route,
   Routes,
+  useNavigate,
 } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
@@ -200,6 +201,7 @@ function CartButton() {
 }
 
 function AppContent() {
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(auth.currentUser);
   const [merchantStatus, setMerchantStatus] =
@@ -296,6 +298,8 @@ function AppContent() {
   async function handleLogout() {
     try {
       await logoutUser();
+      setMobileMenuOpen(false);
+      navigate("/");
     } catch (error) {
       console.error(error);
       alert("Unable to log out.");
@@ -313,8 +317,9 @@ function AppContent() {
 
     try {
       await deleteAccount();
-
+      setMobileMenuOpen(false);
       alert("Your account has been deleted.");
+      navigate("/");
     } catch (error) {
       console.error(error);
 
