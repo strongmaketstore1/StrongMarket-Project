@@ -1,4 +1,4 @@
-export type ProductCategory = "templates" | "prompt-packs" | "guides";
+export type ProductCategory = "templates" | "prompt-packs" | "guides" | "ebooks" | "courses" | "design" | "music" | "other" | "Templates" | "Ebooks" | "Courses" | "Design" | "Music" | "Other";
 
 export interface Product {
   id: string;
@@ -11,6 +11,8 @@ export interface Product {
   category: ProductCategory;
   image: string;
   fileName?: string;
+  fileUrl?: string;
+  downloadUrl?: string;
   cloudinaryPublicId?: string;
   cloudinaryFileRef?: string;
   featured: boolean;
@@ -18,4 +20,7 @@ export interface Product {
   reviewCount: number;
   createdAt: string;
   merchantId?: string;
+  merchantEmail?: string;
+  status?: string;
+  rejectReason?: string;
 }
