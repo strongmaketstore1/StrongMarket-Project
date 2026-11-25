@@ -4,7 +4,7 @@ import { addDoc, collection } from "firebase/firestore";
 import { auth, db } from "../firebase";
 
 const CLOUD = "hvssq06f";
-const PRESET = "ml_default";
+const PRESET = "chilvo_unsigned";
 
 async function uploadToCloudinary(file: File, type: "image" | "raw") {
   const fd = new FormData();
