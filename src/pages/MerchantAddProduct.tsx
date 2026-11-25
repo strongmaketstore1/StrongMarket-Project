@@ -52,6 +52,7 @@ export default function MerchantAddProduct() {
         description: description.trim(),
         image: img.secure_url,
         fileName: productFile.name,
+        fileUrl: fileUp.secure_url, // ✅ FIXED - save the REAL file link
         cloudinaryFileRef: fileUp.public_id,
         merchantId: userId,
         merchantEmail: userEmail,
