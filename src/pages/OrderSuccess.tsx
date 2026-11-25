@@ -2,9 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import { useCart } from "../context/CartContext";
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
+import { doc, getDoc } from "firebase/firestore";
 import { getFirestoreOrder } from "../firestoreOrders";
-import type { Order } from "../types/order";
+import type { Order, OrderItem } from "../types/order";
+
+const BACKEND = "https://strongmarket-payment-server.onrender.com";
 
 export default function OrderSuccess() {
   const [searchParams] = useSearchParams();
@@ -26,46 +29,61 @@ export default function OrderSuccess() {
       "strongmarket-paystack-reference",
     );
 
-  async function getDownloadUrl(productId: string) {
+  // ✅ FIXED: Get real file link directly, no Backend needed for new orders
+  function buildUrlFromRef(ref: string): string | null {
+    if (!ref) return null;
+    if (ref.startsWith("http")) return ref;
+    return `https://res.cloudinary.com/hvssq06f/raw/upload/${ref}`;
+  }
+
+  async function getDownloadUrl(item: OrderItem): Promise<string | null> {
+    // 1. New orders: fileUrl saved in OrderItem at checkout
+    if (item.fileUrl && item.fileUrl.startsWith("http")) return item.fileUrl;
+    if (item.cloudinaryFileRef) {
+      const rebuilt = buildUrlFromRef(item.cloudinaryFileRef);
+      if (rebuilt) return rebuilt;
+    }
+    if (item.cloudinaryPublicId) {
+      const rebuilt = buildUrlFromRef(item.cloudinaryPublicId);
+      if (rebuilt) return rebuilt;
+    }
+
+    // 2. Old orders: no fileUrl in order, fetch it from the product itself
+    try {
+      const snap = await getDoc(doc(db, "products", item.productId));
+      if (snap.exists()) {
+        const p: any = snap.data();
+        if (typeof p.fileUrl === "string" && p.fileUrl.startsWith("http")) return p.fileUrl;
+        if (typeof p.cloudinaryFileRef === "string" && p.cloudinaryFileRef) {
+          const rebuilt = buildUrlFromRef(p.cloudinaryFileRef);
+          if (rebuilt) return rebuilt;
+        }
+      }
+    } catch (e) {
+      console.log("Could not load product for download", e);
+    }
+
+    // 3. Last fallback: Backend (for very old products)
     try {
       const user = auth.currentUser;
-
       if (!user) {
         alert("Please log in to download your product.");
         return null;
       }
-
       if (!reference) {
-        alert(
-          "This order does not have a valid payment reference.",
-        );
+        alert("This order does not have a valid payment reference.");
         return null;
       }
-
       const idToken = await user.getIdToken();
-
       const response = await fetch(
-        `https://strongmarket-payment-server.onrender.com/api/products/${encodeURIComponent(
-          productId,
-        )}/download?orderId=${encodeURIComponent(reference)}`,
-        {
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-          },
-        },
+        `${BACKEND}/api/products/${encodeURIComponent(item.productId)}/download?orderId=${encodeURIComponent(reference)}`,
+        { headers: { Authorization: `Bearer ${idToken}` } },
       );
-
       const result = await response.json();
-
-      if (
-        !response.ok ||
-        result?.success !== true ||
-        typeof result?.downloadUrl !== "string"
-      ) {
+      if (!response.ok || result?.success !== true || typeof result?.downloadUrl !== "string") {
         alert(result?.message || "Unable to download this product.");
         return null;
       }
-
       return result.downloadUrl as string;
     } catch (error) {
       console.error("Product download error:", error);
@@ -74,14 +92,12 @@ export default function OrderSuccess() {
     }
   }
 
-  async function downloadProduct(productId: string) {
-    const downloadUrl = await getDownloadUrl(productId);
+  async function downloadProduct(item: OrderItem) {
+    const downloadUrl = await getDownloadUrl(item);
     if (!downloadUrl) return;
-
-    // Use a real <a> tag so browser downloads instead of opening blank page
     const a = document.createElement("a");
     a.href = downloadUrl;
-    a.download = "";
+    a.download = item.fileName || item.productName || "";
     a.target = "_blank";
     a.rel = "noreferrer";
     document.body.appendChild(a);
@@ -89,15 +105,22 @@ export default function OrderSuccess() {
     a.remove();
   }
 
-  async function previewProduct(productId: string) {
-    const downloadUrl = await getDownloadUrl(productId);
+  async function previewProduct(item: OrderItem) {
+    const downloadUrl = await getDownloadUrl(item);
     if (!downloadUrl) return;
-
-    // DOCX / XLSX cannot preview directly in browser - use Google Docs Viewer
-    const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(
-      downloadUrl,
-    )}&embedded=true`;
-    window.open(viewerUrl, "_blank", "noopener,noreferrer");
+    const name = (item.fileName || item.productName || "").toLowerCase();
+    const isImageFile = /\.(png|jpg|jpeg|gif|webp|avif)$/.test(name);
+    if (isImageFile) {
+      window.open(downloadUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+    if (/\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt)$/.test(name)) {
+      const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(downloadUrl)}&embedded=true`;
+      window.open(viewerUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+    // ZIP / MP3 / MP4 / other - just open/download it
+    window.open(downloadUrl, "_blank", "noopener,noreferrer");
   }
 
   useEffect(() => {
@@ -146,7 +169,7 @@ export default function OrderSuccess() {
         const idToken = await user.getIdToken();
 
         const response = await fetch(
-          "https://strongmarket-payment-server.onrender.com/api/paystack/confirm",
+          `${BACKEND}/api/paystack/confirm`,
           {
             method: "POST",
             headers: {
@@ -257,13 +280,13 @@ export default function OrderSuccess() {
                 }}
               >
                 <button
-                  onClick={() => downloadProduct(item.productId)}
+                  onClick={() => downloadProduct(item)}
                 >
                   Download File ⬇️
                 </button>
 
                 <button
-                  onClick={() => previewProduct(item.productId)}
+                  onClick={() => previewProduct(item)}
                 >
                   Open / Preview File 👁️
                 </button>
