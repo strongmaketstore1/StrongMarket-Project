@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+bimport { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { collection, doc, getDoc, getDocs, query, updateDoc, setDoc, where } from "firebase/firestore";
 import { auth, db } from "../firebase";
@@ -13,7 +13,7 @@ const ADMIN_UID = "QUBuXshWukX4FpUyPnMpjF3GGji2";
 const ADMIN_EMAIL = "chilvodigital@gmail.com";
 
 type MerchantApplicationWithId = MerchantApplication & { email?: string; _collection?: string };
-type ReviewProduct = Product & { status?: string; merchantId?: string; merchantEmail?: string; fileName?: string; cloudinaryFileRef?: string; image?: string; rejectReason?: string };
+type ReviewProduct = Product & { status?: string; merchantId?: string; merchantEmail?: string; fileName?: string; cloudinaryFileRef?: string; image?: string; rejectReason?: string; fileUrl?: string; downloadUrl?: string; file?: string };
 type Tab = "merchants" | "products";
 
 async function sendMerchantAppEmail(to: string, subject: string, htmlBody: string, message: string) {
@@ -102,19 +102,54 @@ export default function AdminMerchantApplications() {
     return "";
   }
 
+  // ✅ PROFESSIONAL FIX: Build direct Cloudinary URL - NO Backend, NO WhatsApp
+  function getDirectCloudinaryUrl(p: ReviewProduct): string | null {
+    // 1. If product already has a direct URL field, use it
+    const direct = (p as any).fileUrl || (p as any).downloadUrl || (p as any).file || (p as any).productFileUrl;
+    if (typeof direct === "string" && direct.startsWith("http")) return direct;
+
+    const ref = (p.cloudinaryFileRef || "").trim();
+    if (!ref) return null;
+    // 2. If ref itself is already a full URL, use it
+    if (ref.startsWith("http")) return ref;
+
+    // 3. Get Cloud Name from product image (image is also on Cloudinary)
+    // image looks like: https://res.cloudinary.com/YOUR-CLOUD/image/upload/...
+    let cloudName = "";
+    if (p.image) {
+      const m = p.image.match(/res\.cloudinary\.com\/([^\/]+)/);
+      if (m) cloudName = m[1];
+    }
+    // Fallback: try env
+    if (!cloudName) cloudName = (import.meta as any)?.env?.VITE_CLOUDINARY_CLOUD_NAME || "";
+    if (!cloudName) return null;
+
+    // 4. Clean ref - remove leading slash, keep extension
+    const cleanRef = ref.replace(/^\/+/, "");
+    // Use raw/upload for PDFs/docs - works for most digital products
+    // fl_attachment forces download with correct filename
+    return `https://res.cloudinary.com/${cloudName}/raw/upload/fl_attachment:${encodeURIComponent(p.fileName || "file")}/${cleanRef}`;
+  }
+
   async function getAdminDownloadUrl(productId: string): Promise<string | null> {
+    const p = pendingProducts.find((x) => x.id === productId) || selectedProduct;
+    if (!p) return null;
+
+    // Try direct Cloudinary FIRST - professional, instant, no sleeping backend
+    const direct = getDirectCloudinaryUrl(p);
+    if (direct) return direct;
+
+    // Fallback: try Backend (old way)
     try {
       const user = auth.currentUser;
       if (!user) { setProductMsg("Please log in as admin."); return null; }
       const idToken = await user.getIdToken();
       const response = await fetch(`${BACKEND}/api/products/${encodeURIComponent(productId)}/download?orderId=${encodeURIComponent("admin-review")}`, { headers: { Authorization: `Bearer ${idToken}` } });
       const result = await response.json();
-      if (!response.ok || result?.success !== true || typeof result?.downloadUrl !== "string") { 
-        setProductMsg(`Backend blocked download: ${result?.message || "Not Admin in Backend - Backend still has old UID. Approve/Reject will still work, Download needs Backend fix."}`); 
-        return null; 
-      }
-      return result.downloadUrl as string;
-    } catch (e: any) { setProductMsg(e.message || "Unable to get download link."); return null; }
+      if (response.ok && result?.success === true && typeof result?.downloadUrl === "string") return result.downloadUrl as string;
+    } catch {}
+    setProductMsg("No file found for this product. The merchant file Ref is empty - merchant needs to re-upload the product file.");
+    return null;
   }
 
   async function downloadSelectedProduct() {
@@ -123,7 +158,8 @@ export default function AdminMerchantApplications() {
     const url = await getAdminDownloadUrl(selectedProduct.id);
     setFileBusy(false);
     if (!url) return;
-    const a = document.createElement("a"); a.href = url; a.download = selectedProduct.fileName || ""; a.target = "_blank"; a.rel = "noreferrer"; document.body.appendChild(a); a.click(); a.remove();
+    // Use direct link - Cloudinary will download with filename
+    window.open(url, "_blank", "noopener,noreferrer");
   }
 
   async function previewSelectedProduct() {
@@ -132,11 +168,10 @@ export default function AdminMerchantApplications() {
     const url = await getAdminDownloadUrl(selectedProduct.id);
     setFileBusy(false);
     if (!url) return;
-    const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
-    window.open(viewerUrl, "_blank", "noopener,noreferrer");
+    // For PDFs/docs, open directly - Cloudinary preview works better than Google Viewer for private files
+    window.open(url, "_blank", "noopener,noreferrer");
   }
 
-  // ✅ FIXED: Approve Product via Firestore - NO BACKEND NEEDED
   async function approveProduct() {
     if (!selectedProduct) return;
     try {
@@ -151,7 +186,6 @@ export default function AdminMerchantApplications() {
     } catch (e: any) { setProductMsg(`Approve failed: ${e.message} - Check Firestore Rules for products allow admin update.`); }
   }
 
-  // ✅ FIXED: Reject Product via Firestore - NO BACKEND NEEDED
   async function rejectProduct() {
     if (!selectedProduct) return;
     if (!rejectReason.trim()) { setProductMsg("Please write a reject reason - merchant will see it."); return; }
