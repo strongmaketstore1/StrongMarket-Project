@@ -1,262 +1,270 @@
-import { useState } from "react";
-import type { ChangeEvent, FormEvent } from "react";
-import { addDoc, collection, doc, getDoc } from "firebase/firestore";
+import { useEffect, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { collection, doc, getDoc, getDocs, query, updateDoc, setDoc, where } from "firebase/firestore";
 import { auth, db } from "../firebase";
-import { emailAdminNewProduct } from "../utils/email";
-import type { ProductCategory } from "../types/product";
+import { emailMerchantApproved, emailMerchantRejected } from "../utils/email";
+import type { MerchantApplication } from "../types/merchant";
+import type { Product } from "../types/product";
 
-const categories: { label: string; value: ProductCategory }[] = [
-  { label: "Templates", value: "templates" },
-  { label: "AI Prompt Packs", value: "prompt-packs" },
-  { label: "Guides", value: "guides" },
-];
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwJ9ao3k6Q_7-UiEO2NIfWrsQ96vP1yuOttIDXJEnA5YAHaafTmKAAmnteQqmTOICg/exec";
+const BACKEND = "https://strongmarket-payment-server.onrender.com";
 
-const ALLOWED_BY_CATEGORY: Record<ProductCategory, string[]> = {
-  templates: ["pdf", "docx", "xlsx", "pptx", "zip"],
-  "prompt-packs": ["pdf", "txt", "md", "docx", "json", "csv", "zip"],
-  guides: ["pdf", "epub", "docx", "txt"],
-};
+const ADMIN_UID = "QUBuXshWukX4FpUyPnMpjF3GGji2";
+const ADMIN_EMAIL = "chilvodigital@gmail.com";
 
-const ACCEPT_BY_CATEGORY: Record<ProductCategory, string> = {
-  templates: ".pdf,.docx,.xlsx,.pptx,.zip",
-  "prompt-packs": ".pdf,.txt,.md,.docx,.json,.csv,.zip",
-  guides: ".pdf,.epub,.docx,.txt",
-};
+type MerchantApplicationWithId = MerchantApplication & { email?: string; _collection?: string };
+type ReviewProduct = Product & { status?: string; merchantId?: string; merchantEmail?: string; fileName?: string; cloudinaryFileRef?: string; image?: string; rejectReason?: string };
+type Tab = "merchants" | "products";
 
-const MAX_FILE_SIZE = 20 * 1024 * 1024;
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
-
-function getExtension(fileName: string): string {
-  const parts = fileName.toLowerCase().split(".");
-  return parts.length > 1 ? parts[parts.length - 1] : "";
+async function sendMerchantAppEmail(to: string, subject: string, htmlBody: string, message: string) {
+  try {
+    await fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to_email: to, subject, message, htmlBody }) });
+  } catch (e) { console.log("Email failed", e); }
 }
 
-export default function MerchantAddProduct() {
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [shortDescription, setShortDescription] = useState("");
-  const [price, setPrice] = useState("");
-  const [category, setCategory] = useState<ProductCategory>("templates");
-  const [image, setImage] = useState("");
-  const [fileName, setFileName] = useState("");
-  const [cloudinaryFileRef, setCloudinaryFileRef] = useState("");
-  const [uploadingFile, setUploadingFile] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
+const proLayout = (title: string, body: string) => `<div style="font-family:Inter,Arial,sans-serif;background:#f6f7f9;padding:32px 16px;"><div style="max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.06);"><div style="background:#111827;padding:24px 32px;"><div style="color:#fff;font-size:24px;font-weight:800;">CHILVO<span style="color:#6366f1;">.</span></div><div style="color:#9ca3af;font-size:13px;margin-top:4px;">Digital Marketplace</div></div><div style="padding:32px;"><h2 style="margin:0 0 12px;font-size:22px;color:#111827;">${title}</h2>${body}</div><div style="padding:20px 32px;background:#f9fafb;color:#6b7280;font-size:12px;">© 2026 CHILVO • chilvodigital@gmail.com</div></div></div>`;
 
-  function changeCategory(value: ProductCategory) {
-    setCategory(value);
-    if (cloudinaryFileRef || fileName) {
-      setCloudinaryFileRef("");
-      setFileName("");
-      setMessage(`Category changed to ${value}. Please upload a new file for this category.`);
-    } else {
-      setMessage("");
-    }
+export default function AdminMerchantApplications() {
+  const [tab, setTab] = useState<Tab>("merchants");
+  const [applications, setApplications] = useState<MerchantApplicationWithId[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [merchantMsg, setMerchantMsg] = useState("");
+  const [pendingProducts, setPendingProducts] = useState<ReviewProduct[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<ReviewProduct | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [productMsg, setProductMsg] = useState("");
+  const [productsLoading, setProductsLoading] = useState(false);
+  const [fileBusy, setFileBusy] = useState(false);
+
+  async function loadApplications() {
+    try {
+      setError("");
+      const q = query(collection(db, "merchantApplications"), where("status", "==", "pending"));
+      const snap = await getDocs(q);
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data(), _collection: "merchantApplications" }) as MerchantApplicationWithId);
+      setApplications(list);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to load merchant applications.");
+    } finally { setLoading(false); }
   }
 
-  async function uploadProductFile(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (file.size > MAX_FILE_SIZE) {
-      setMessage("File is too large. Max size is 20MB.");
-      event.target.value = "";
-      return;
-    }
-    const ext = getExtension(file.name);
-    const allowed = ALLOWED_BY_CATEGORY[category];
-    if (!allowed.includes(ext)) {
-      setMessage(`Wrong file type for ${category}. Allowed: ${allowed.map((e) => "." + e).join(", ")} - You uploaded .${ext || "unknown"}`);
-      event.target.value = "";
-      return;
-    }
+  async function approveApplication(application: MerchantApplicationWithId) {
+    setMerchantMsg("");
+    try {
+      const collName = application._collection || "merchantApplications";
+      await updateDoc(doc(db, collName, application.id), { status: "approved", reviewedAt: new Date().toISOString() });
+      if (application.userId) {
+        await setDoc(doc(db, "users", application.userId), { role: "merchant", isMerchant: true, merchantApproved: true, merchantStatus: "approved", businessName: application.businessName, email: (application as any).email || (application as any).merchantEmail || "" }, { merge: true });
+      }
+      const merchantEmail = (application as any).email || (application as any).merchantEmail || "";
+      if (merchantEmail) {
+        await sendMerchantAppEmail(merchantEmail, "Your CHILVO Merchant Application is Approved ✅", proLayout("Your Merchant Application is Approved! 🎉", `<p style="color:#374151;line-height:1.6;">Congratulations!</p><p style="color:#374151;">Business: <b>${application.businessName}</b></p><p style="color:#374151;">You can now log in and start adding products to sell on CHILVO.</p>`), "Approved");
+      }
+      setMerchantMsg(`✅ Approved: ${application.businessName} - Email sent. They can now add products.`);
+      setApplications((current) => current.filter((item) => item.id !== application.id));
+    } catch (err) { setMerchantMsg(err instanceof Error ? err.message : "Unable to approve merchant application."); }
+  }
+
+  async function rejectMerchantApplication(application: MerchantApplicationWithId) {
+    setMerchantMsg("");
+    try {
+      const collName = application._collection || "merchantApplications";
+      await updateDoc(doc(db, collName, application.id), { status: "rejected", reviewedAt: new Date().toISOString() });
+      const merchantEmail = (application as any).email || (application as any).merchantEmail || "";
+      if (merchantEmail) {
+        await sendMerchantAppEmail(merchantEmail, "Update on your CHILVO Merchant Application", proLayout("Update on your application", `<p style="color:#374151;">Hi, thanks for applying with <b>${application.businessName}</b>.</p><p style="color:#374151;">We couldn't approve your merchant application at this time. Please review your business details and try again.</p>`), "Rejected");
+      }
+      setMerchantMsg(`❌ Rejected: ${application.businessName} - Email sent.`);
+      setApplications((current) => current.filter((item) => item.id !== application.id));
+    } catch (err) { setMerchantMsg(err instanceof Error ? err.message : "Unable to reject merchant application."); }
+  }
+
+  async function loadPendingProducts() {
+    setProductsLoading(true); setProductMsg("");
+    try {
+      const q = query(collection(db, "products"), where("status", "==", "pending"));
+      const snap = await getDocs(q);
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as ReviewProduct);
+      setPendingProducts(list);
+      if (list.length > 0) setSelectedProduct(list[0]); else setSelectedProduct(null);
+    } catch (e: any) { setProductMsg(e.message || "Failed to load pending products."); }
+    finally { setProductsLoading(false); }
+  }
+
+  async function getMerchantEmailForProduct(p: ReviewProduct): Promise<string> {
+    if (p.merchantEmail) return p.merchantEmail;
+    if (!p.merchantId) return "";
+    try {
+      const snap = await getDoc(doc(db, "users", p.merchantId));
+      if (snap.exists()) return snap.data().email || "";
+    } catch {}
+    return "";
+  }
+
+  async function getAdminDownloadUrl(productId: string): Promise<string | null> {
     try {
       const user = auth.currentUser;
-      if (!user) { setMessage("You must be logged in."); return; }
-      setUploadingFile(true);
-      setMessage("");
+      if (!user) { setProductMsg("Please log in as admin."); return null; }
       const idToken = await user.getIdToken();
-      const formData = new FormData();
-      formData.append("file", file);
-      const response = await fetch("https://strongmarket-payment-server.onrender.com/api/products/upload", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${idToken}` },
-        body: formData,
-      });
+      const response = await fetch(`${BACKEND}/api/products/${encodeURIComponent(productId)}/download?orderId=${encodeURIComponent("admin-review")}`, { headers: { Authorization: `Bearer ${idToken}` } });
       const result = await response.json();
-      if (!response.ok || result?.success !== true) {
-        setMessage(result?.message || "Unable to upload product file.");
-        return;
+      if (!response.ok || result?.success !== true || typeof result?.downloadUrl !== "string") { 
+        setProductMsg(`Backend blocked download: ${result?.message || "Not Admin in Backend - Backend still has old UID. Approve/Reject will still work, Download needs Backend fix."}`); 
+        return null; 
       }
-      if (!result.fileReference) {
-        setMessage("File reference missing. Please try again.");
-        return;
-      }
-      setCloudinaryFileRef(result.fileReference);
-      setFileName(result.fileName || file.name);
-      setMessage("Product file uploaded successfully.");
-    } catch (error) {
-      console.error("Product file upload error:", error);
-      setMessage(error instanceof Error ? `Upload error: ${error.message}` : "Unable to upload product file. Please try again.");
-    } finally {
-      setUploadingFile(false);
-    }
+      return result.downloadUrl as string;
+    } catch (e: any) { setProductMsg(e.message || "Unable to get download link."); return null; }
   }
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-    setMessage("");
-    setLoading(true);
+  async function downloadSelectedProduct() {
+    if (!selectedProduct) return;
+    setFileBusy(true);
+    const url = await getAdminDownloadUrl(selectedProduct.id);
+    setFileBusy(false);
+    if (!url) return;
+    const a = document.createElement("a"); a.href = url; a.download = selectedProduct.fileName || ""; a.target = "_blank"; a.rel = "noreferrer"; document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  async function previewSelectedProduct() {
+    if (!selectedProduct) return;
+    setFileBusy(true);
+    const url = await getAdminDownloadUrl(selectedProduct.id);
+    setFileBusy(false);
+    if (!url) return;
+    const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+    window.open(viewerUrl, "_blank", "noopener,noreferrer");
+  }
+
+  // ✅ FIXED: Approve Product via Firestore - NO BACKEND NEEDED
+  async function approveProduct() {
+    if (!selectedProduct) return;
     try {
-      const user = auth.currentUser;
-      if (!user) { setMessage("You must be logged in."); return; }
-      const userSnapshot = await getDoc(doc(db, "users", user.uid));
-      if (!userSnapshot.exists() || userSnapshot.data().merchantStatus !== "approved") {
-        setMessage("Only approved merchants can add products.");
-        return;
+      setProductMsg("Approving...");
+      await updateDoc(doc(db, "products", selectedProduct.id), { status: "approved", reviewedAt: new Date().toISOString(), rejectReason: "" });
+      const merchantEmail = await getMerchantEmailForProduct(selectedProduct);
+      if (merchantEmail) {
+        try { await emailMerchantApproved(merchantEmail, selectedProduct.name); } catch (e) { console.log("Approve email failed", e); }
       }
-      if (!name.trim()) { setMessage("Please enter a product name."); return; }
-      if (!image.trim()) { setMessage("Please upload a product image first."); return; }
-      if (!cloudinaryFileRef.trim() || !fileName.trim()) {
-        setMessage("Please upload the digital product file first.");
-        return;
-      }
-      const finalExt = getExtension(fileName);
-      const allowed = ALLOWED_BY_CATEGORY[category];
-      if (!allowed.includes(finalExt)) {
-        setMessage(`This file (.${finalExt}) is not allowed for ${category}. Allowed: ${allowed.map((e) => "." + e).join(", ")}. Please upload a new file.`);
-        return;
-      }
-      if (!Number.isFinite(Number(price)) || Number(price) <= 0) {
-        setMessage("Enter a valid price greater than zero.");
-        return;
-      }
-      const productSlug = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-      await addDoc(collection(db, "products"), {
-        name: name.trim(),
-        slug: productSlug,
-        description: description.trim(),
-        shortDescription: shortDescription.trim(),
-        price: Number(price),
-        currency: "USD",
-        category,
-        image: image.trim(),
-        fileName: fileName.trim(),
-        cloudinaryFileRef: cloudinaryFileRef.trim(),
-        featured: false,
-        rating: 0,
-        reviewCount: 0,
-        createdAt: new Date().toISOString(),
-        merchantId: user.uid,
-        merchantEmail: user.email || "",
-        status: "pending",
-      });
-
-      // Professional email to Admin - no bell, no local notification
-      try {
-        await emailAdminNewProduct("chilvodigital@gmail.com", name.trim(), `$${price} USD`, user.email || "Unknown merchant");
-      } catch (e) {
-        console.log("Email failed, but product was saved", e);
-      }
-
-      setMessage("Product submitted for review. It will appear in Shop after Admin approves it.");
-      setName("");
-      setDescription("");
-      setShortDescription("");
-      setPrice("");
-      setCategory("templates");
-      setImage("");
-      setFileName("");
-      setCloudinaryFileRef("");
-    } catch (error) {
-      console.error("Add product error:", error);
-      setMessage(error instanceof Error ? error.message : "Unable to add product. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+      setProductMsg(`✅ Approved: ${selectedProduct.name} - Now live in Shop. Email sent to merchant.`);
+      setSelectedProduct(null); setRejectReason(""); loadPendingProducts();
+    } catch (e: any) { setProductMsg(`Approve failed: ${e.message} - Check Firestore Rules for products allow admin update.`); }
   }
 
-  const allowedForThisCategory = ALLOWED_BY_CATEGORY[category];
-  const inputStyle: React.CSSProperties = { width: "100%", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e5e7eb", fontSize: "14px", outline: "none", background: "#fff", boxSizing: "border-box" };
-  const labelStyle: React.CSSProperties = { display: "block", fontSize: "13px", fontWeight: 600, color: "#111827", marginBottom: "6px" };
+  // ✅ FIXED: Reject Product via Firestore - NO BACKEND NEEDED
+  async function rejectProduct() {
+    if (!selectedProduct) return;
+    if (!rejectReason.trim()) { setProductMsg("Please write a reject reason - merchant will see it."); return; }
+    try {
+      setProductMsg("Rejecting...");
+      await updateDoc(doc(db, "products", selectedProduct.id), { status: "rejected", rejectReason: rejectReason.trim(), reviewedAt: new Date().toISOString() });
+      const merchantEmail = await getMerchantEmailForProduct(selectedProduct);
+      if (merchantEmail) {
+        try { await emailMerchantRejected(merchantEmail, selectedProduct.name, rejectReason.trim()); } catch (e) { console.log("Reject email failed", e); }
+      }
+      setProductMsg(`❌ Rejected: ${selectedProduct.name} - Email sent with reason.`);
+      setSelectedProduct(null); setRejectReason(""); loadPendingProducts();
+    } catch (e: any) { setProductMsg(`Reject failed: ${e.message} - Check Firestore Rules for products allow admin update.`); }
+  }
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (!currentUser) { setError("You must be logged in."); setLoading(false); return; }
+      if (currentUser.uid !== ADMIN_UID && currentUser.email !== ADMIN_EMAIL) {
+        setError("Access denied. Admins only.");
+        setLoading(false);
+        return;
+      }
+      loadApplications(); loadPendingProducts();
+    });
+    return () => unsubscribe();
+  }, []);
+
+  function getExt(name: string) { return name.split(".").pop()?.toUpperCase() || "UNKNOWN"; }
+
+  if (loading) return (<main style={{ padding: "32px", fontFamily: "Inter, Arial" }}><h1>Admin Panel</h1><p>Loading...</p></main>);
 
   return (
-    <main style={{ maxWidth: "720px", margin: "0 auto", padding: "32px 16px", fontFamily: "Inter, Arial, sans-serif" }}>
-      <div style={{ background: "#111827", borderRadius: "16px", padding: "24px", color: "#fff", marginBottom: "24px" }}>
-        <h1 style={{ margin: 0, fontSize: "26px", letterSpacing: "-0.5px" }}>Add Product</h1>
-        <p style={{ margin: "8px 0 0", color: "#9ca3af", fontSize: "14px" }}>Add a digital product to CHILVO. It will be reviewed before going live.</p>
+    <main style={{ padding: "20px", maxWidth: "1100px", margin: "0 auto", fontFamily: "Inter, Arial, sans-serif" }}>
+      <div style={{ background: "#111827", borderRadius: "16px", padding: "24px", color: "#fff", marginBottom: "20px" }}>
+        <h1 style={{ margin: 0, fontSize: "26px" }}>Admin Panel</h1>
+        <p style={{ margin: "8px 0 0", color: "#9ca3af", fontSize: "14px" }}>Review merchants and products. Approvals send a professional email automatically.</p>
+      </div>
+      {error && <p style={{ background: "#fde8e8", padding: "10px", borderRadius: "8px" }}>{error}</p>}
+      <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+        <button onClick={() => setTab("merchants")} style={{ flex: 1, padding: "14px", borderRadius: "12px", border: "none", cursor: "pointer", background: tab === "merchants" ? "#111827" : "#eef0f2", color: tab === "merchants" ? "#fff" : "#111", fontWeight: 700 }}>Merchant Applications ({applications.length})</button>
+        <button onClick={() => setTab("products")} style={{ flex: 1, padding: "14px", borderRadius: "12px", border: "none", cursor: "pointer", background: tab === "products" ? "#111827" : "#eef0f2", color: tab === "products" ? "#fff" : "#111", fontWeight: 700 }}>Review Products ({pendingProducts.length} pending)</button>
       </div>
 
-      <form onSubmit={handleSubmit} style={{ background: "#fff", border: "1px solid #eef0f2", borderRadius: "16px", padding: "24px", display: "flex", flexDirection: "column", gap: "18px", boxShadow: "0 4px 20px rgba(0,0,0,0.04)" }}>
+      {tab === "merchants" && (
         <div>
-          <label htmlFor="name" style={labelStyle}>Product Name</label>
-          <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required style={inputStyle} placeholder="e.g. Ultimate Notion Template Pack" />
+          <h2>Merchant Applications</h2>
+          <p style={{ color: "#666" }}>If business looks real, Approve. Approve gives them access to Add Product + sends email.</p>
+          {merchantMsg && <p style={{ background: "#eef2ff", padding: "12px", borderRadius: "10px" }}>{merchantMsg}</p>}
+          {applications.length === 0 ? <p>No pending merchant applications.</p> : applications.map((application) => (
+            <article key={application.id} style={{ border: "1px solid #eef0f2", padding: "16px", borderRadius: "14px", marginBottom: "12px", background: "#fff", boxShadow: "0 2px 10px rgba(0,0,0,0.03)" }}>
+              <h3 style={{ margin: "0 0 6px" }}>{application.businessName}</h3>
+              <p style={{ margin: "0 0 6px", color: "#374151" }}>{application.businessDescription}</p>
+              <p><strong>Status:</strong> {application.status}</p>
+              <p><strong>Email:</strong> {(application as any).email || "No email saved"}</p>
+              <p><strong>User ID:</strong> {application.userId}</p>
+              <div style={{ display: "flex", gap: "10px", marginTop: "12px" }}>
+                <button type="button" onClick={() => approveApplication(application)} style={{ flex: 1, background: "#1a7f37", color: "#fff", padding: "14px", borderRadius: "10px", border: "none", fontWeight: 700, cursor: "pointer" }}>✅ Approve - Give Add Product Access</button>
+                <button type="button" onClick={() => rejectMerchantApplication(application)} style={{ flex: 1, background: "#d1242f", color: "#fff", padding: "14px", borderRadius: "10px", border: "none", fontWeight: 700, cursor: "pointer" }}>❌ Reject</button>
+              </div>
+            </article>
+          ))}
         </div>
+      )}
+
+      {tab === "products" && (
         <div>
-          <label htmlFor="shortDescription" style={labelStyle}>Short Description</label>
-          <input id="shortDescription" type="text" value={shortDescription} onChange={(e) => setShortDescription(e.target.value)} required style={inputStyle} placeholder="One-line summary for Shop cards" />
-        </div>
-        <div>
-          <label htmlFor="description" style={labelStyle}>Description</label>
-          <textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} required style={{ ...inputStyle, minHeight: "110px", resize: "vertical" }} placeholder="Full details, what's inside, who it's for..." />
-        </div>
-        <div style={{ display: "flex", gap: "16px" }}>
-          <div style={{ flex: 1 }}>
-            <label htmlFor="price" style={labelStyle}>Price (USD)</label>
-            <input id="price" type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} required style={inputStyle} placeholder="19.00" />
+          <h2>Review Products</h2>
+          <p style={{ color: "#666" }}>Open the file and read it before you approve. If it's a bank statement, personal doc, or doesn't match category - REJECT it.</p>
+          {productMsg && <p style={{ background: "#eef2ff", padding: "12px", borderRadius: "10px" }}>{productMsg}</p>}
+          {productsLoading && <p>Loading pending products...</p>}
+          {!productsLoading && pendingProducts.length === 0 && <p>No pending products. All reviewed ✅</p>}
+          <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", alignItems: "flex-start" }}>
+            <div style={{ flex: 1, minWidth: "280px" }}>
+              {pendingProducts.map((p) => (
+                <button key={p.id} onClick={() => { setSelectedProduct(p); setRejectReason(""); setProductMsg(""); }} style={{ display: "block", width: "100%", textAlign: "left", padding: "12px", marginBottom: "8px", borderRadius: "12px", cursor: "pointer", border: selectedProduct?.id === p.id ? "2px solid #111827" : "1px solid #e5e7eb", background: selectedProduct?.id === p.id ? "#f0f0ff" : "#fff" }}>
+                  <strong>{p.name}</strong><br /><span>{p.category} • ${p.price} • {getExt(p.fileName || "")}</span><br /><span style={{ fontSize: "12px", color: "#666" }}>Merchant: {(p.merchantEmail || p.merchantId?.slice(0, 8))}...</span>
+                </button>
+              ))}
+            </div>
+            {selectedProduct && (
+              <div style={{ flex: 2, minWidth: "320px", border: "1px solid #eef0f2", borderRadius: "14px", padding: "18px", background: "#fff" }}>
+                <h3 style={{ marginTop: 0 }}>{selectedProduct.name}</h3>
+                {selectedProduct.image && <img src={selectedProduct.image} alt={selectedProduct.name} style={{ width: "100%", maxHeight: "250px", objectFit: "cover", borderRadius: "12px" }} />}
+                <p><strong>Category:</strong> {selectedProduct.category}</p>
+                <p><strong>Price:</strong> ${selectedProduct.price} USD</p>
+                <p><strong>Merchant Email:</strong> {selectedProduct.merchantEmail || "Will fetch from user profile"}</p>
+                <p><strong>Merchant ID:</strong> {selectedProduct.merchantId}</p>
+                <p><strong>Short Description:</strong><br />{selectedProduct.shortDescription}</p>
+                <p><strong>Full Description:</strong><br />{selectedProduct.description}</p>
+                <div style={{ background: "#f9fafb", padding: "14px", borderRadius: "12px", margin: "12px 0" }}>
+                  <p><strong>📁 File to Review:</strong></p>
+                  <p>File Name: {selectedProduct.fileName}</p>
+                  <p>File Type: {getExt(selectedProduct.fileName || "")}</p>
+                  <p style={{ fontSize: "12px", color: "#666" }}>Ref: {selectedProduct.cloudinaryFileRef}</p>
+                  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                    <button onClick={previewSelectedProduct} disabled={fileBusy} style={{ background: "#111827", color: "#fff", padding: "10px 16px", borderRadius: "10px", border: "none", cursor: "pointer" }}>{fileBusy ? "Getting link..." : "Open / Preview File 🔍"}</button>
+                    <button onClick={downloadSelectedProduct} disabled={fileBusy} style={{ background: "#fff", color: "#111", padding: "10px 16px", borderRadius: "10px", border: "1px solid #111", cursor: "pointer" }}>{fileBusy ? "Getting link..." : "Download File ⬇️"}</button>
+                  </div>
+                </div>
+                <div>
+                  <label><strong>Reject Reason:</strong></label>
+                  <textarea value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} placeholder="e.g. This is a bank statement, not a Template. Please upload a real CV Template." style={{ width: "100%", minHeight: "70px", padding: "12px", borderRadius: "10px", marginTop: "6px", boxSizing: "border-box", border: "1px solid #e5e7eb" }} />
+                </div>
+                <div style={{ display: "flex", gap: "10px", marginTop: "14px" }}>
+                  <button onClick={approveProduct} style={{ flex: 1, background: "#1a7f37", color: "#fff", padding: "14px", borderRadius: "10px", border: "none", fontWeight: 700, cursor: "pointer" }}>✅ Approve - Show in Shop + Email Merchant</button>
+                  <button onClick={rejectProduct} style={{ flex: 1, background: "#d1242f", color: "#fff", padding: "14px", borderRadius: "10px", border: "none", fontWeight: 700, cursor: "pointer" }}>❌ Reject + Email Reason</button>
+                </div>
+              </div>
+            )}
           </div>
-          <div style={{ flex: 1 }}>
-            <label htmlFor="category" style={labelStyle}>Category</label>
-            <select id="category" value={category} onChange={(e) => changeCategory(e.target.value as ProductCategory)} style={inputStyle}>
-              {categories.map((item) => (<option key={item.value} value={item.value}>{item.label}</option>))}
-            </select>
-          </div>
         </div>
-        <p style={{ fontSize: "13px", color: "#666", margin: "-10px 0 0" }}>Allowed for {category}: {allowedForThisCategory.map((e) => "." + e).join(", ")} - Max 20MB</p>
-
-        <div>
-          <label htmlFor="image" style={labelStyle}>Product Image</label>
-          <input id="image" type="file" accept="image/png,image/jpeg,image/webp" style={inputStyle} onChange={async (event) => {
-            const file = event.target.files?.[0];
-            if (!file) return;
-            if (file.size > MAX_IMAGE_SIZE) { setMessage("Image is too large. Max size is 5MB."); event.target.value = ""; return; }
-            try {
-              const user = auth.currentUser;
-              if (!user) { setMessage("You must be logged in."); return; }
-              setUploadingImage(true);
-              setMessage("Uploading product image...");
-              const idToken = await user.getIdToken();
-              const formData = new FormData();
-              formData.append("file", file);
-              const response = await fetch("https://strongmarket-payment-server.onrender.com/api/products/upload", { method: "POST", headers: { Authorization: `Bearer ${idToken}` }, body: formData });
-              const result = await response.json();
-              if (!response.ok || result?.success !== true) { setMessage(result?.message || "Unable to upload product image."); return; }
-              setImage(result.secureUrl || "");
-              setMessage("Product image uploaded successfully.");
-            } catch (error) {
-              console.error("Product image upload error:", error);
-              setMessage(error instanceof Error ? error.message : "Unable to upload product image.");
-            } finally { setUploadingImage(false); }
-          }} />
-          {image && <img src={image} alt="Preview" style={{ width: "100%", height: "180px", objectFit: "cover", borderRadius: "12px", marginTop: "10px" }} />}
-        </div>
-
-        <div>
-          <label htmlFor="fileName" style={labelStyle}>Digital File Name</label>
-          <input id="fileName" type="text" value={fileName} onChange={(e) => setFileName(e.target.value)} placeholder="my-product.pdf" readOnly style={{ ...inputStyle, background: "#f9fafb" }} />
-        </div>
-        <div>
-          <label htmlFor="productFile" style={labelStyle}>Digital Product File</label>
-          <input id="productFile" type="file" accept={ACCEPT_BY_CATEGORY[category]} onChange={uploadProductFile} style={inputStyle} />
-          {fileName && <p style={{ fontSize: "13px", color: "#1a7f37" }}>Uploaded: {fileName}</p>}
-        </div>
-
-        <button type="submit" disabled={loading || uploadingFile || uploadingImage} style={{ background: "#6366f1", color: "#fff", border: "none", padding: "14px", borderRadius: "10px", fontWeight: 700, fontSize: "15px", cursor: "pointer", opacity: loading || uploadingFile || uploadingImage ? 0.6 : 1 }}>
-          {uploadingImage ? "Uploading Image..." : uploadingFile ? "Uploading File..." : loading ? "Adding Product..." : "Add Product → Submit for Review"}
-        </button>
-      </form>
-      {message && <p style={{ marginTop: "16px", background: "#f0fdf4", border: "1px solid #bbf7d0", padding: "12px 16px", borderRadius: "10px", fontSize: "14px" }}>{message}</p>}
+      )}
     </main>
   );
 }
