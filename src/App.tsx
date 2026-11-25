@@ -46,6 +46,10 @@ import {
   useCart,
 } from "./context/CartContext";
 
+// ✅ NEW ADMIN - chilvodigital@gmail.com
+const ADMIN_UID = "QUBuXshWukX4FpUyPnMpjF3GGji2";
+const ADMIN_EMAIL = "chilvodigital@gmail.com";
+
 function Home({ isDark }: { isDark: boolean }) {
   const [featuredProducts, setFeaturedProducts] =
     useState<Product[]>([]);
@@ -202,7 +206,6 @@ function AppContent() {
     useState<string>("none");
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // DARK / LIGHT MODE - ONLY IN MENU
   const [isDark, setIsDark] = useState(() => {
     try {
       return localStorage.getItem("chilvo-theme") === "dark";
@@ -225,14 +228,12 @@ function AppContent() {
     return () => { document.body.style.overflow = ""; };
   }, [mobileMenuOpen]);
 
-  // ✅ FIXED: Live listener + accepts merchantStatus OR role OR isMerchant
   useEffect(() => {
     let unsubUser: (() => void) | undefined;
 
     const unsubscribeAuth = onAuthStateChanged(
       auth,
       (currentUser) => {
-        // Clean up previous user listener when user changes
         if (unsubUser) {
           unsubUser();
           unsubUser = undefined;
@@ -240,9 +241,10 @@ function AppContent() {
 
         setUser(currentUser);
 
+        // ✅ FIXED: New admin chilvodigital
         setIsAdmin(
-          currentUser?.uid ===
-            "K2XHC9W2xxPcdEkjrtPdBAUjAjy1",
+          currentUser?.uid === ADMIN_UID ||
+          currentUser?.email === ADMIN_EMAIL,
         );
 
         if (!currentUser) {
@@ -477,7 +479,6 @@ function AppContent() {
               Privacy Policy
             </Link>
 
-            {/* DARK MODE - ONLY HERE IN MENU */}
             <button
               type="button"
               onClick={() => setIsDark(!isDark)}
