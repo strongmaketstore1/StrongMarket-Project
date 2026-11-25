@@ -12,7 +12,7 @@ const ADMIN_UID = "QUBuXshWukX4FpUyPnMpjF3GGji2";
 const ADMIN_EMAIL = "chilvodigital@gmail.com";
 
 type MerchantApplicationWithId = MerchantApplication & { email?: string; _collection?: string };
-type ReviewProduct = Product & { status?: string; merchantId?: string; merchantEmail?: string; fileName?: string; cloudinaryFileRef?: string; image?: string; rejectReason?: string };
+type ReviewProduct = Product & { status?: string; merchantId?: string; merchantEmail?: string; fileName?: string; fileUrl?: string; cloudinaryFileRef?: string; image?: string; rejectReason?: string };
 type Tab = "merchants" | "products";
 
 async function sendMerchantAppEmail(to: string, subject: string, htmlBody: string, message: string) {
@@ -90,40 +90,28 @@ export default function AdminMerchantApplications() {
     return "";
   }
 
-  // ✅ FIXED: Use direct image/file URL first, only use Backend as fallback
+  // ✅ FIXED: Always return the PRODUCT FILE, never the cover image
   function getDirectUrl(p: ReviewProduct): string | null {
-    const candidates = [
-      (p as any).image,
-      (p as any).cloudinaryFileRef,
-      (p as any).fileUrl,
-      (p as any).downloadUrl,
-      (p as any).fileURL,
-    ];
-    for (const c of candidates) {
-      if (typeof c === "string" && c.startsWith("http")) return c;
+    // 1. New products: fileUrl saved by Add Product
+    const fileUrl = (p as any).fileUrl || (p as any).downloadUrl || (p as any).fileURL;
+    if (typeof fileUrl === "string" && fileUrl.startsWith("http")) return fileUrl;
+    // 2. Old products: only have public_id, rebuild Cloudinary raw link
+    const ref = (p as any).cloudinaryFileRef;
+    if (typeof ref === "string" && ref.startsWith("http")) return ref;
+    if (typeof ref === "string" && ref) {
+      return `https://res.cloudinary.com/hvssq06f/raw/upload/${ref}`;
     }
+    // 3. No file link at all - do NOT fall back to image
     return null;
   }
 
   async function getAdminDownloadUrl(productId: string): Promise<string | null> {
-    // 1. Try direct link first - instant, no Backend needed
+    // 1. Try direct product file first - instant, no Backend needed
     const direct = selectedProduct ? getDirectUrl(selectedProduct) : null;
     if (direct) { setProductMsg(""); return direct; }
-    // 2. Fallback to Backend if no direct link saved
-    try {
-      const user = auth.currentUser;
-      if (!user) { setProductMsg("Please log in as admin."); return null; }
-      setProductMsg("Getting file link from Backend... please wait (Backend may wake up in 30s)...");
-      const idToken = await user.getIdToken();
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 45000);
-      const response = await fetch(`${BACKEND}/api/products/${encodeURIComponent(productId)}/download?orderId=${encodeURIComponent("admin-review")}`, { headers: { Authorization: `Bearer ${idToken}` }, signal: controller.signal });
-      clearTimeout(timeout);
-      const result = await response.json();
-      if (!response.ok || result?.success !== true || typeof result?.downloadUrl !== "string") { setProductMsg(`Download blocked by Backend: ${result?.message || "Backend still has OLD Admin UID. Approve/Reject will still work - only Download needs Backend fix."}`); return null; }
-      setProductMsg("");
-      return result.downloadUrl as string;
-    } catch (e: any) { setProductMsg(e.name === "AbortError" ? "Backend is sleeping / too slow. Try again in 1 min." : (e.message || "Unable to get download link.")); return null; }
+    // 2. No direct file - tell admin clearly, don't open image
+    setProductMsg("⚠️ No product file link saved for this product. This product was uploaded before the fix. Ask merchant to re-upload, or check its cloudinaryFileRef in Firestore.");
+    return null;
   }
 
   async function downloadSelectedProduct() {
@@ -141,16 +129,19 @@ export default function AdminMerchantApplications() {
     const url = await getAdminDownloadUrl(selectedProduct.id);
     setFileBusy(false);
     if (!url) return;
-    // If it's an image, open directly. If it's a PDF/doc, use Google Viewer.
-    const isImage = /\.(png|jpg|jpeg|gif|webp|avif)(\?|$)/i.test(url) || url.includes("image/upload");
-    if (isImage) {
+    // Decide by fileName, not by URL - fileName is the real file type
+    const name = (selectedProduct.fileName || "").toLowerCase();
+    const isImageFile = /\.(png|jpg|jpeg|gif|webp|avif)$/.test(name);
+    if (isImageFile) {
       window.open(url, "_blank", "noopener,noreferrer");
-    } else {
+    } else if (/\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt)$/.test(name)) {
       window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`, "_blank", "noopener,noreferrer");
+    } else {
+      // ZIP / MP3 / MP4 / other - can't preview in viewer, just open/download it
+      window.open(url, "_blank", "noopener,noreferrer");
     }
   }
 
-  // ✅ FIXED - NO BACKEND, Firestore only, instant
   async function approveProduct() {
     if (!selectedProduct) { setProductMsg("Click a product on the left first."); return; }
     if (actionBusy) return;
@@ -166,7 +157,6 @@ export default function AdminMerchantApplications() {
     finally { setActionBusy(false); }
   }
 
-  // ✅ FIXED - NO BACKEND, Firestore only
   async function rejectProduct() {
     if (!selectedProduct) { setProductMsg("Click a product on the left first."); return; }
     if (!rejectReason.trim()) { setProductMsg("⚠️ Please write a reject reason first."); return; }
