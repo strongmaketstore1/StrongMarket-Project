@@ -3,8 +3,8 @@ import { onAuthStateChanged } from "firebase/auth";
 import { addDoc, collection } from "firebase/firestore";
 import { auth, db } from "../firebase";
 
-const CLOUD = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "";
-const PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "";
+const CLOUD = "hvssq06f";
+const PRESET = "ml_default";
 
 async function uploadToCloudinary(file: File, type: "image" | "raw") {
   const fd = new FormData();
@@ -73,7 +73,6 @@ export default function MerchantAddProduct() {
       <h1>Add Product</h1>
       <p style={{ color: "#666" }}>Upload your product. Admin will review it before it goes live.</p>
       {msg && <p style={{ background: "#eef2ff", padding: "12px", borderRadius: "10px" }}>{msg}</p>}
-      {!CLOUD || !PRESET ? <p style={{ background: "#fef3c7", padding: "12px", borderRadius: "10px" }}>Missing Cloudinary settings in .env - VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET</p> : null}
       <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
         <label><strong>Product Name</strong><input style={input} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Professional CV Template" /></label>
         <label><strong>Category</strong><select style={input} value={category} onChange={(e) => setCategory(e.target.value)}><option>Templates</option><option>Ebooks</option><option>Courses</option><option>Design</option><option>Music</option><option>Other</option></select></label>
