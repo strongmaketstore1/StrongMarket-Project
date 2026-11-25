@@ -90,7 +90,26 @@ export default function AdminMerchantApplications() {
     return "";
   }
 
+  // ✅ FIXED: Use direct image/file URL first, only use Backend as fallback
+  function getDirectUrl(p: ReviewProduct): string | null {
+    const candidates = [
+      (p as any).image,
+      (p as any).cloudinaryFileRef,
+      (p as any).fileUrl,
+      (p as any).downloadUrl,
+      (p as any).fileURL,
+    ];
+    for (const c of candidates) {
+      if (typeof c === "string" && c.startsWith("http")) return c;
+    }
+    return null;
+  }
+
   async function getAdminDownloadUrl(productId: string): Promise<string | null> {
+    // 1. Try direct link first - instant, no Backend needed
+    const direct = selectedProduct ? getDirectUrl(selectedProduct) : null;
+    if (direct) { setProductMsg(""); return direct; }
+    // 2. Fallback to Backend if no direct link saved
     try {
       const user = auth.currentUser;
       if (!user) { setProductMsg("Please log in as admin."); return null; }
@@ -122,7 +141,13 @@ export default function AdminMerchantApplications() {
     const url = await getAdminDownloadUrl(selectedProduct.id);
     setFileBusy(false);
     if (!url) return;
-    window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`, "_blank", "noopener,noreferrer");
+    // If it's an image, open directly. If it's a PDF/doc, use Google Viewer.
+    const isImage = /\.(png|jpg|jpeg|gif|webp|avif)(\?|$)/i.test(url) || url.includes("image/upload");
+    if (isImage) {
+      window.open(url, "_blank", "noopener,noreferrer");
+    } else {
+      window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`, "_blank", "noopener,noreferrer");
+    }
   }
 
   // ✅ FIXED - NO BACKEND, Firestore only, instant
