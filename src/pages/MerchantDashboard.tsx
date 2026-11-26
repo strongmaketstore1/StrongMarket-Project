@@ -235,7 +235,7 @@ export default function MerchantDashboard() {
 
         <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "14px" }}>
           {storeLogoUrl ? (
-            <img src={storeLogoUrl} alt="Store logo" style={{ width: "72px", height: "72px", borderRadius: "50%", objectFit: "cover", border: "1px solid #eee" }} />
+            <img src={storeLogoUrl} alt="Store logo" style={{ width: "72px", height: "72px", borderRadius: "12px", objectFit: "contain", background: "#fff", border: "1px solid #eee", padding: "4px", boxSizing: "border-box" }} />
           ) : (
             <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: "#0a2540", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px", fontWeight: 800, flexShrink: 0 }}>
               {(storeName || "S").charAt(0).toUpperCase()}
