@@ -385,12 +385,12 @@ function AppContent() {
             className="logo"
             to="/"
             onClick={() => setMobileMenuOpen(false)}
-            style={{ flexShrink: 0 }}
+            style={{ flexShrink: 0, display: "flex", alignItems: "center" }}
           >
             <img
               src="/StrongMarket-Project/chilvo-logo-1.png"
               alt="CHILVO"
-              style={{ height: "32px", width: "auto", display: "block" }}
+              style={{ height: "42px", width: "auto", display: "block" }}
             />
           </Link>
 
@@ -551,7 +551,7 @@ function AppContent() {
               <img
                 src="/StrongMarket-Project/chilvo-logo-1.png"
                 alt="CHILVO"
-                style={{ height: "32px", width: "auto" }}
+                style={{ height: "38px", width: "auto" }}
               />
             </Link>
 
