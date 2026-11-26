@@ -16,8 +16,20 @@ const categories: {
 }[] = [
   { label: "Templates", value: "templates" },
   { label: "AI Prompt Packs", value: "prompt-packs" },
-  { label: "Guides", value: "guides" },
+  { label: "Ebooks", value: "ebooks" },
+  { label: "Design", value: "design" },
+  { label: "Music", value: "music" },
 ];
+
+function normalizeCategory(raw: any): ProductCategory {
+  const s = String(raw || "").toLowerCase().trim();
+  if (s === "templates" || s === "template") return "templates";
+  if (s === "prompt-packs" || s === "prompt-pack" || s === "ai prompt packs") return "prompt-packs";
+  if (s === "ebooks" || s === "ebook" || s === "guides" || s === "guide" || s === "courses" || s === "course") return "ebooks";
+  if (s === "design") return "design";
+  if (s === "music") return "music";
+  return "templates";
+}
 
 export default function MerchantEditProduct() {
   const { productId } = useParams();
@@ -29,6 +41,7 @@ export default function MerchantEditProduct() {
   const [price, setPrice] = useState("");
   const [category, setCategory] =
     useState<ProductCategory>("templates");
+  const [license, setLicense] = useState("personal");
   const [image, setImage] = useState("");
   const [fileName, setFileName] = useState("");
   // FIXED: Track status + reason to show banner
@@ -77,7 +90,8 @@ export default function MerchantEditProduct() {
         setDescription(data.description || "");
         setShortDescription(data.shortDescription || "");
         setPrice(String(data.price ?? ""));
-        setCategory(data.category || "templates");
+        setCategory(normalizeCategory(data.category));
+        setLicense(data.license || "personal");
         setImage(data.image || "");
         setFileName(data.fileName || "");
         // FIXED: Load status
@@ -136,6 +150,7 @@ export default function MerchantEditProduct() {
         price: Number(price),
         currency: "NGN",
         category,
+        license: category === "music" ? license : "",
         image: image.trim(),
         fileName: fileName.trim(),
         status: "pending", // <-- Goes back to Admin queue
@@ -254,6 +269,20 @@ export default function MerchantEditProduct() {
             ))}
           </select>
         </div>
+
+        {category === "music" && (
+          <div>
+            <label htmlFor="license">License - For Music Only</label>
+            <select
+              id="license"
+              value={license}
+              onChange={(event) => setLicense(event.target.value)}
+            >
+              <option value="personal">Personal - Listen only</option>
+              <option value="commercial">Commercial - Use in your song / content</option>
+            </select>
+          </div>
+        )}
 
         <div>
           <label htmlFor="image">Product Image</label>
