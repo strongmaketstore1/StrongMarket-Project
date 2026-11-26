@@ -99,8 +99,8 @@ function Home({ isDark }: { isDark: boolean }) {
           </h1>
 
           <p className="hero-text" style={{ fontSize: "14px", lineHeight: "1.6", color: subText, margin: "0 0 18px" }}>
-            Explore premium templates, AI prompt packs, and
-            guides designed for modern life and business.
+            Explore premium templates, AI prompt packs, ebooks, design and music
+            designed for modern life and business.
           </p>
 
           <div className="hero-actions" style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
@@ -166,13 +166,37 @@ function Home({ isDark }: { isDark: boolean }) {
 
           <Link
             className="category-card"
-            to="/shop?category=guides"
+            to="/shop?category=ebooks"
             style={{ padding: "16px 12px", borderRadius: "12px", display: "block", boxSizing: "border-box", background: isDark ? "#1e293b" : "#ffffff", color: textColor }}
           >
             <span>03</span>
-            <h3 style={{ fontSize: "15px", margin: "10px 0 6px", lineHeight: "1.3", color: textColor }}>Guides</h3>
+            <h3 style={{ fontSize: "15px", margin: "10px 0 6px", lineHeight: "1.3", color: textColor }}>Ebooks</h3>
             <p style={{ fontSize: "12px", lineHeight: "1.5", margin: 0, color: subText }}>
-              Practical knowledge for personal and professional growth.
+              Guides, ebooks and practical knowledge for growth.
+            </p>
+          </Link>
+
+          <Link
+            className="category-card"
+            to="/shop?category=design"
+            style={{ padding: "16px 12px", borderRadius: "12px", display: "block", boxSizing: "border-box", background: isDark ? "#1e293b" : "#ffffff", color: textColor }}
+          >
+            <span>04</span>
+            <h3 style={{ fontSize: "15px", margin: "10px 0 6px", lineHeight: "1.3", color: textColor }}>Design</h3>
+            <p style={{ fontSize: "12px", lineHeight: "1.5", margin: 0, color: subText }}>
+              Logo packs, flyers, UI kits and design assets.
+            </p>
+          </Link>
+
+          <Link
+            className="category-card"
+            to="/shop?category=music"
+            style={{ padding: "16px 12px", borderRadius: "12px", display: "block", boxSizing: "border-box", background: isDark ? "#1e293b" : "#ffffff", color: textColor }}
+          >
+            <span>05</span>
+            <h3 style={{ fontSize: "15px", margin: "10px 0 6px", lineHeight: "1.3", color: textColor }}>Music</h3>
+            <p style={{ fontSize: "12px", lineHeight: "1.5", margin: 0, color: subText }}>
+              Beats, songs and sound packs.
             </p>
           </Link>
         </div>
