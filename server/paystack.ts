@@ -498,6 +498,109 @@ app.post(
   },
 );
 
+// ✅ NEW: Store logo upload - separate from personal profile photo
+app.post(
+  "/api/store/logo/upload",
+  (req, res, next) => {
+    upload.single("file")(req, res, (error) => {
+      if (error) {
+        console.error("Multer store logo upload error:", error);
+        return res.status(400).json({
+          success: false,
+          message:
+            error instanceof Error
+              ? error.message
+              : "Unable to process store logo.",
+        });
+      }
+      next();
+    });
+  },
+  async (req, res) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader?.startsWith("Bearer ")) {
+        return res.status(401).json({
+          success: false,
+          message: "Authentication required.",
+        });
+      }
+
+      const idToken = authHeader.substring(7);
+      const decodedToken = await adminAuth.verifyIdToken(idToken);
+
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: "Please select a store logo.",
+        });
+      }
+
+      if (!req.file.mimetype.startsWith("image/")) {
+        return res.status(400).json({
+          success: false,
+          message: "Store logo must be an image.",
+        });
+      }
+
+      const userSnapshot = await db
+        .collection("users")
+        .doc(decodedToken.uid)
+        .get();
+
+      if (!userSnapshot.exists) {
+        return res.status(403).json({
+          success: false,
+          message: "User account not found.",
+        });
+      }
+
+      if (userSnapshot.data()?.merchantStatus !== "approved") {
+        return res.status(403).json({
+          success: false,
+          message: "Approved merchant account required.",
+        });
+      }
+
+      const result = await new Promise<any>((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            folder: "strongmarket/store-logos",
+            resource_type: "image",
+            type: "upload",
+            transformation: [{ width: 400, height: 400, crop: "fill" }],
+          },
+          (error, uploadedResult) => {
+            if (error) reject(error);
+            else resolve(uploadedResult);
+          },
+        );
+        stream.end(req.file!.buffer);
+      });
+
+      // Save logo URL to Firestore - separate field, does NOT touch photoURL
+      await db.collection("users").doc(decodedToken.uid).update({
+        storeLogoUrl: result.secure_url,
+      });
+
+      return res.json({
+        success: true,
+        message: "Store logo uploaded successfully.",
+        storeLogoUrl: result.secure_url,
+      });
+    } catch (error) {
+      console.error("Store logo upload error:", error);
+      return res.status(500).json({
+        success: false,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Unable to upload store logo.",
+      });
+    }
+  },
+);
+
 // Public merchant profile
 app.get(
   "/api/merchants/:merchantId",
@@ -537,14 +640,22 @@ app.get(
         });
       }
 
+      // ✅ FIXED: Return store branding separate from personal photo
       return res.json({
         success: true,
         merchant: {
           name:
+            merchantData?.storeName ||
+            merchantData?.name ||
+            "CHILVO Merchant",
+          storeName:
+            merchantData?.storeName ||
             merchantData?.name ||
             "CHILVO Merchant",
           photoURL:
             merchantData?.photoURL || "",
+          storeLogoUrl:
+            merchantData?.storeLogoUrl || "",
         },
       });
     } catch (error) {
