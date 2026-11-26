@@ -250,9 +250,9 @@ setMerchant(
                     {product.shortDescription}
                   </p>
 
+                  {/* ✅ STEP 1 FIX: Always $ only, never ₦ */}
                   <strong style={{ display: "block", fontSize: "18px", marginBottom: "14px" }}>
-                    {product.currency === "NGN" ? "₦" : product.currency}
-                    {product.price.toLocaleString("en-NG")}
+                    ${product.price.toLocaleString("en-US")}
                   </strong>
 
                   {/* BUTTONS */}
