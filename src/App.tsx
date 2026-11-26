@@ -219,7 +219,11 @@ function CartButton() {
 
   return (
     <Link className="cart-btn" to="/cart" aria-label="Cart" style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", background: "#111111", color: "#ffffff", width: "42px", height: "42px", borderRadius: "10px", textDecoration: "none" }}>
-      <span style={{ fontSize: "20px", lineHeight: "1" }}>🛒</span>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="9" cy="21" r="1" fill="#ffffff" stroke="none" />
+        <circle cx="20" cy="21" r="1" fill="#ffffff" stroke="none" />
+        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+      </svg>
       <span style={{ position: "absolute", top: "-6px", right: "-6px", background: "#ef4444", color: "#ffffff", minWidth: "20px", height: "20px", borderRadius: "999px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700, padding: "0 5px", border: "2px solid #ffffff" }}>
         {itemCount}
       </span>
