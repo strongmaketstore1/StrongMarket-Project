@@ -13,8 +13,10 @@ import type { Product } from "../types/product";
 
 type MerchantProfile = {
   name?: string;
+  storeName?: string;
   merchantStatus?: string;
   photoURL?: string;
+  storeLogoUrl?: string; // NEW: separate from personal photo
 };
 
 export default function MerchantStore() {
@@ -130,6 +132,12 @@ setMerchant(
     );
   }
 
+  // ✅ SEPARATE LOGIC: Store Logo first, Personal Photo second, Letter third
+  const displayName = merchant.storeName || merchant.name || "CHILVO Merchant";
+  const storeLogo = merchant.storeLogoUrl || "";
+  const personalPhoto = merchant.photoURL || "";
+  const displayImage = storeLogo || personalPhoto;
+
   return (
     <main style={{ width: "100%", boxSizing: "border-box", overflowX: "hidden", padding: "0 0 32px" }}>
       {/* HEADER - Fixed: avatar now has fixed box, object-fit cover */}
@@ -140,20 +148,20 @@ setMerchant(
 
         <div style={{ display: "flex", gap: "14px", alignItems: "flex-start" }}>
           <div style={{ width: "84px", height: "84px", flexShrink: 0, borderRadius: "50%", overflow: "hidden", background: "#eef2ff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "32px", fontWeight: 800, color: "#1d4ed8" }}>
-            {merchant.photoURL ? (
+            {displayImage ? (
               <img
-                src={merchant.photoURL}
-                alt={merchant.name || "Merchant"}
+                src={displayImage}
+                alt={displayName}
                 style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
               />
             ) : (
-              merchant.name?.charAt(0).toUpperCase() || "C"
+              displayName.charAt(0).toUpperCase() || "C"
             )}
           </div>
 
           <div style={{ flex: 1, minWidth: 0 }}>
             <h1 style={{ fontSize: "28px", lineHeight: "1.15", margin: "0 0 6px", wordBreak: "break-word" }}>
-              {merchant.name || "CHILVO Merchant"}
+              {displayName}
             </h1>
 
             <p style={{ fontSize: "14px", color: "#555", margin: "0 0 4px" }}>
@@ -177,7 +185,7 @@ setMerchant(
 
           <h2 style={{ fontSize: "24px", lineHeight: "1.2", margin: 0 }}>
             Products from{" "}
-            {merchant.name || "this merchant"}
+            {displayName}
           </h2>
         </div>
 
