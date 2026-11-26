@@ -367,6 +367,7 @@ function AppContent() {
   const navLinkStyle: React.CSSProperties = {
     display: "flex",
     alignItems: "center",
+    gap: "12px",
     padding: "22px 12px",
     fontSize: "28px",
     lineHeight: "1.4",
@@ -430,33 +431,33 @@ function AppContent() {
             style={{ display: "flex", flexDirection: "column", background: menuBg, padding: "8px 16px 80px", borderBottom: `1px solid ${border}`, width: "100%", boxSizing: "border-box", position: "fixed", top: "82px", left: 0, right: 0, bottom: 0, height: "calc(100vh - 82px)", minHeight: "calc(100vh - 82px)", overflowY: "auto", zIndex: 9999 }}
           >
             <Link to="/" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
-              Home
+              <span>🏠</span> Home
             </Link>
 
             <Link to="/shop" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
-              Shop
+              <span>🛍️</span> Shop
             </Link>
 
             <Link to="/shop" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
-              Categories
+              <span>🗂️</span> Categories
             </Link>
 
             {merchantStatus !== "approved" && merchantStatus !== "pending" && (
               <Link to="/merchant/apply" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
-                Become a Merchant
+                <span>🏪</span> Become a Merchant
               </Link>
             )}
 
             {merchantStatus === "pending" && (
               <div style={{ ...navLinkStyle, color: "#60a5fa", cursor: "default" }}>
-                Merchant Application Pending...
+                <span>⏳</span> Merchant Application Pending...
               </div>
             )}
 
             {user ? (
               <>
                 <Link to="/account" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
-                  My Account
+                  <span>👤</span> My Account
                 </Link>
 
                 {merchantStatus === "approved" && (
@@ -465,7 +466,7 @@ function AppContent() {
                     onClick={() => setMobileMenuOpen(false)}
                     style={navLinkStyle}
                   >
-                    Merchant Dashboard
+                    <span>📊</span> Merchant Dashboard
                   </Link>
                 )}
 
@@ -475,7 +476,7 @@ function AppContent() {
                     onClick={() => setMobileMenuOpen(false)}
                     style={navLinkStyle}
                   >
-                    Admin
+                    <span>🛡️</span> Admin
                   </Link>
                 )}
 
@@ -483,34 +484,34 @@ function AppContent() {
                   setMobileMenuOpen(false);
                   void handleLogout();
                 }} style={{ ...navLinkStyle, background: "none", border: "none", borderBottom: "1px solid #f0f0f0", textAlign: "left", cursor: "pointer" }}>
-                  Logout
+                  <span>🚪</span> Logout
                 </button>
 
                 <button type="button" onClick={() => {
                   setMobileMenuOpen(false);
                   void handleDeleteAccount();
                 }} style={{ ...navLinkStyle, background: "none", border: "none", borderBottom: "none", textAlign: "left", cursor: "pointer", color: "#f87171" }}>
-                  Delete Account
+                  <span>🗑️</span> Delete Account
                 </button>
               </>
             ) : (
               <>
                 <Link to="/login" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
-                  Login
+                  <span>🔑</span> Login
                 </Link>
 
                 <Link to="/register" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
-                  Register
+                  <span>✍️</span> Register
                 </Link>
               </>
             )}
 
             <Link to="/about" onClick={() => setMobileMenuOpen(false)} style={navLinkStyle}>
-              About
+              <span>ℹ️</span> About
             </Link>
 
             <Link to="/privacy-policy" onClick={() => setMobileMenuOpen(false)} style={{ ...navLinkStyle, borderBottom: "none" }}>
-              Privacy Policy
+              <span>🔒</span> Privacy Policy
             </Link>
 
             <button
