@@ -1,4 +1,4 @@
-export type ProductCategory = "templates" | "prompt-packs" | "guides" | "ebooks" | "courses" | "design" | "music" | "other" | "Templates" | "Ebooks" | "Courses" | "Design" | "Music" | "Other";
+export type ProductCategory = "templates" | "prompt-packs" | "ebooks" | "design" | "music";
 
 export interface Product {
   id: string;
@@ -9,6 +9,7 @@ export interface Product {
   price: number;
   currency: string;
   category: ProductCategory;
+  license?: string;
   image: string;
   fileName?: string;
   fileUrl?: string;
