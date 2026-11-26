@@ -216,11 +216,6 @@ export default function Checkout() {
             )}
           </div>
 
-          <div className="checkout-section" style={{ background: "#fff", border: "1px solid #eee", borderRadius: "12px", padding: "20px 16px" }}>
-            <h2 style={{ fontSize: "18px", margin: 0 }}>Payment</h2>
-            <p style={{ fontSize: "13px", color: "#666", margin: "8px 0 0", lineHeight: "1.5" }}>You will be redirected to Paystack to pay securely.</p>
-          </div>
-
           <button
             className="primary-btn checkout-submit"
             type="button"
