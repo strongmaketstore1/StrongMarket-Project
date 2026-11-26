@@ -16,7 +16,7 @@ type MerchantProfile = {
   storeName?: string;
   merchantStatus?: string;
   photoURL?: string;
-  storeLogoUrl?: string; // ✅ NEW: separate from personal photo
+  storeLogoUrl?: string;
 };
 
 export default function MerchantStore() {
@@ -140,24 +140,35 @@ setMerchant(
 
   return (
     <main style={{ width: "100%", boxSizing: "border-box", overflowX: "hidden", padding: "0 0 32px" }}>
-      {/* HEADER - Fixed: avatar now has fixed box, object-fit cover */}
+      {/* HEADER */}
       <section style={{ padding: "24px 16px", boxSizing: "border-box" }}>
         <p className="eyebrow" style={{ margin: "0 0 16px" }}>
           CHILVO STORE
         </p>
 
         <div style={{ display: "flex", gap: "14px", alignItems: "flex-start" }}>
-          <div style={{ width: "84px", height: "84px", flexShrink: 0, borderRadius: "50%", overflow: "hidden", background: "#eef2ff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "32px", fontWeight: 800, color: "#1d4ed8" }}>
-            {displayImage ? (
+          {/* ✅ FIXED: Logo = square + contain (full CHILVO, no cut), Face = circle + cover */}
+          {storeLogo ? (
+            <div style={{ width: "84px", height: "84px", flexShrink: 0, borderRadius: "14px", overflow: "hidden", background: "#fff", border: "1px solid #e5e7eb", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <img
-                src={displayImage}
+                src={storeLogo}
                 alt={displayName}
-                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                style={{ width: "100%", height: "100%", objectFit: "contain", display: "block", padding: "6px", boxSizing: "border-box" }}
               />
-            ) : (
-              displayName.charAt(0).toUpperCase() || "C"
-            )}
-          </div>
+            </div>
+          ) : (
+            <div style={{ width: "84px", height: "84px", flexShrink: 0, borderRadius: "50%", overflow: "hidden", background: "#eef2ff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "32px", fontWeight: 800, color: "#1d4ed8" }}>
+              {displayImage ? (
+                <img
+                  src={displayImage}
+                  alt={displayName}
+                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                />
+              ) : (
+                displayName.charAt(0).toUpperCase() || "C"
+              )}
+            </div>
+          )}
 
           <div style={{ flex: 1, minWidth: 0 }}>
             <h1 style={{ fontSize: "28px", lineHeight: "1.15", margin: "0 0 6px", wordBreak: "break-word" }}>
@@ -203,7 +214,7 @@ setMerchant(
                 key={product.id}
                 style={{ width: "100%", boxSizing: "border-box", background: "#fff", border: "1px solid #e5e7eb", borderRadius: "16px", overflow: "hidden" }}
               >
-                {/* IMAGE BOX - Fixed: fixed height, object-fit cover, no overflow */}
+                {/* IMAGE BOX */}
                 <Link
                   to={`/product/${product.id}`}
                   style={{ display: "block", width: "100%", height: "220px", overflow: "hidden", background: "#f3f4f6" }}
@@ -244,7 +255,7 @@ setMerchant(
                     {product.price.toLocaleString("en-NG")}
                   </strong>
 
-                  {/* BUTTONS - Fixed: stacked, full width, no overlap */}
+                  {/* BUTTONS */}
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px", width: "100%" }}>
                     <Link
                       className="secondary-btn"
