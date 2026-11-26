@@ -16,7 +16,7 @@ type MerchantProfile = {
   storeName?: string;
   merchantStatus?: string;
   photoURL?: string;
-  storeLogoUrl?: string; // NEW: separate from personal photo
+  storeLogoUrl?: string; // ✅ NEW: separate from personal photo
 };
 
 export default function MerchantStore() {
