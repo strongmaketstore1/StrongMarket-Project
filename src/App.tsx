@@ -220,11 +220,9 @@ function CartButton() {
   return (
     <Link className="cart-btn" to="/cart" style={{ position: "relative", display: "flex", alignItems: "center", gap: "6px", background: "#111111", color: "#ffffff", padding: "8px 12px", borderRadius: "8px", textDecoration: "none", fontSize: "14px", fontWeight: 600 }}>
       Cart
-      {itemCount > 0 && (
-        <span style={{ background: "#ef4444", color: "#ffffff", minWidth: "20px", height: "20px", borderRadius: "999px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700, padding: "0 5px" }}>
-          {itemCount}
-        </span>
-      )}
+      <span style={{ background: "#ef4444", color: "#ffffff", minWidth: "20px", height: "20px", borderRadius: "999px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700, padding: "0 5px" }}>
+        {itemCount}
+      </span>
     </Link>
   );
 }
