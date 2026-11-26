@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import {
   doc,
   getDoc,
+  updateDoc,
   collection,
   query,
   where,
@@ -19,6 +20,13 @@ export default function MerchantDashboard() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ products: 0, orders: 0, earnings: 0 });
 
+  // ✅ NEW: Store Branding - separate from My Account photo
+  const [storeName, setStoreName] = useState("");
+  const [storeLogoUrl, setStoreLogoUrl] = useState("");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [savingStore, setSavingStore] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -26,6 +34,8 @@ export default function MerchantDashboard() {
         setLoading(false);
         return;
       }
+
+      setCurrentUserId(user.uid);
 
       try {
         const userSnapshot = await getDoc(doc(db, "users", user.uid));
@@ -35,8 +45,13 @@ export default function MerchantDashboard() {
           return;
         }
 
-        const merchantStatus = userSnapshot.data().merchantStatus ?? "none";
+        const data = userSnapshot.data();
+        const merchantStatus = data.merchantStatus ?? "none";
         setStatus(merchantStatus);
+
+        // Load store branding
+        setStoreName(data.storeName || data.name || "");
+        setStoreLogoUrl(data.storeLogoUrl || "");
 
         // Load stats only if approved
         if (merchantStatus === "approved") {
@@ -72,6 +87,59 @@ export default function MerchantDashboard() {
 
     return () => unsubscribe();
   }, []);
+
+  async function handleStoreLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !currentUserId) return;
+
+    setUploadingLogo(true);
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = reader.result as string;
+      try {
+        await updateDoc(doc(db, "users", currentUserId), {
+          storeLogoUrl: base64,
+        });
+        setStoreLogoUrl(base64);
+        alert("Store logo updated! Buyers will now see this logo, not your face.");
+      } catch (err) {
+        console.error(err);
+        alert("Failed to save logo. Try a smaller image.");
+      }
+      setUploadingLogo(false);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function handleSaveStoreName() {
+    if (!currentUserId) return;
+    setSavingStore(true);
+    try {
+      await updateDoc(doc(db, "users", currentUserId), {
+        storeName: storeName.trim(),
+      });
+      alert("Store name saved!");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save store name.");
+    }
+    setSavingStore(false);
+  }
+
+  async function handleRemoveLogo() {
+    if (!currentUserId) return;
+    const ok = window.confirm("Remove store logo? Your store will show your initial letter again.");
+    if (!ok) return;
+    try {
+      await updateDoc(doc(db, "users", currentUserId), {
+        storeLogoUrl: "",
+      });
+      setStoreLogoUrl("");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to remove logo.");
+    }
+  }
 
   const pageStyle: React.CSSProperties = {
     maxWidth: "1100px",
@@ -154,6 +222,49 @@ export default function MerchantDashboard() {
             Your merchant account has been approved! You can now add products and receive orders.
           </div>
         </div>
+      </section>
+
+      {/* ✅ STORE BRANDING - Different from My Account */}
+      <section style={{ background: "#fff", border: "1px solid #eee", borderRadius: "14px", padding: "18px", marginTop: "16px" }}>
+        <h3 style={{ margin: "0 0 6px" }}>🏪 Store Branding</h3>
+        <p style={{ color: "#666", fontSize: "13px", margin: "0 0 14px", lineHeight: "1.5" }}>
+          This is what buyers see on your Store Page. Different from your personal photo in My Account.
+        </p>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "14px" }}>
+          {storeLogoUrl ? (
+            <img src={storeLogoUrl} alt="Store logo" style={{ width: "72px", height: "72px", borderRadius: "50%", objectFit: "cover", border: "1px solid #eee" }} />
+          ) : (
+            <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: "#0a2540", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px", fontWeight: 800, flexShrink: 0 }}>
+              {(storeName || "S").charAt(0).toUpperCase()}
+            </div>
+          )}
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <label style={{ background: "#0a2540", color: "#fff", padding: "10px 16px", borderRadius: "10px", cursor: "pointer", fontSize: "14px", fontWeight: 700, textAlign: "center", display: "inline-block" }}>
+              {uploadingLogo ? "Uploading..." : "Upload Store Logo"}
+              <input type="file" accept="image/*" onChange={handleStoreLogoChange} style={{ display: "none" }} />
+            </label>
+            {storeLogoUrl && (
+              <button type="button" onClick={handleRemoveLogo} style={{ background: "transparent", border: "none", color: "#ef4444", fontSize: "13px", cursor: "pointer", textAlign: "left", padding: 0 }}>
+                Remove logo
+              </button>
+            )}
+          </div>
+        </div>
+
+        <label style={{ fontSize: "13px", fontWeight: 700 }}>Store Name</label>
+        <input
+          value={storeName}
+          onChange={(e) => setStoreName(e.target.value)}
+          placeholder="e.g. USA Bethel"
+          style={{ width: "100%", padding: "11px", borderRadius: "10px", border: "1px solid #ddd", margin: "6px 0 12px", boxSizing: "border-box", fontSize: "14px" }}
+        />
+        <button onClick={handleSaveStoreName} disabled={savingStore} style={{ background: "#1d4ed8", color: "#fff", border: "none", padding: "11px 18px", borderRadius: "10px", cursor: "pointer", fontWeight: 700, width: "100%" }}>
+          {savingStore ? "Saving..." : "Save Store Branding"}
+        </button>
+        <p style={{ fontSize: "12px", color: "#888", margin: "10px 0 0" }}>
+          Tip: Use a square logo (like CHILVO logo). Your personal face in My Account will not change.
+        </p>
       </section>
 
       {/* Merchant Center - FIXED GRID */}
