@@ -50,6 +50,7 @@ export default function MerchantAddProduct() {
         category,
         license: category === "music" ? license : "",
         price: Number(price),
+        currency: "USD",
         shortDescription: shortDescription.trim(),
         description: description.trim(),
         image: img.secure_url,
