@@ -20,7 +20,7 @@ export default function MerchantDashboard() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ products: 0, orders: 0, earnings: 0 });
 
-  // ✅ NEW: Store Branding - separate from My Account photo
+  // ✅ Store Branding - separate from My Account photo
   const [storeName, setStoreName] = useState("");
   const [storeLogoUrl, setStoreLogoUrl] = useState("");
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -88,27 +88,29 @@ export default function MerchantDashboard() {
     return () => unsubscribe();
   }, []);
 
+  // ✅ Upload Store Logo via Backend + Cloudinary - NOT base64, NOT photoURL
   async function handleStoreLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file || !currentUserId) return;
-
+    if (!file || !auth.currentUser) return;
     setUploadingLogo(true);
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64 = reader.result as string;
-      try {
-        await updateDoc(doc(db, "users", currentUserId), {
-          storeLogoUrl: base64,
-        });
-        setStoreLogoUrl(base64);
-        alert("Store logo updated! Buyers will now see this logo, not your face.");
-      } catch (err) {
-        console.error(err);
-        alert("Failed to save logo. Try a smaller image.");
-      }
-      setUploadingLogo(false);
-    };
-    reader.readAsDataURL(file);
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("https://strongmarket-payment-server.onrender.com/api/store/logo/upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || "Upload failed");
+      setStoreLogoUrl(data.storeLogoUrl);
+      alert("Store logo updated! Buyers will now see this logo, not your face.");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save logo.");
+    }
+    setUploadingLogo(false);
   }
 
   async function handleSaveStoreName() {
@@ -205,7 +207,7 @@ export default function MerchantDashboard() {
     );
   }
 
-  // APPROVED - THIS IS THE FIXED SECTION
+  // APPROVED
   return (
     <main style={pageStyle}>
       <h1 style={{ fontSize: "24px", fontWeight: 800, margin: 0 }}>Merchant Dashboard</h1>
@@ -267,7 +269,7 @@ export default function MerchantDashboard() {
         </p>
       </section>
 
-      {/* Merchant Center - FIXED GRID */}
+      {/* Merchant Center */}
       <section>
         <h2 style={{ fontSize: "16px", margin: "22px 0 12px" }}>Merchant Center</h2>
 
@@ -306,7 +308,7 @@ export default function MerchantDashboard() {
         </div>
       </section>
 
-      {/* Overview - fixes empty white space */}
+      {/* Overview */}
       <section style={{ background: "#fff", border: "1px solid #eee", borderRadius: "14px", padding: "18px", marginTop: "16px" }}>
         <h3 style={{ margin: 0 }}>Overview</h3>
         <div style={{ display: "flex", justifyContent: "space-between", textAlign: "center", marginTop: "14px" }}>
