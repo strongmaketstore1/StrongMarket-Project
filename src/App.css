@@ -61,8 +61,9 @@ a {
 }
 
 .logo img {
-  width: 44px;
-  height: 44px;
+  width: auto;
+  height: 42px;
+  max-width: 160px;
   object-fit: contain;
   display: block;
 }
@@ -545,8 +546,9 @@ footer p {
   }
 
   .navbar .logo img {
-    width: 40px;
-    height: 40px;
+    width: auto;
+    height: 42px;
+    max-width: 160px;
   }
 
   .nav-actions {
@@ -759,16 +761,33 @@ z-index: 100;
   }
 }
 
-/* FORCE BIG MENU LINKS - global */
+/* FIXED - Big links ONLY inside mobile menu, NOT header */
 @media (max-width: 1024px) {
-  body a,
-  body button {
+  #chilvo-mobile-navigation a,
+  #chilvo-mobile-navigation button {
     font-size: 26px !important;
     line-height: 1.4 !important;
     font-weight: 800 !important;
     padding-top: 22px !important;
     padding-bottom: 22px !important;
     min-height: 72px !important;
+  }
+
+  /* Header stays small */
+  header.navbar .cart-btn,
+  header.navbar .search-btn,
+  header.navbar .mobile-menu-btn {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    padding: 8px 12px !important;
+    min-height: 38px !important;
+    line-height: 1.2 !important;
+  }
+
+  header.navbar .cart-btn span {
+    font-size: 12px !important;
+    padding: 0 5px !important;
+    min-height: 20px !important;
   }
 }
 
