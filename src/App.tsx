@@ -218,9 +218,9 @@ function CartButton() {
   const { itemCount } = useCart();
 
   return (
-    <Link className="cart-btn" to="/cart" style={{ position: "relative", display: "flex", alignItems: "center", gap: "6px", background: "#111111", color: "#ffffff", padding: "8px 12px", borderRadius: "8px", textDecoration: "none", fontSize: "14px", fontWeight: 600 }}>
-      Cart
-      <span style={{ background: "#ef4444", color: "#ffffff", minWidth: "20px", height: "20px", borderRadius: "999px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700, padding: "0 5px" }}>
+    <Link className="cart-btn" to="/cart" aria-label="Cart" style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", background: "#111111", color: "#ffffff", width: "42px", height: "42px", borderRadius: "10px", textDecoration: "none" }}>
+      <span style={{ fontSize: "20px", lineHeight: "1" }}>🛒</span>
+      <span style={{ position: "absolute", top: "-6px", right: "-6px", background: "#ef4444", color: "#ffffff", minWidth: "20px", height: "20px", borderRadius: "999px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 700, padding: "0 5px", border: "2px solid #ffffff" }}>
         {itemCount}
       </span>
     </Link>
