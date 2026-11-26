@@ -148,7 +148,7 @@ export default function MerchantEditProduct() {
         description: description.trim(),
         shortDescription: shortDescription.trim(),
         price: Number(price),
-        currency: "NGN",
+        currency: "USD",
         category,
         license: category === "music" ? license : "",
         image: image.trim(),
@@ -241,7 +241,7 @@ export default function MerchantEditProduct() {
         </div>
 
         <div>
-          <label htmlFor="price">Price (NGN)</label>
+          <label htmlFor="price">Price (USD)</label>
           <input
             id="price"
             type="number"
