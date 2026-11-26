@@ -243,7 +243,6 @@ function AppContent() {
 
         setUser(currentUser);
 
-        // ✅ FIXED: New admin chilvodigital
         setIsAdmin(
           currentUser?.uid === ADMIN_UID ||
           currentUser?.email === ADMIN_EMAIL,
@@ -351,7 +350,6 @@ function AppContent() {
   };
 
   return (
-    <BrowserRouter basename="/StrongMarket-Project">
       <div className="app" style={{ width: "100%", overflowX: "hidden", paddingTop: "82px", background: bg, color: text, minHeight: "100vh" }}>
         <header className="navbar" style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 10000, background: bg, display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", padding: "10px 12px", width: "100%", boxSizing: "border-box", borderBottom: `1px solid ${border}` }}>
           <Link
@@ -539,15 +537,16 @@ function AppContent() {
           </p>
         </footer>
       </div>
-    </BrowserRouter>
   );
 }
 
 function App() {
   return (
-    <CartProvider>
-      <AppContent />
-    </CartProvider>
+    <BrowserRouter basename="/StrongMarket-Project">
+      <CartProvider>
+        <AppContent />
+      </CartProvider>
+    </BrowserRouter>
   );
 }
 
