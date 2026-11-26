@@ -8,11 +8,10 @@ import {
 import ProductCard from "../components/ProductCard";
 import type {
   Product,
-  ProductCategory,
 } from "../types/product";
 import { db } from "../firebase";
 
-type CategoryFilter = "all" | ProductCategory;
+type CategoryFilter = "all" | "templates" | "prompt-packs" | "ebooks" | "design" | "music";
 
 type SortOption =
   | "newest"
@@ -29,7 +28,9 @@ const categories: {
   { label: "All Products", value: "all" },
   { label: "Templates", value: "templates" },
   { label: "AI Prompt Packs", value: "prompt-packs" },
-  { label: "Guides", value: "guides" },
+  { label: "Ebooks", value: "ebooks" },
+  { label: "Design", value: "design" },
+  { label: "Music", value: "music" },
 ];
 
 const sortOptions: {
@@ -56,7 +57,11 @@ function normalizeCategory(raw: any): string {
   const s = String(raw).toLowerCase().trim();
   if (s === "template" || s === "templates") return "templates";
   if (s === "prompt-pack" || s === "prompt-packs" || s === "prompt pack" || s === "ai prompt packs") return "prompt-packs";
-  if (s === "guide" || s === "guides") return "guides";
+  if (s === "guide" || s === "guides" || s === "ebook" || s === "ebooks") return "ebooks";
+  if (s === "design") return "design";
+  if (s === "music") return "music";
+  if (s === "course" || s === "courses") return "ebooks";
+  if (s === "other") return "templates";
   return s;
 }
 
@@ -104,10 +109,12 @@ export default function Shop() {
   // Read ?category= from URL (from Home page)
   useEffect(() => {
     const cat = searchParams.get("category");
-    if (cat === "templates" || cat === "prompt-packs" || cat === "guides") {
+    if (cat === "templates" || cat === "prompt-packs" || cat === "ebooks" || cat === "design" || cat === "music") {
       setSelectedCategory(cat);
     } else if (cat === "all") {
       setSelectedCategory("all");
+    } else if (cat === "guides") {
+      setSelectedCategory("ebooks");
     }
     const q = searchParams.get("search");
     if (q) setSearchTerm(q);
