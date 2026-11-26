@@ -20,7 +20,8 @@ export default function MerchantAddProduct() {
   const [userId, setUserId] = useState("");
   const [userEmail, setUserEmail] = useState("");
   const [name, setName] = useState("");
-  const [category, setCategory] = useState("Templates");
+  const [category, setCategory] = useState("templates");
+  const [license, setLicense] = useState("personal");
   const [price, setPrice] = useState("");
   const [shortDescription, setShortDescription] = useState("");
   const [description, setDescription] = useState("");
@@ -47,12 +48,13 @@ export default function MerchantAddProduct() {
       await addDoc(collection(db, "products"), {
         name: name.trim(),
         category,
+        license: category === "music" ? license : "",
         price: Number(price),
         shortDescription: shortDescription.trim(),
         description: description.trim(),
         image: img.secure_url,
         fileName: productFile.name,
-        fileUrl: fileUp.secure_url, // ✅ FIXED - save the REAL file link
+        fileUrl: fileUp.secure_url,
         cloudinaryFileRef: fileUp.public_id,
         merchantId: userId,
         merchantEmail: userEmail,
@@ -63,6 +65,7 @@ export default function MerchantAddProduct() {
       setMsg("✅ Sent for review! Admin will approve it.");
       setName(""); setPrice(""); setShortDescription(""); setDescription("");
       setImageFile(null); setProductFile(null);
+      setCategory("templates"); setLicense("personal");
     } catch (err: any) { setMsg(err.message || "Failed to add product."); }
     finally { setBusy(false); }
   }
@@ -76,12 +79,31 @@ export default function MerchantAddProduct() {
       {msg && <p style={{ background: "#eef2ff", padding: "12px", borderRadius: "10px" }}>{msg}</p>}
       <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
         <label><strong>Product Name</strong><input style={input} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Professional CV Template" /></label>
-        <label><strong>Category</strong><select style={input} value={category} onChange={(e) => setCategory(e.target.value)}><option>Templates</option><option>Ebooks</option><option>Courses</option><option>Design</option><option>Music</option><option>Other</option></select></label>
+        <label><strong>Category</strong>
+          <select style={input} value={category} onChange={(e) => setCategory(e.target.value)}>
+            <option value="templates">Templates</option>
+            <option value="prompt-packs">AI Prompt Packs</option>
+            <option value="ebooks">Ebooks</option>
+            <option value="design">Design</option>
+            <option value="music">Music</option>
+          </select>
+        </label>
+
+        {category === "music" && (
+          <label><strong>License - For Music Only</strong>
+            <select style={input} value={license} onChange={(e) => setLicense(e.target.value)}>
+              <option value="personal">Personal - Listen only</option>
+              <option value="commercial">Commercial - Use in your song / content</option>
+            </select>
+            <span style={{ fontSize: "12px", color: "#666" }}>This tells buyers what they are allowed to do with your beat/song.</span>
+          </label>
+        )}
+
         <label><strong>Price (USD)</strong><input style={input} type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="9.99" /></label>
         <label><strong>Short Description</strong><input style={input} value={shortDescription} onChange={(e) => setShortDescription(e.target.value)} placeholder="One line for shop listing" /></label>
         <label><strong>Full Description</strong><textarea style={{ ...input, minHeight: "90px" }} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What will buyer get?" /></label>
         <label><strong>Cover Image (JPG/PNG)</strong><input style={input} type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] || null)} /></label>
-        <label><strong>Product File (PDF / DOC / ZIP)</strong><input style={input} type="file" onChange={(e) => setProductFile(e.target.files?.[0] || null)} /></label>
+        <label><strong>Product File (PDF / DOC / ZIP / MP3 / WAV)</strong><input style={input} type="file" onChange={(e) => setProductFile(e.target.files?.[0] || null)} /></label>
         <button disabled={busy} style={{ background: "#111827", color: "#fff", padding: "14px", borderRadius: "10px", border: "none", fontWeight: 700, cursor: "pointer" }}>{busy ? "Uploading..." : "Submit for Review"}</button>
       </form>
     </main>
