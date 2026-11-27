@@ -8,7 +8,8 @@ import {
   getMerchantIds,
 } from "../firestoreOrders";
 import type { Order } from "../types/order";
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
+import { addDoc, collection } from "firebase/firestore";
 
 export default function Checkout() {
   const { items, itemCount, subtotal } = useCart();
@@ -99,6 +100,31 @@ export default function Checkout() {
       };
 
       await createFirestoreOrder(order);
+
+      // NEW - Create pending earnings for each merchant
+      const byMerchant: Record<string, number> = {};
+      for (const item of orderItems) {
+        const totalForItem = item.price * item.quantity;
+        byMerchant[item.merchantId] = (byMerchant[item.merchantId] || 0) + totalForItem;
+      }
+
+      for (const merchantId in byMerchant) {
+        const gross = byMerchant[merchantId];
+        const commission = gross * 0.10;
+        const net = gross - commission;
+
+        await addDoc(collection(db, "merchantEarnings"), {
+          orderId: orderId,
+          merchantId: merchantId,
+          currency: "USD",
+          grossSales: gross,
+          commissionRate: 0.10,
+          commissionAmount: commission,
+          netEarnings: net,
+          status: "pending",
+          createdAt: new Date().toISOString(),
+        });
+      }
 
       startPaystackPayment(
         {
