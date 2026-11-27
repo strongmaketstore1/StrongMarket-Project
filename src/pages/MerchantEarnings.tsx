@@ -72,6 +72,12 @@ export default function MerchantEarnings() {
     return `CHV-2026-00${num.toString().slice(0, 3)}`;
   };
 
+  const maskAccount = (acc: string) => {
+    if (!acc) return '****';
+    if (acc.startsWith('****')) return acc;
+    return `****${acc.slice(-4)}`;
+  };
+
   const handleRequestPayout = () => {
     if (!beneficiaryName || !accountDetails || !bankName || !amount) {
       alert('Please complete all payout details.');
@@ -103,7 +109,7 @@ export default function MerchantEarnings() {
   };
 
   const getStatusStyle = (status: PayoutStatus): React.CSSProperties => {
-    const base: React.CSSProperties = { padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 600 };
+    const base: React.CSSProperties = { padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap' };
     if (status === 'Completed') return { ...base, background: '#D1FAE5', color: '#065F46' };
     if (status === 'Processing') return { ...base, background: '#FEF3C7', color: '#92400E' };
     if (status === 'Requested') return { ...base, background: '#DBEAFE', color: '#1E40AF' };
@@ -111,11 +117,19 @@ export default function MerchantEarnings() {
   };
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: 20, fontFamily: 'Inter, sans-serif' }}>
-      <h2 style={{ fontSize: 24, fontWeight: 700 }}>Earnings & Payouts</h2>
-      <p style={{ color: '#64748B', fontSize: 14 }}>Manage your earnings and request secure payouts.</p>
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: 16, fontFamily: 'Inter, sans-serif', boxSizing: 'border-box' }}>
+      {/* FIX 1: RESPONSIVE CSS - 1 column on mobile, 2 columns on desktop */}
+      <style>{`
+        .payout-grid { display: flex; flex-direction: column; gap: 20px; }
+        @media (min-width: 768px) {
+          .payout-grid { display: grid !important; grid-template-columns: 1fr 1fr !important; }
+        }
+      `}</style>
 
-      <div style={{ background: '#111827', color: '#fff', padding: 20, borderRadius: 12, margin: '20px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <h2 style={{ fontSize: 24, fontWeight: 700, margin: '0 0 4px 0' }}>Earnings & Payouts</h2>
+      <p style={{ color: '#64748B', fontSize: 14, margin: 0 }}>Manage your earnings and request secure payouts.</p>
+
+      <div style={{ background: '#111827', color: '#fff', padding: 20, borderRadius: 12, margin: '20px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
         <div>
           <div style={{ fontSize: 13, opacity: 0.7 }}>Available Balance</div>
           <div style={{ fontSize: 28, fontWeight: 700 }}>${balance.toFixed(2)} USD</div>
@@ -123,10 +137,10 @@ export default function MerchantEarnings() {
         <div style={{ textAlign: 'right', fontSize: 13, opacity: 0.8 }}>Chilvo Merchant<br />Payouts in 1-3 Business Days</div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, alignItems: 'start' }}>
+      <div className="payout-grid">
         {/* REQUEST PAYOUT */}
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: 20 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Request Payout</h3>
+        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: 20, boxSizing: 'border-box', minWidth: 0 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, marginTop: 0 }}>Request Payout</h3>
 
           <label style={labelStyle}>Payout Amount (USD)</label>
           <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" style={inputStyle} />
@@ -136,7 +150,7 @@ export default function MerchantEarnings() {
             <option>Bank Transfer</option>
             <option>Crypto Wallet (USDT)</option>
           </select>
-re
+
           <label style={labelStyle}>Beneficiary Name</label>
           <input type="text" value={beneficiaryName} onChange={(e) => setBeneficiaryName(e.target.value)} placeholder="Full name as it appears on bank account" style={inputStyle} />
 
@@ -151,16 +165,16 @@ re
         </div>
 
         {/* HISTORY */}
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: 20 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Payout History</h3>
+        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: 20, boxSizing: 'border-box', minWidth: 0 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, marginTop: 0 }}>Payout History</h3>
           {payouts.map((p) => (
-            <div key={p.id} style={{ borderBottom: '1px solid #F1F5F9', padding: '12px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
+            <div key={p.id} style={{ borderBottom: '1px solid #F1F5F9', padding: '12px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
+              <div style={{ minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: 14 }}>${p.amount.toFixed(2)} USD</div>
-                <div style={{ fontSize: 12, color: '#64748B' }}>{p.reference} • {p.date}</div>
-                <div style={{ fontSize: 12, color: '#64748B' }}>{p.method} • {p.bankName}</div>
+                <div style={{ fontSize: 12, color: '#64748B', wordBreak: 'break-word' }}>{p.reference} • {p.date}</div>
+                <div style={{ fontSize: 12, color: '#64748B' }}>{p.method} • {p.bankName} • {maskAccount(p.accountDetails)}</div>
               </div>
-              <div style={{ textAlign: 'right' }}>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 <span style={getStatusStyle(p.status)}>{p.status}</span>
                 <div>
                   <button onClick={() => setShowReceipt(p)} style={{ background: 'none', border: 'none', color: '#2563EB', fontSize: 12, cursor: 'pointer', marginTop: 6, fontWeight: 600 }}>View Receipt →</button>
@@ -172,23 +186,27 @@ re
         </div>
       </div>
 
-      {/* PROFESSIONAL RECEIPT MODAL */}
+      {/* PROFESSIONAL RECEIPT MODAL - FIX 2 & 3 */}
       {showReceipt && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 16 }} onClick={() => setShowReceipt(null)}>
-          <div style={{ background: '#fff', borderRadius: 12, maxWidth: 480, width: '100%', padding: 24 }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 50, padding: 16, overflowY: 'auto', boxSizing: 'border-box' }} onClick={() => setShowReceipt(null)}>
+          <div style={{ background: '#fff', borderRadius: 12, maxWidth: 480, width: '100%', padding: 24, margin: '20px auto', boxSizing: 'border-box' }} onClick={(e) => e.stopPropagation()}>
             <div style={{ textAlign: 'center', borderBottom: '1px solid #E2E8F0', paddingBottom: 16 }}>
               <div style={{ fontSize: 20, fontWeight: 800 }}>CHILVO</div>
               <div style={{ fontSize: 12, color: '#64748B' }}>Payout Receipt</div>
             </div>
             <div style={{ marginTop: 16, fontSize: 14, lineHeight: 1.7 }}>
               <p>Dear {showReceipt.beneficiaryName},</p>
-              <p>We are pleased to inform you that your payout request has been successfully processed.</p>
-              <div style={{ background: '#F8FAFC', padding: 14, borderRadius: 8, margin: '12px 0' }}>
+              <p>
+                {showReceipt.status === 'Completed'
+                  ? 'We are pleased to inform you that your payout request has been successfully processed.'
+                  : 'We have received your payout request and it is currently being reviewed. You will be notified once it is processed.'}
+              </p>
+              <div style={{ background: '#F8FAFC', padding: 14, borderRadius: 8, margin: '12px 0', wordBreak: 'break-word' }}>
                 <div><strong>Payout Reference:</strong> {showReceipt.reference}</div>
                 <div><strong>Date:</strong> {showReceipt.date}</div>
                 <div><strong>Amount:</strong> ${showReceipt.amount.toFixed(2)} USD</div>
                 <div><strong>Payout Method:</strong> {showReceipt.method}</div>
-                <div><strong>Beneficiary:</strong> {showReceipt.beneficiaryName} - {showReceipt.bankName} {showReceipt.accountDetails}</div>
+                <div><strong>Beneficiary:</strong> {showReceipt.beneficiaryName} - {showReceipt.bankName} {maskAccount(showReceipt.accountDetails)}</div>
                 <div><strong>Status:</strong> {showReceipt.status}</div>
               </div>
               <p style={{ fontSize: 13, color: '#64748B' }}>Funds should reflect in your account within 1-3 business days depending on your bank. For any enquiries, please contact support@chilvo.com with your Payout Reference.</p>
