@@ -98,12 +98,6 @@ const totalSales = earnings.reduce(
   0,
 );
 
-const totalCommission = earnings.reduce(
-  (total, earning) =>
-    total + earning.commissionAmount,
-  0,
-);
-
 const totalMerchantEarnings = earnings.reduce(
   (total, earning) =>
     total + earning.netEarnings,
@@ -134,7 +128,7 @@ const formatUSD = (amount: number) =>
  
   if (loading) {
     return (
-      <main>
+      <main style={{ padding: "20px", maxWidth: "700px", margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
         <h1>Earnings & Withdrawals</h1>
         <p>Loading your merchant account...</p>
       </main>
@@ -143,7 +137,7 @@ const formatUSD = (amount: number) =>
 
   if (merchantStatus !== "approved") {
     return (
-      <main>
+      <main style={{ padding: "20px", maxWidth: "700px", margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
         <h1>Earnings & Withdrawals</h1>
         <p>
           An approved merchant account is required
@@ -161,43 +155,22 @@ const formatUSD = (amount: number) =>
   }
 
   return (
-    <main>
+    <main style={{ padding: "20px", maxWidth: "700px", margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
       <section>
-        <h1>Earnings & Withdrawals</h1>
+        <h1 style={{ margin: "0 0 8px" }}>Earnings & Withdrawals</h1>
 
-        <p>
+        <p style={{ color: "#666", margin: "0 0 20px" }}>
           Manage your earnings and track your withdrawals
           from one place.
         </p>
-
-        <p>
-          CHILVO is preparing its merchant payout system.
-          Your existing sales and payment records will
-          remain separate from confirmed payouts.
-        </p>
       </section>
 
-      <section>
-  <h2>Currency Support</h2>
-
-  <p>
-    US dollars (USD) are currently supported. British pounds
-    (GBP), euros (EUR), and other currencies may be supported
-    as suitable payment and payout services become available.
-  </p>
-</section>
-
-      <section>
-  <h2>Your Earnings</h2>
+      <section style={{ background: "#fff", border: "1px solid #eee", borderRadius: "12px", padding: "20px 16px", marginBottom: "20px" }}>
+  <h2 style={{ margin: "0 0 16px" }}>Your Earnings</h2>
 
   <p>
     <strong>Total Sales:</strong>{" "}
     {formatUSD(totalSales)}
-  </p>
-
-  <p>
-    <strong>CHILVO Commission:</strong>{" "}
-    {formatUSD(totalCommission)}
   </p>
 
   <p>
@@ -219,29 +192,28 @@ const formatUSD = (amount: number) =>
     <strong>Total Withdrawn:</strong> $0.00
   </p>
 
-  <p>
-    CHILVO's commission is 10% of verified sales.
+  <p style={{ fontSize: "13px", color: "#666", margin: "16px 0 0" }}>
     Pending earnings are not yet available for withdrawal.
-    Withdrawals have not been activated, so no payouts
-    have been recorded.
   </p>
 </section>
 
-      <Link
-        className="primary-btn"
-        to="/merchant/sales"
-      >
-        View Sales & Earnings
-      </Link>
+      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        <Link
+          className="primary-btn"
+          to="/merchant/sales"
+          style={{ display: "block", textAlign: "center", padding: "14px", borderRadius: "10px", width: "100%", boxSizing: "border-box" }}
+        >
+          View Sales & Earnings
+        </Link>
 
-      {" "}
-
-      <Link
-        className="secondary-btn"
-        to="/merchant/dashboard"
-      >
-        Back to Merchant Dashboard
-      </Link>
+        <Link
+          className="secondary-btn"
+          to="/merchant/dashboard"
+          style={{ display: "block", textAlign: "center", padding: "14px", borderRadius: "10px", width: "100%", boxSizing: "border-box" }}
+        >
+          Back to Merchant Dashboard
+        </Link>
+      </div>
     </main>
   );
 }
