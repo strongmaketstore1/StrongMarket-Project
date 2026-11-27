@@ -104,8 +104,9 @@ export default function Checkout() {
       // NEW - Create pending earnings for each merchant
       const byMerchant: Record<string, number> = {};
       for (const item of orderItems) {
+        const merchantId = item.merchantId || "unknown";
         const totalForItem = item.price * item.quantity;
-        byMerchant[item.merchantId] = (byMerchant[item.merchantId] || 0) + totalForItem;
+        byMerchant[merchantId] = (byMerchant[merchantId] || 0) + totalForItem;
       }
 
       for (const merchantId in byMerchant) {
