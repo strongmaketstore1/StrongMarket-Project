@@ -25,6 +25,7 @@ import Register from "./pages/Register";
 import MerchantApply from "./pages/MerchantApply";
 import AdminMerchantApplications from "./pages/AdminMerchantApplications";
 import AdminOrders from "./pages/AdminOrders";
+import AdminWithdrawals from "./pages/AdminWithdrawals";
 import Shop from "./pages/Shop";
 import ProductDetails from "./pages/ProductDetails";
 import Cart from "./pages/Cart";
@@ -487,6 +488,13 @@ function AppContent() {
                     >
                       <span>💰</span> Admin - Orders
                     </Link>
+                    <Link
+                      to="/admin/withdrawals"
+                      onClick={() => setMobileMenuOpen(false)}
+                      style={navLinkStyle}
+                    >
+                      <span>🏦</span> Admin - Withdrawals
+                    </Link>
                   </>
                 )}
 
@@ -557,6 +565,7 @@ function AppContent() {
           <Route path="/merchant/earnings" element={<MerchantEarnings />} />
           <Route path="/admin/merchant-applications" element={<AdminMerchantApplications />} />
           <Route path="/admin/orders" element={<AdminOrders />} />
+          <Route path="/admin/withdrawals" element={<AdminWithdrawals />} />
         </Routes>
 
         <footer style={{ padding: "24px 16px", boxSizing: "border-box", background: bg, color: text }}>
