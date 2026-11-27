@@ -24,6 +24,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import MerchantApply from "./pages/MerchantApply";
 import AdminMerchantApplications from "./pages/AdminMerchantApplications";
+import AdminOrders from "./pages/AdminOrders";
 import Shop from "./pages/Shop";
 import ProductDetails from "./pages/ProductDetails";
 import Cart from "./pages/Cart";
@@ -471,13 +472,22 @@ function AppContent() {
                 )}
 
                 {isAdmin && (
-                  <Link
-                    to="/admin/merchant-applications"
-                    onClick={() => setMobileMenuOpen(false)}
-                    style={navLinkStyle}
-                  >
-                    <span>🛡️</span> Admin
-                  </Link>
+                  <>
+                    <Link
+                      to="/admin/merchant-applications"
+                      onClick={() => setMobileMenuOpen(false)}
+                      style={navLinkStyle}
+                    >
+                      <span>🛡️</span> Admin - Applications
+                    </Link>
+                    <Link
+                      to="/admin/orders"
+                      onClick={() => setMobileMenuOpen(false)}
+                      style={navLinkStyle}
+                    >
+                      <span>💰</span> Admin - Orders
+                    </Link>
+                  </>
                 )}
 
                 <button type="button" onClick={() => {
@@ -546,6 +556,7 @@ function AppContent() {
           <Route path="/merchant/sales" element={<MerchantSales />} />
           <Route path="/merchant/earnings" element={<MerchantEarnings />} />
           <Route path="/admin/merchant-applications" element={<AdminMerchantApplications />} />
+          <Route path="/admin/orders" element={<AdminOrders />} />
         </Routes>
 
         <footer style={{ padding: "24px 16px", boxSizing: "border-box", background: bg, color: text }}>
