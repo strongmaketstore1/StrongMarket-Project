@@ -1,271 +1,203 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { onAuthStateChanged } from "firebase/auth";
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-  addDoc,
-} from "firebase/firestore";
+import React, { useState } from 'react';
 
-import { auth, db } from "../firebase";
+type PayoutStatus = 'Requested' | 'Processing' | 'Completed' | 'Declined';
 
-type MerchantEarning = {
+interface Payout {
   id: string;
-  orderId: string;
-  merchantId: string;
-  currency: string;
-  grossSales: number;
-  commissionRate: number;
-  commissionAmount: number;
-  netEarnings: number;
-  status: string;
-  createdAt: string;
+  reference: string;
+  amount: number;
+  method: string;
+  beneficiaryName: string;
+  accountDetails: string;
+  bankName: string;
+  date: string;
+  status: PayoutStatus;
+}
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '12px',
+  borderRadius: '8px',
+  border: '1px solid #E2E8F0',
+  fontSize: '14px',
+  marginBottom: '16px',
+  outline: 'none',
+  boxSizing: 'border-box',
+};
+
+const labelStyle: React.CSSProperties = {
+  display: 'block',
+  fontSize: '13px',
+  fontWeight: 600,
+  color: '#1A202C',
+  marginBottom: '6px',
+};
+
+const buttonStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '13px',
+  background: '#111827',
+  color: '#fff',
+  border: 'none',
+  borderRadius: '8px',
+  fontWeight: 600,
+  cursor: 'pointer',
+  fontSize: '14px',
 };
 
 export default function MerchantEarnings() {
-  const [loading, setLoading] = useState(true);
-  const [merchantStatus, setMerchantStatus] = useState("none");
-  const [earnings, setEarnings] = useState<MerchantEarning[]>([]);
+  const [balance] = useState(250.00);
+  const [paymentMethod, setPaymentMethod] = useState('Bank Transfer');
+  const [beneficiaryName, setBeneficiaryName] = useState('');
+  const [accountDetails, setAccountDetails] = useState('');
+  const [bankName, setBankName] = useState('');
+  const [amount, setAmount] = useState('');
+  const [payouts, setPayouts] = useState<Payout[]>([
+    {
+      id: '1',
+      reference: 'CHV-2026-00122',
+      amount: 120.00,
+      method: 'Bank Transfer',
+      beneficiaryName: 'John Doe',
+      accountDetails: '****6789',
+      bankName: 'GTBank',
+      date: '20 Nov 2026',
+      status: 'Completed',
+    },
+  ]);
+  const [showReceipt, setShowReceipt] = useState<Payout | null>(null);
 
-  // ✅ NEW - Separate professional fields
-  const [paymentMethod, setPaymentMethod] = useState("Bank Transfer");
-  const [bankName, setBankName] = useState("");
-  const [accountNumber, setAccountNumber] = useState("");
-  const [accountName, setAccountName] = useState("");
-  const [requesting, setRequesting] = useState(false);
-  const [message, setMessage] = useState("");
-  const [messageIsError, setMessageIsError] = useState(false);
+  const generateReference = () => {
+    const num = Math.floor(10000 + Math.random() * 90000);
+    return `CHV-2026-00${num.toString().slice(0, 3)}`;
+  };
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        setMerchantStatus("none");
-        setLoading(false);
-        return;
-      }
-      try {
-        const userSnapshot = await getDoc(doc(db, "users", user.uid));
-        if (!userSnapshot.exists()) {
-          setMerchantStatus("none");
-          return;
-        }
-        const status = userSnapshot.data().merchantStatus ?? "none";
-        setMerchantStatus(status);
-        if (status !== "approved") {
-          setEarnings([]);
-          return;
-        }
-        const earningsQuery = query(
-          collection(db, "merchantEarnings"),
-          where("merchantId", "==", user.uid),
-        );
-        const earningsSnapshot = await getDocs(earningsQuery);
-        const merchantEarnings: MerchantEarning[] =
-          earningsSnapshot.docs.map((earningDoc) => ({
-            id: earningDoc.id,
-            ...earningDoc.data(),
-          })) as MerchantEarning[];
-        setEarnings(merchantEarnings);
-      } catch (error) {
-        console.error("Unable to verify merchant status:", error);
-        setMerchantStatus("error");
-      } finally {
-        setLoading(false);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const totalSales = earnings.reduce((total, earning) => total + earning.grossSales, 0);
-  const totalMerchantEarnings = earnings.reduce((total, earning) => total + earning.netEarnings, 0);
-  const pendingEarnings = earnings
-    .filter((earning) => earning.status === "pending")
-    .reduce((total, earning) => total + earning.netEarnings, 0);
-  const availableBalance = earnings
-    .filter((earning) => earning.status === "available")
-    .reduce((total, earning) => total + earning.netEarnings, 0);
-  const totalWithdrawn = earnings
-    .filter((earning) => earning.status === "withdrawn" || earning.status === "paid_out")
-    .reduce((total, earning) => total + earning.netEarnings, 0);
-
-  const formatUSD = (amount: number) =>
-    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
-
-  function showMessage(text: string, isError = false) {
-    setMessage(text);
-    setMessageIsError(isError);
-  }
-
-  async function handleRequestWithdrawal() {
-    const user = auth.currentUser;
-    if (!user) { showMessage("Please log in.", true); return; }
-    if (availableBalance <= 0) { showMessage("You have no available balance to withdraw.", true); return; }
-
-    // ✅ Validation per field
-    if (!bankName.trim()) { showMessage("Please enter your bank name.", true); return; }
-    if (!accountNumber.trim()) { showMessage("Please enter your account number.", true); return; }
-    if (accountNumber.trim().length < 10) { showMessage("Account number looks too short. Please check it.", true); return; }
-    if (!accountName.trim()) { showMessage("Please enter the account holder name.", true); return; }
-
-    setRequesting(true);
-    showMessage("");
-    try {
-      const availableEarnings = earnings.filter((e) => e.status === "available");
-
-      // ✅ Clean paymentDetails for Admin to read + separate fields for future
-      const paymentDetails = `${paymentMethod} | Bank: ${bankName.trim()} | Account No: ${accountNumber.trim()} | Account Name: ${accountName.trim()}`;
-
-      await addDoc(collection(db, "withdrawalRequests"), {
-        merchantId: user.uid,
-        merchantEmail: user.email,
-        amount: availableBalance,
-        currency: "USD",
-        paymentMethod,
-        bankName: bankName.trim(),
-        accountNumber: accountNumber.trim(),
-        accountName: accountName.trim(),
-        paymentDetails,
-        earningIds: availableEarnings.map((e) => e.id),
-        status: "requested",
-        createdAt: new Date().toISOString(),
-      });
-      showMessage(`Withdrawal request for ${formatUSD(availableBalance)} sent! Admin will review it.`);
-      setBankName("");
-      setAccountNumber("");
-      setAccountName("");
-      setPaymentMethod("Bank Transfer");
-    } catch (error) {
-      console.error(error);
-      showMessage("Could not send request. Try again.", true);
+  const handleRequestPayout = () => {
+    if (!beneficiaryName || !accountDetails || !bankName || !amount) {
+      alert('Please complete all payout details.');
+      return;
     }
-    setRequesting(false);
-  }
+    if (parseFloat(amount) > balance) {
+      alert('Insufficient balance.');
+      return;
+    }
 
-  const inputStyle: React.CSSProperties = {
-    width: "100%",
-    padding: "13px 12px",
-    border: "1px solid #ddd",
-    borderRadius: "10px",
-    fontSize: "15px",
-    boxSizing: "border-box",
-    background: "#fff",
-    outline: "none",
+    const newPayout: Payout = {
+      id: Date.now().toString(),
+      reference: generateReference(),
+      amount: parseFloat(amount),
+      method: paymentMethod,
+      beneficiaryName,
+      accountDetails,
+      bankName,
+      date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      status: 'Requested',
+    };
+
+    setPayouts([newPayout, ...payouts]);
+    setAmount('');
+    setBeneficiaryName('');
+    setAccountDetails('');
+    setBankName('');
+    alert(`Payout Request Submitted\nReference: ${newPayout.reference}`);
   };
 
-  const labelStyle: React.CSSProperties = {
-    display: "block",
-    fontSize: "13px",
-    fontWeight: 700,
-    marginBottom: "6px",
-    color: "#111",
+  const getStatusStyle = (status: PayoutStatus): React.CSSProperties => {
+    const base: React.CSSProperties = { padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 600 };
+    if (status === 'Completed') return { ...base, background: '#D1FAE5', color: '#065F46' };
+    if (status === 'Processing') return { ...base, background: '#FEF3C7', color: '#92400E' };
+    if (status === 'Requested') return { ...base, background: '#DBEAFE', color: '#1E40AF' };
+    return { ...base, background: '#FEE2E2', color: '#991B1B' };
   };
-
-  if (loading) {
-    return (
-      <main style={{ padding: "20px", maxWidth: "700px", margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
-        <h1>Earnings & Withdrawals</h1>
-        <p>Loading your merchant account...</p>
-      </main>
-    );
-  }
-
-  if (merchantStatus !== "approved") {
-    return (
-      <main style={{ padding: "20px", maxWidth: "700px", margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
-        <h1>Earnings & Withdrawals</h1>
-        <p>An approved merchant account is required to access this section.</p>
-        <Link className="primary-btn" to="/merchant/dashboard">Back to Merchant Dashboard</Link>
-      </main>
-    );
-  }
 
   return (
-    <main style={{ padding: "20px", maxWidth: "700px", margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
-      <section>
-        <h1 style={{ margin: "0 0 8px" }}>Earnings & Withdrawals</h1>
-        <p style={{ color: "#666", margin: "0 0 20px" }}>Manage your earnings and track your withdrawals from one place.</p>
-      </section>
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: 20, fontFamily: 'Inter, sans-serif' }}>
+      <h2 style={{ fontSize: 24, fontWeight: 700 }}>Earnings & Payouts</h2>
+      <p style={{ color: '#64748B', fontSize: 14 }}>Manage your earnings and request secure payouts.</p>
 
-      <section style={{ background: "#fff", border: "1px solid #eee", borderRadius: "12px", padding: "20px 16px", marginBottom: "20px" }}>
-        <h2 style={{ margin: "0 0 16px" }}>Your Earnings</h2>
-        <p><strong>Total Sales:</strong> {formatUSD(totalSales)}</p>
-        <p><strong>Total Merchant Earnings:</strong> {formatUSD(totalMerchantEarnings)}</p>
-        <p><strong>Pending Earnings:</strong> {formatUSD(pendingEarnings)}</p>
-        <p><strong>Available Balance:</strong> {formatUSD(availableBalance)}</p>
-        <p><strong>Total Withdrawn:</strong> {formatUSD(totalWithdrawn)}</p>
-        <p style={{ fontSize: "13px", color: "#666", margin: "16px 0 0" }}>Pending earnings are not yet available for withdrawal.</p>
-      </section>
-
-      {/* ✅ PROFESSIONAL WITHDRAWAL FORM */}
-      <section style={{ background: "#fff", border: "1px solid #eee", borderRadius: "16px", padding: "22px 18px", marginBottom: "20px", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
-          <div>
-            <h2 style={{ margin: "0 0 6px", fontSize: "22px" }}>Request Withdrawal</h2>
-            <p style={{ fontSize: "13px", color: "#666", margin: 0 }}>Enter your payout details below. Make sure they match your bank account.</p>
-          </div>
-          <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "10px", padding: "10px 12px", textAlign: "right", flexShrink: 0 }}>
-            <p style={{ margin: 0, fontSize: "11px", color: "#166534", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>Available</p>
-            <p style={{ margin: "2px 0 0", fontSize: "18px", fontWeight: 800, color: "#166534" }}>{formatUSD(availableBalance)}</p>
-          </div>
+      <div style={{ background: '#111827', color: '#fff', padding: 20, borderRadius: 12, margin: '20px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <div style={{ fontSize: 13, opacity: 0.7 }}>Available Balance</div>
+          <div style={{ fontSize: 28, fontWeight: 700 }}>${balance.toFixed(2)} USD</div>
         </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginTop: "20px" }}>
-          <div>
-            <label style={labelStyle}>Payment Method</label>
-            <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} style={inputStyle}>
-              <option>Bank Transfer</option>
-              <option>Paystack</option>
-              <option>Mobile Money</option>
-            </select>
-          </div>
-
-          <div>
-            <label style={labelStyle}>Bank Name</label>
-            <input type="text" value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="e.g. GTBank, Access Bank, First Bank" style={inputStyle} />
-          </div>
-
-          <div>
-            <label style={labelStyle}>Account Number</label>
-            <input type="text" inputMode="numeric" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value.replace(/[^0-9]/g, ""))} placeholder="e.g. 0123456789" maxLength={11} style={inputStyle} />
-          </div>
-
-          <div>
-            <label style={labelStyle}>Account Name</label>
-            <input type="text" value={accountName} onChange={(e) => setAccountName(e.target.value)} placeholder="Name on the account" style={inputStyle} />
-          </div>
-        </div>
-
-        <button
-          onClick={handleRequestWithdrawal}
-          disabled={requesting || availableBalance <= 0}
-          style={{ marginTop: "18px", width: "100%", padding: "14px", background: availableBalance > 0 ? "#111" : "#ccc", color: "#fff", border: "none", borderRadius: "10px", cursor: availableBalance > 0 ? "pointer" : "not-allowed", fontSize: "16px", fontWeight: 700 }}
-        >
-          {requesting ? "Sending Request..." : availableBalance > 0 ? `Request ${formatUSD(availableBalance)} Withdrawal` : "No Available Balance"}
-        </button>
-
-        {message && (
-          <p style={{ fontSize: "13px", marginTop: "12px", padding: "10px 12px", borderRadius: "8px", background: messageIsError ? "#fef2f2" : "#f0fdf4", color: messageIsError ? "#b91c1c" : "#166534", border: `1px solid ${messageIsError ? "#fecaca" : "#bbf7d0"}` }}>
-            {message}
-          </p>
-        )}
-
-        <p style={{ fontSize: "12px", color: "#999", margin: "12px 0 0", textAlign: "center" }}>
-          Withdrawals are reviewed by Chilvo Admin. Please allow 1-3 business days.
-        </p>
-      </section>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-        <Link className="primary-btn" to="/merchant/sales" style={{ display: "block", textAlign: "center", padding: "14px", borderRadius: "10px", width: "100%", boxSizing: "border-box" }}>
-          View Sales & Earnings
-        </Link>
-        <Link className="secondary-btn" to="/merchant/dashboard" style={{ display: "block", textAlign: "center", padding: "14px", borderRadius: "10px", width: "100%", boxSizing: "border-box" }}>
-          Back to Merchant Dashboard
-        </Link>
+        <div style={{ textAlign: 'right', fontSize: 13, opacity: 0.8 }}>Chilvo Merchant<br />Payouts in 1-3 Business Days</div>
       </div>
-    </main>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, alignItems: 'start' }}>
+        {/* REQUEST PAYOUT */}
+        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: 20 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Request Payout</h3>
+
+          <label style={labelStyle}>Payout Amount (USD)</label>
+          <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" style={inputStyle} />
+
+          <label style={labelStyle}>Payout Method</label>
+          <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} style={inputStyle}>
+            <option>Bank Transfer</option>
+            <option>Crypto Wallet (USDT)</option>
+          </select>
+re
+          <label style={labelStyle}>Beneficiary Name</label>
+          <input type="text" value={beneficiaryName} onChange={(e) => setBeneficiaryName(e.target.value)} placeholder="Full name as it appears on bank account" style={inputStyle} />
+
+          <label style={labelStyle}>Beneficiary Account Details</label>
+          <input type="text" value={accountDetails} onChange={(e) => setAccountDetails(e.target.value)} placeholder="Account Number / IBAN / USDT Wallet Address" style={inputStyle} />
+
+          <label style={labelStyle}>Bank Name / Network</label>
+          <input type="text" value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="e.g. GTBank, Chase, Barclays, TRC20" style={inputStyle} />
+
+          <button onClick={handleRequestPayout} style={buttonStyle}>Submit Payout Request</button>
+          <p style={{ fontSize: 12, color: '#94A3B8', marginTop: 10, textAlign: 'center' }}>Secured by Chilvo Payments. Payouts are reviewed before processing.</p>
+        </div>
+
+        {/* HISTORY */}
+        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: 20 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Payout History</h3>
+          {payouts.map((p) => (
+            <div key={p.id} style={{ borderBottom: '1px solid #F1F5F9', padding: '12px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 14 }}>${p.amount.toFixed(2)} USD</div>
+                <div style={{ fontSize: 12, color: '#64748B' }}>{p.reference} • {p.date}</div>
+                <div style={{ fontSize: 12, color: '#64748B' }}>{p.method} • {p.bankName}</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <span style={getStatusStyle(p.status)}>{p.status}</span>
+                <div>
+                  <button onClick={() => setShowReceipt(p)} style={{ background: 'none', border: 'none', color: '#2563EB', fontSize: 12, cursor: 'pointer', marginTop: 6, fontWeight: 600 }}>View Receipt →</button>
+                </div>
+              </div>
+            </div>
+          ))}
+          {payouts.length === 0 && <p style={{ fontSize: 13, color: '#94A3B8' }}>No payouts yet.</p>}
+        </div>
+      </div>
+
+      {/* PROFESSIONAL RECEIPT MODAL */}
+      {showReceipt && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 16 }} onClick={() => setShowReceipt(null)}>
+          <div style={{ background: '#fff', borderRadius: 12, maxWidth: 480, width: '100%', padding: 24 }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ textAlign: 'center', borderBottom: '1px solid #E2E8F0', paddingBottom: 16 }}>
+              <div style={{ fontSize: 20, fontWeight: 800 }}>CHILVO</div>
+              <div style={{ fontSize: 12, color: '#64748B' }}>Payout Receipt</div>
+            </div>
+            <div style={{ marginTop: 16, fontSize: 14, lineHeight: 1.7 }}>
+              <p>Dear {showReceipt.beneficiaryName},</p>
+              <p>We are pleased to inform you that your payout request has been successfully processed.</p>
+              <div style={{ background: '#F8FAFC', padding: 14, borderRadius: 8, margin: '12px 0' }}>
+                <div><strong>Payout Reference:</strong> {showReceipt.reference}</div>
+                <div><strong>Date:</strong> {showReceipt.date}</div>
+                <div><strong>Amount:</strong> ${showReceipt.amount.toFixed(2)} USD</div>
+                <div><strong>Payout Method:</strong> {showReceipt.method}</div>
+                <div><strong>Beneficiary:</strong> {showReceipt.beneficiaryName} - {showReceipt.bankName} {showReceipt.accountDetails}</div>
+                <div><strong>Status:</strong> {showReceipt.status}</div>
+              </div>
+              <p style={{ fontSize: 13, color: '#64748B' }}>Funds should reflect in your account within 1-3 business days depending on your bank. For any enquiries, please contact support@chilvo.com with your Payout Reference.</p>
+              <p style={{ fontSize: 13 }}>Thank you for being a valued Chilvo Merchant.<br /><strong>Best Regards,<br />Chilvo Finance Team</strong><br />www.chilvo.com</p>
+            </div>
+            <button onClick={() => setShowReceipt(null)} style={buttonStyle}>Close</button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
