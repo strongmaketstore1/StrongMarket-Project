@@ -30,9 +30,15 @@ export default function MerchantEarnings() {
   const [loading, setLoading] = useState(true);
   const [merchantStatus, setMerchantStatus] = useState("none");
   const [earnings, setEarnings] = useState<MerchantEarning[]>([]);
-  const [paymentDetails, setPaymentDetails] = useState("");
+
+  // ✅ NEW - Separate professional fields
+  const [paymentMethod, setPaymentMethod] = useState("Bank Transfer");
+  const [bankName, setBankName] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [accountName, setAccountName] = useState("");
   const [requesting, setRequesting] = useState(false);
   const [message, setMessage] = useState("");
+  const [messageIsError, setMessageIsError] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -89,34 +95,74 @@ export default function MerchantEarnings() {
   const formatUSD = (amount: number) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
 
+  function showMessage(text: string, isError = false) {
+    setMessage(text);
+    setMessageIsError(isError);
+  }
+
   async function handleRequestWithdrawal() {
     const user = auth.currentUser;
-    if (!user) { setMessage("Please log in."); return; }
-    if (availableBalance <= 0) { setMessage("You have no available balance to withdraw."); return; }
-    if (!paymentDetails.trim()) { setMessage("Please enter where you want to be paid - bank / Paystack / mobile money."); return; }
+    if (!user) { showMessage("Please log in.", true); return; }
+    if (availableBalance <= 0) { showMessage("You have no available balance to withdraw.", true); return; }
+
+    // ✅ Validation per field
+    if (!bankName.trim()) { showMessage("Please enter your bank name.", true); return; }
+    if (!accountNumber.trim()) { showMessage("Please enter your account number.", true); return; }
+    if (accountNumber.trim().length < 10) { showMessage("Account number looks too short. Please check it.", true); return; }
+    if (!accountName.trim()) { showMessage("Please enter the account holder name.", true); return; }
 
     setRequesting(true);
-    setMessage("");
+    showMessage("");
     try {
       const availableEarnings = earnings.filter((e) => e.status === "available");
+
+      // ✅ Clean paymentDetails for Admin to read + separate fields for future
+      const paymentDetails = `${paymentMethod} | Bank: ${bankName.trim()} | Account No: ${accountNumber.trim()} | Account Name: ${accountName.trim()}`;
+
       await addDoc(collection(db, "withdrawalRequests"), {
         merchantId: user.uid,
         merchantEmail: user.email,
         amount: availableBalance,
         currency: "USD",
-        paymentDetails: paymentDetails.trim(),
+        paymentMethod,
+        bankName: bankName.trim(),
+        accountNumber: accountNumber.trim(),
+        accountName: accountName.trim(),
+        paymentDetails,
         earningIds: availableEarnings.map((e) => e.id),
         status: "requested",
         createdAt: new Date().toISOString(),
       });
-      setMessage(`Withdrawal request for ${formatUSD(availableBalance)} sent! Admin will review it.`);
-      setPaymentDetails("");
+      showMessage(`Withdrawal request for ${formatUSD(availableBalance)} sent! Admin will review it.`);
+      setBankName("");
+      setAccountNumber("");
+      setAccountName("");
+      setPaymentMethod("Bank Transfer");
     } catch (error) {
       console.error(error);
-      setMessage("Could not send request. Try again.");
+      showMessage("Could not send request. Try again.", true);
     }
     setRequesting(false);
   }
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "13px 12px",
+    border: "1px solid #ddd",
+    borderRadius: "10px",
+    fontSize: "15px",
+    boxSizing: "border-box",
+    background: "#fff",
+    outline: "none",
+  };
+
+  const labelStyle: React.CSSProperties = {
+    display: "block",
+    fontSize: "13px",
+    fontWeight: 700,
+    marginBottom: "6px",
+    color: "#111",
+  };
 
   if (loading) {
     return (
@@ -154,25 +200,62 @@ export default function MerchantEarnings() {
         <p style={{ fontSize: "13px", color: "#666", margin: "16px 0 0" }}>Pending earnings are not yet available for withdrawal.</p>
       </section>
 
-      {/* ✅ NEW PIECE 3 - Withdrawal Request */}
-      <section style={{ background: "#fff", border: "1px solid #eee", borderRadius: "12px", padding: "20px 16px", marginBottom: "20px" }}>
-        <h2 style={{ margin: "0 0 8px" }}>Request Withdrawal</h2>
-        <p style={{ fontSize: "13px", color: "#666", margin: "0 0 12px" }}>Available = you can withdraw it now.</p>
-        <input
-          type="text"
-          value={paymentDetails}
-          onChange={(e) => setPaymentDetails(e.target.value)}
-          placeholder="Bank name + account number, or Paystack email"
-          style={{ width: "100%", padding: "12px", border: "1px solid #ddd", borderRadius: "8px", boxSizing: "border-box" }}
-        />
+      {/* ✅ PROFESSIONAL WITHDRAWAL FORM */}
+      <section style={{ background: "#fff", border: "1px solid #eee", borderRadius: "16px", padding: "22px 18px", marginBottom: "20px", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
+          <div>
+            <h2 style={{ margin: "0 0 6px", fontSize: "22px" }}>Request Withdrawal</h2>
+            <p style={{ fontSize: "13px", color: "#666", margin: 0 }}>Enter your payout details below. Make sure they match your bank account.</p>
+          </div>
+          <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "10px", padding: "10px 12px", textAlign: "right", flexShrink: 0 }}>
+            <p style={{ margin: 0, fontSize: "11px", color: "#166534", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>Available</p>
+            <p style={{ margin: "2px 0 0", fontSize: "18px", fontWeight: 800, color: "#166534" }}>{formatUSD(availableBalance)}</p>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginTop: "20px" }}>
+          <div>
+            <label style={labelStyle}>Payment Method</label>
+            <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} style={inputStyle}>
+              <option>Bank Transfer</option>
+              <option>Paystack</option>
+              <option>Mobile Money</option>
+            </select>
+          </div>
+
+          <div>
+            <label style={labelStyle}>Bank Name</label>
+            <input type="text" value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="e.g. GTBank, Access Bank, First Bank" style={inputStyle} />
+          </div>
+
+          <div>
+            <label style={labelStyle}>Account Number</label>
+            <input type="text" inputMode="numeric" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value.replace(/[^0-9]/g, ""))} placeholder="e.g. 0123456789" maxLength={11} style={inputStyle} />
+          </div>
+
+          <div>
+            <label style={labelStyle}>Account Name</label>
+            <input type="text" value={accountName} onChange={(e) => setAccountName(e.target.value)} placeholder="Name on the account" style={inputStyle} />
+          </div>
+        </div>
+
         <button
           onClick={handleRequestWithdrawal}
           disabled={requesting || availableBalance <= 0}
-          style={{ marginTop: "12px", width: "100%", padding: "12px", background: availableBalance > 0 ? "#111" : "#ccc", color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer" }}
+          style={{ marginTop: "18px", width: "100%", padding: "14px", background: availableBalance > 0 ? "#111" : "#ccc", color: "#fff", border: "none", borderRadius: "10px", cursor: availableBalance > 0 ? "pointer" : "not-allowed", fontSize: "16px", fontWeight: 700 }}
         >
-          {requesting ? "Sending..." : `Request ${formatUSD(availableBalance)} Withdrawal`}
+          {requesting ? "Sending Request..." : availableBalance > 0 ? `Request ${formatUSD(availableBalance)} Withdrawal` : "No Available Balance"}
         </button>
-        {message && <p style={{ fontSize: "13px", marginTop: "10px" }}>{message}</p>}
+
+        {message && (
+          <p style={{ fontSize: "13px", marginTop: "12px", padding: "10px 12px", borderRadius: "8px", background: messageIsError ? "#fef2f2" : "#f0fdf4", color: messageIsError ? "#b91c1c" : "#166534", border: `1px solid ${messageIsError ? "#fecaca" : "#bbf7d0"}` }}>
+            {message}
+          </p>
+        )}
+
+        <p style={{ fontSize: "12px", color: "#999", margin: "12px 0 0", textAlign: "center" }}>
+          Withdrawals are reviewed by Chilvo Admin. Please allow 1-3 business days.
+        </p>
       </section>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
