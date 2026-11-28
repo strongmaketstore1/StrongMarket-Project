@@ -55,7 +55,9 @@ const mapDbStatus = (s: string): PayoutStatus => {
 };
 
 export default function MerchantEarnings() {
-  const [balance] = useState(250.00);
+  const [userId, setUserId] = useState("");
+  const [totalEarned, setTotalEarned] = useState(0);
+  const [totalWithdrawn, setTotalWithdrawn] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('Bank Transfer');
   const [beneficiaryName, setBeneficiaryName] = useState('');
   const [accountDetails, setAccountDetails] = useState('');
@@ -64,13 +66,55 @@ export default function MerchantEarnings() {
   const [loading, setLoading] = useState(false);
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [showReceipt, setShowReceipt] = useState<Payout | null>(null);
+  const [pageLoading, setPageLoading] = useState(true);
 
-  // LOAD FROM SUPABASE - real history, not fake
+  // Real balance = Earnings - Withdrawals (not fake $250)
+  const balance = Math.max(0, totalEarned - totalWithdrawn);
+
+  // 1. Get real logged-in merchant
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) setUserId(data.user.id);
+      else setPageLoading(false);
+    });
+  }, []);
+
+  // 2. Load earnings + payouts for THIS merchant only
+  useEffect(() => {
+    if (!userId) return;
+    fetchAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+
+  const fetchAll = async () => {
+    setPageLoading(true);
+    await Promise.all([fetchEarnings(), fetchPayouts()]);
+    setPageLoading(false);
+  };
+
+  const fetchEarnings = async () => {
+    // Sum from merchant_earnings table - created when Paystack says PAID
+    const { data, error } = await supabase
+      .from('merchant_earnings')
+      .select('amount')
+      .eq('merchant_id', userId);
+
+    if (error) {
+      console.log('Earnings table not found yet, balance will be 0 until you create it:', error.message);
+      setTotalEarned(0);
+      return;
+    }
+    const sum = (data || []).reduce((acc: number, r: any) => acc + Number(r.amount || 0), 0);
+    setTotalEarned(sum);
+  };
+
   const fetchPayouts = async () => {
     const { data, error } = await supabase
       .from('withdrawals')
       .select('*')
+      .eq('merchant_id', userId) // FIX: only this merchant
       .order('created_at', { ascending: false });
+
     if (error) {
       console.log('Fetch error:', error.message);
       return;
@@ -88,12 +132,23 @@ export default function MerchantEarnings() {
         status: mapDbStatus(row.status),
       }));
       setPayouts(mapped);
+
+      // Total withdrawn = all except declined (declined = money returned)
+      const withdrawn = data
+        .filter((r: any) => r.status !== 'declined' && r.status !== 'rejected')
+        .reduce((acc: number, r: any) => acc + Number(r.amount || 0), 0);
+      setTotalWithdrawn(withdrawn);
+
+      // Auto-fill bank details from last payout - merchant doesn't retype every time
+      if (data.length > 0) {
+        const last = data[0];
+        if (last.account_name) setBeneficiaryName(last.account_name);
+        if (last.account_number) setAccountDetails(last.account_number);
+        if (last.bank_name) setBankName(last.bank_name.replace(' - USDT', ''));
+        if (last.bank_name?.includes('USDT')) setPaymentMethod('Crypto Wallet (USDT)');
+      }
     }
   };
-
-  useEffect(() => {
-    fetchPayouts();
-  }, []);
 
   const generateReference = () => {
     const num = Math.floor(10000 + Math.random() * 90000);
@@ -107,23 +162,30 @@ export default function MerchantEarnings() {
   };
 
   const handleRequestPayout = async () => {
+    if (!userId) {
+      alert('Please login first.');
+      return;
+    }
     if (!beneficiaryName || !accountDetails || !bankName || !amount) {
       alert('Please complete all payout details.');
       return;
     }
     if (parseFloat(amount) > balance) {
-      alert('Insufficient balance.');
+      alert(`Insufficient balance. Available: $${balance.toFixed(2)}`);
+      return;
+    }
+    if (parseFloat(amount) <= 0) {
+      alert('Enter a valid amount.');
       return;
     }
 
     setLoading(true);
     const reference = generateReference();
 
-    // SAVE TO SUPABASE - Admin will see this instantly
     const { data, error } = await supabase
       .from('withdrawals')
       .insert([{
-        merchant_id: 'merchant-001',
+        merchant_id: userId, // FIX: real merchant, not merchant-001
         merchant_name: beneficiaryName,
         amount: parseFloat(amount),
         bank_name: paymentMethod === 'Crypto Wallet (USDT)' ? `${bankName} - USDT` : bankName,
@@ -154,10 +216,8 @@ export default function MerchantEarnings() {
     };
 
     setPayouts([newPayout, ...payouts]);
+    setTotalWithdrawn(totalWithdrawn + parseFloat(amount));
     setAmount('');
-    setBeneficiaryName('');
-    setAccountDetails('');
-    setBankName('');
     alert(`Payout Request Submitted\nReference: ${reference}\nAdmin has been notified.`);
   };
 
@@ -168,6 +228,14 @@ export default function MerchantEarnings() {
     if (status === 'Requested') return { ...base, background: '#DBEAFE', color: '#1E40AF' };
     return { ...base, background: '#FEE2E2', color: '#991B1B' };
   };
+
+  if (pageLoading) {
+    return <div style={{ maxWidth: 900, margin: '0 auto', padding: 16 }}><p>Loading earnings...</p></div>;
+  }
+
+  if (!userId) {
+    return <div style={{ maxWidth: 900, margin: '0 auto', padding: 16 }}><p>Please login to see your earnings.</p></div>;
+  }
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: 16, fontFamily: 'Inter, sans-serif', boxSizing: 'border-box' }}>
@@ -185,6 +253,7 @@ export default function MerchantEarnings() {
         <div>
           <div style={{ fontSize: 13, opacity: 0.7 }}>Available Balance</div>
           <div style={{ fontSize: 28, fontWeight: 700 }}>${balance.toFixed(2)} USD</div>
+          <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>Total Earned: ${totalEarned.toFixed(2)} • Withdrawn: ${totalWithdrawn.toFixed(2)}</div>
         </div>
         <div style={{ textAlign: 'right', fontSize: 13, opacity: 0.8 }}>Chilvo Merchant<br />Payouts in 1-3 Business Days</div>
       </div>
@@ -212,7 +281,7 @@ export default function MerchantEarnings() {
           <input type="text" value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="e.g. GTBank, Chase, Barclays, TRC20" style={inputStyle} />
 
           <button onClick={handleRequestPayout} disabled={loading} style={{ ...buttonStyle, opacity: loading ? 0.6 : 1 }}>{loading ? 'Sending...' : 'Submit Payout Request'}</button>
-          <p style={{ fontSize: 12, color: '#94A3B8', marginTop: 10, textAlign: 'center' }}>Secured by Chilvo Payments. Payouts are reviewed before processing.</p>
+          <p style={{ fontSize: 12, color: '#94A3B8', marginTop: 10, textAlign: 'center' }}>Secured by Chilvo Payments. Payouts are reviewed before processing. Admin pays via Grey / Paystack.</p>
         </div>
 
         <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: 20, boxSizing: 'border-box', minWidth: 0 }}>
