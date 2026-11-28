@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabaseClient';
 
 type PayoutStatus = 'Requested' | 'Processing' | 'Completed' | 'Declined';
 
@@ -45,6 +46,14 @@ const buttonStyle: React.CSSProperties = {
   fontSize: '14px',
 };
 
+const mapDbStatus = (s: string): PayoutStatus => {
+  const v = (s || 'pending').toLowerCase();
+  if (v === 'completed') return 'Completed';
+  if (v === 'processing') return 'Processing';
+  if (v === 'declined' || v === 'rejected') return 'Declined';
+  return 'Requested';
+};
+
 export default function MerchantEarnings() {
   const [balance] = useState(250.00);
   const [paymentMethod, setPaymentMethod] = useState('Bank Transfer');
@@ -52,20 +61,39 @@ export default function MerchantEarnings() {
   const [accountDetails, setAccountDetails] = useState('');
   const [bankName, setBankName] = useState('');
   const [amount, setAmount] = useState('');
-  const [payouts, setPayouts] = useState<Payout[]>([
-    {
-      id: '1',
-      reference: 'CHV-2026-00122',
-      amount: 120.00,
-      method: 'Bank Transfer',
-      beneficiaryName: 'John Doe',
-      accountDetails: '****6789',
-      bankName: 'GTBank',
-      date: '20 Nov 2026',
-      status: 'Completed',
-    },
-  ]);
+  const [loading, setLoading] = useState(false);
+  const [payouts, setPayouts] = useState<Payout[]>([]);
   const [showReceipt, setShowReceipt] = useState<Payout | null>(null);
+
+  // LOAD FROM SUPABASE - real history, not fake
+  const fetchPayouts = async () => {
+    const { data, error } = await supabase
+      .from('withdrawals')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) {
+      console.log('Fetch error:', error.message);
+      return;
+    }
+    if (data) {
+      const mapped: Payout[] = data.map((row: any) => ({
+        id: row.id,
+        reference: `CHV-${String(row.id).slice(0, 8).toUpperCase()}`,
+        amount: Number(row.amount),
+        method: row.bank_name?.includes('TRC20') || row.bank_name?.includes('USDT') ? 'Crypto Wallet (USDT)' : 'Bank Transfer',
+        beneficiaryName: row.account_name || row.merchant_name || 'Merchant',
+        accountDetails: row.account_number || '',
+        bankName: row.bank_name || '',
+        date: new Date(row.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+        status: mapDbStatus(row.status),
+      }));
+      setPayouts(mapped);
+    }
+  };
+
+  useEffect(() => {
+    fetchPayouts();
+  }, []);
 
   const generateReference = () => {
     const num = Math.floor(10000 + Math.random() * 90000);
@@ -78,7 +106,7 @@ export default function MerchantEarnings() {
     return `****${acc.slice(-4)}`;
   };
 
-  const handleRequestPayout = () => {
+  const handleRequestPayout = async () => {
     if (!beneficiaryName || !accountDetails || !bankName || !amount) {
       alert('Please complete all payout details.');
       return;
@@ -88,9 +116,34 @@ export default function MerchantEarnings() {
       return;
     }
 
+    setLoading(true);
+    const reference = generateReference();
+
+    // SAVE TO SUPABASE - Admin will see this instantly
+    const { data, error } = await supabase
+      .from('withdrawals')
+      .insert([{
+        merchant_id: 'merchant-001',
+        merchant_name: beneficiaryName,
+        amount: parseFloat(amount),
+        bank_name: paymentMethod === 'Crypto Wallet (USDT)' ? `${bankName} - USDT` : bankName,
+        account_number: accountDetails,
+        account_name: beneficiaryName,
+        status: 'pending',
+      }])
+      .select()
+      .single();
+
+    setLoading(false);
+
+    if (error) {
+      alert('Error: ' + error.message);
+      return;
+    }
+
     const newPayout: Payout = {
-      id: Date.now().toString(),
-      reference: generateReference(),
+      id: data?.id || Date.now().toString(),
+      reference: reference,
       amount: parseFloat(amount),
       method: paymentMethod,
       beneficiaryName,
@@ -105,7 +158,7 @@ export default function MerchantEarnings() {
     setBeneficiaryName('');
     setAccountDetails('');
     setBankName('');
-    alert(`Payout Request Submitted\nReference: ${newPayout.reference}`);
+    alert(`Payout Request Submitted\nReference: ${reference}\nAdmin has been notified.`);
   };
 
   const getStatusStyle = (status: PayoutStatus): React.CSSProperties => {
@@ -118,7 +171,6 @@ export default function MerchantEarnings() {
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: 16, fontFamily: 'Inter, sans-serif', boxSizing: 'border-box' }}>
-      {/* FIX 1: RESPONSIVE CSS - 1 column on mobile, 2 columns on desktop */}
       <style>{`
         .payout-grid { display: flex; flex-direction: column; gap: 20px; }
         @media (min-width: 768px) {
@@ -138,7 +190,6 @@ export default function MerchantEarnings() {
       </div>
 
       <div className="payout-grid">
-        {/* REQUEST PAYOUT */}
         <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: 20, boxSizing: 'border-box', minWidth: 0 }}>
           <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, marginTop: 0 }}>Request Payout</h3>
 
@@ -160,11 +211,10 @@ export default function MerchantEarnings() {
           <label style={labelStyle}>Bank Name / Network</label>
           <input type="text" value={bankName} onChange={(e) => setBankName(e.target.value)} placeholder="e.g. GTBank, Chase, Barclays, TRC20" style={inputStyle} />
 
-          <button onClick={handleRequestPayout} style={buttonStyle}>Submit Payout Request</button>
+          <button onClick={handleRequestPayout} disabled={loading} style={{ ...buttonStyle, opacity: loading ? 0.6 : 1 }}>{loading ? 'Sending...' : 'Submit Payout Request'}</button>
           <p style={{ fontSize: 12, color: '#94A3B8', marginTop: 10, textAlign: 'center' }}>Secured by Chilvo Payments. Payouts are reviewed before processing.</p>
         </div>
 
-        {/* HISTORY */}
         <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: 20, boxSizing: 'border-box', minWidth: 0 }}>
           <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, marginTop: 0 }}>Payout History</h3>
           {payouts.map((p) => (
@@ -186,7 +236,6 @@ export default function MerchantEarnings() {
         </div>
       </div>
 
-      {/* PROFESSIONAL RECEIPT MODAL - FIX 2 & 3 */}
       {showReceipt && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 50, padding: 16, overflowY: 'auto', boxSizing: 'border-box' }} onClick={() => setShowReceipt(null)}>
           <div style={{ background: '#fff', borderRadius: 12, maxWidth: 480, width: '100%', padding: 24, margin: '20px auto', boxSizing: 'border-box' }} onClick={(e) => e.stopPropagation()}>
