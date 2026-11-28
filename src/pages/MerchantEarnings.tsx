@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { getAuth } from 'firebase/auth';
+
+const API = "https://YOUR-RENDER-URL-HERE"; // <-- PUT YOUR RENDER URL HERE, e.g. https://chilvo-backend.onrender.com
 
 type PayoutStatus = 'Requested' | 'Processing' | 'Completed' | 'Declined';
 
@@ -68,18 +70,28 @@ export default function MerchantEarnings() {
   const [showReceipt, setShowReceipt] = useState<Payout | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
 
-  // Real balance = Earnings - Withdrawals (not fake $250)
   const balance = Math.max(0, totalEarned - totalWithdrawn);
 
-  // 1. Get real logged-in merchant
+  async function getToken() {
+    const user = getAuth().currentUser;
+    if (!user) return null;
+    return await user.getIdToken();
+  }
+
+  // 1. Get real logged-in merchant from Firebase
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) setUserId(data.user.id);
+    const user = getAuth().currentUser;
+    if (user) setUserId(user.uid);
+    else setPageLoading(false);
+    // If Firebase takes a moment to load, check again
+    const unsub = getAuth().onAuthStateChanged((u) => {
+      if (u) setUserId(u.uid);
       else setPageLoading(false);
     });
+    return () => unsub();
   }, []);
 
-  // 2. Load earnings + payouts for THIS merchant only
+  // 2. Load earnings + payouts for THIS merchant only, from backend / Firebase
   useEffect(() => {
     if (!userId) return;
     fetchAll();
@@ -93,60 +105,55 @@ export default function MerchantEarnings() {
   };
 
   const fetchEarnings = async () => {
-    // Sum from merchant_earnings table - created when Paystack says PAID
-    const { data, error } = await supabase
-      .from('merchant_earnings')
-      .select('amount')
-      .eq('merchant_id', userId);
-
-    if (error) {
-      console.log('Earnings table not found yet, balance will be 0 until you create it:', error.message);
+    const token = await getToken();
+    if (!token) { setTotalEarned(0); return; }
+    try {
+      const res = await fetch(`${API}/api/merchant/earnings`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (json.success) setTotalEarned(Number(json.totalEarned || 0));
+      else setTotalEarned(0);
+    } catch {
       setTotalEarned(0);
-      return;
     }
-    const sum = (data || []).reduce((acc: number, r: any) => acc + Number(r.amount || 0), 0);
-    setTotalEarned(sum);
   };
 
   const fetchPayouts = async () => {
-    const { data, error } = await supabase
-      .from('withdrawals')
-      .select('*')
-      .eq('merchant_id', userId) // FIX: only this merchant
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.log('Fetch error:', error.message);
-      return;
-    }
-    if (data) {
+    const token = await getToken();
+    if (!token) return;
+    try {
+      const res = await fetch(`${API}/api/merchant/withdrawals`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (!json.success) return;
+      const data = json.withdrawals || [];
       const mapped: Payout[] = data.map((row: any) => ({
         id: row.id,
         reference: `CHV-${String(row.id).slice(0, 8).toUpperCase()}`,
         amount: Number(row.amount),
-        method: row.bank_name?.includes('TRC20') || row.bank_name?.includes('USDT') ? 'Crypto Wallet (USDT)' : 'Bank Transfer',
-        beneficiaryName: row.account_name || row.merchant_name || 'Merchant',
-        accountDetails: row.account_number || '',
-        bankName: row.bank_name || '',
-        date: new Date(row.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+        method: row.method || (row.bankName?.includes('TRC20') || row.bankName?.includes('USDT') ? 'Crypto Wallet (USDT)' : 'Bank Transfer'),
+        beneficiaryName: row.accountName || row.beneficiaryName || 'Merchant',
+        accountDetails: row.accountNumber || '',
+        bankName: (row.bankName || '').replace(' - USDT', ''),
+        date: new Date(row.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
         status: mapDbStatus(row.status),
       }));
       setPayouts(mapped);
-
-      // Total withdrawn = all except declined (declined = money returned)
       const withdrawn = data
         .filter((r: any) => r.status !== 'declined' && r.status !== 'rejected')
         .reduce((acc: number, r: any) => acc + Number(r.amount || 0), 0);
       setTotalWithdrawn(withdrawn);
-
-      // Auto-fill bank details from last payout - merchant doesn't retype every time
       if (data.length > 0) {
         const last = data[0];
-        if (last.account_name) setBeneficiaryName(last.account_name);
-        if (last.account_number) setAccountDetails(last.account_number);
-        if (last.bank_name) setBankName(last.bank_name.replace(' - USDT', ''));
-        if (last.bank_name?.includes('USDT')) setPaymentMethod('Crypto Wallet (USDT)');
+        if (last.accountName) setBeneficiaryName(last.accountName);
+        if (last.accountNumber) setAccountDetails(last.accountNumber);
+        if (last.bankName) setBankName(last.bankName.replace(' - USDT', ''));
+        if (last.bankName?.includes('USDT') || last.method === 'Crypto Wallet (USDT)') setPaymentMethod('Crypto Wallet (USDT)');
       }
+    } catch (e) {
+      console.log('Fetch error:', e);
     }
   };
 
@@ -162,63 +169,50 @@ export default function MerchantEarnings() {
   };
 
   const handleRequestPayout = async () => {
-    if (!userId) {
-      alert('Please login first.');
-      return;
-    }
-    if (!beneficiaryName || !accountDetails || !bankName || !amount) {
-      alert('Please complete all payout details.');
-      return;
-    }
-    if (parseFloat(amount) > balance) {
-      alert(`Insufficient balance. Available: $${balance.toFixed(2)}`);
-      return;
-    }
-    if (parseFloat(amount) <= 0) {
-      alert('Enter a valid amount.');
-      return;
-    }
+    if (!userId) { alert('Please login first.'); return; }
+    if (!beneficiaryName || !accountDetails || !bankName || !amount) { alert('Please complete all payout details.'); return; }
+    if (parseFloat(amount) > balance) { alert(`Insufficient balance. Available: $${balance.toFixed(2)}`); return; }
+    if (parseFloat(amount) <= 0) { alert('Enter a valid amount.'); return; }
 
     setLoading(true);
+    const token = await getToken();
+    if (!token) { setLoading(false); alert('Please login again.'); return; }
     const reference = generateReference();
 
-    const { data, error } = await supabase
-      .from('withdrawals')
-      .insert([{
-        merchant_id: userId, // FIX: real merchant, not merchant-001
-        merchant_name: beneficiaryName,
+    try {
+      const res = await fetch(`${API}/api/merchant/withdrawals`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          amount: parseFloat(amount),
+          bankName: paymentMethod === 'Crypto Wallet (USDT)' ? `${bankName} - USDT` : bankName,
+          accountNumber: accountDetails,
+          accountName: beneficiaryName,
+          method: paymentMethod,
+        }),
+      });
+      const json = await res.json();
+      if (!json.success) { alert('Error: ' + (json.message || 'Failed')); setLoading(false); return; }
+
+      const newPayout: Payout = {
+        id: json.id || Date.now().toString(),
+        reference: reference,
         amount: parseFloat(amount),
-        bank_name: paymentMethod === 'Crypto Wallet (USDT)' ? `${bankName} - USDT` : bankName,
-        account_number: accountDetails,
-        account_name: beneficiaryName,
-        status: 'pending',
-      }])
-      .select()
-      .single();
-
-    setLoading(false);
-
-    if (error) {
-      alert('Error: ' + error.message);
-      return;
+        method: paymentMethod,
+        beneficiaryName,
+        accountDetails,
+        bankName,
+        date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+        status: 'Requested',
+      };
+      setPayouts([newPayout, ...payouts]);
+      setTotalWithdrawn(totalWithdrawn + parseFloat(amount));
+      setAmount('');
+      alert(`Payout Request Submitted\nReference: ${reference}\nAdmin has been notified.`);
+    } catch (e: any) {
+      alert('Error: ' + (e.message || 'Failed'));
     }
-
-    const newPayout: Payout = {
-      id: data?.id || Date.now().toString(),
-      reference: reference,
-      amount: parseFloat(amount),
-      method: paymentMethod,
-      beneficiaryName,
-      accountDetails,
-      bankName,
-      date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-      status: 'Requested',
-    };
-
-    setPayouts([newPayout, ...payouts]);
-    setTotalWithdrawn(totalWithdrawn + parseFloat(amount));
-    setAmount('');
-    alert(`Payout Request Submitted\nReference: ${reference}\nAdmin has been notified.`);
+    setLoading(false);
   };
 
   const getStatusStyle = (status: PayoutStatus): React.CSSProperties => {
