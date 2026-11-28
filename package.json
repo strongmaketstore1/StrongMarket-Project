@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@paystack/inline-js": "^2.24.0",
+    "@supabase/supabase-js": "^2.45.0",
     "axios": "^1.19.0",
     "cloudinary": "^2.11.0",
     "cors": "^2.8.6",
